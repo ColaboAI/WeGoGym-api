@@ -1,0 +1,8 @@
+alembic==1.8.1
+fastapi==0.79.1
+fastapi-users[sqlalchemy,oauth]==10.1.5
+uvicorn==0.18.2
+SQLAlchemy==1.4.40
+asyncpg==0.26.0
+databases==0.6.1
+python-dotenv==0.20.0
