@@ -7,39 +7,53 @@ version: "3.8"
 #
 
 services:
-  app:
-    build: .
+  api:
+    build:
+      context: .
+      dockerfile: docker/api/Dockerfile
+    container_name: api
+    hostname: api
     env_file:
       - .env
+    # tty: true
     ports:
       - "8000:8000"
+    networks:
+      - backend
+    depends_on:
+      - db
 
 
-  default_database:
-    restart: unless-stopped
-    image: postgres:latest
+  db:
+    restart: always
+    image: postgres
+    container_name: db
+    hostname: db
     volumes:
-      - ./default_database_data/db:/var/lib/postgresql/data
+      - ${POSTGRES_HOME_DIR}/data:/var/lib/postgresql/data
     environment:
       - POSTGRES_DB=${DEFAULT_DATABASE_DB}
       - POSTGRES_USER=${DEFAULT_DATABASE_USER}
       - POSTGRES_PASSWORD=${DEFAULT_DATABASE_PASSWORD}
+
     env_file:
       - .env
     ports:
       - "${DEFAULT_DATABASE_PORT}:5432"
+    networks:
+      - backend
 
-  test_database:
-    restart: unless-stopped
-    image: postgres:latest
-    volumes:
-      - ./test_database_data/db:/var/lib/postgresql/data
-    environment:
-      - POSTGRES_DB=${TEST_DATABASE_DB}
-      - POSTGRES_USER=${TEST_DATABASE_USER}
-      - POSTGRES_PASSWORD=${TEST_DATABASE_PASSWORD}
-    env_file:
-      - .env
+  redis:
+    build:
+      context: .
+      dockerfile: docker/redis/Dockerfile
+    container_name: redis
+    hostname: redis
     ports:
-      - "${TEST_DATABASE_PORT}:5432"
+      - '6379:6379'
+    networks:
+      - backend
 
+networks:
+  backend:
+    driver: 'bridge'

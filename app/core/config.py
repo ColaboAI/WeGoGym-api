@@ -47,14 +47,6 @@ class Settings(BaseSettings):
     DEFAULT_DATABASE_DB: str
     DEFAULT_SQLALCHEMY_DATABASE_URI: str = ""
 
-    # POSTGRESQL TEST DATABASE
-    TEST_DATABASE_HOSTNAME: str
-    TEST_DATABASE_USER: str
-    TEST_DATABASE_PASSWORD: str
-    TEST_DATABASE_PORT: str
-    TEST_DATABASE_DB: str
-    TEST_SQLALCHEMY_DATABASE_URI: str = ""
-
     # FIRST SUPERUSER
     FIRST_SUPERUSER_EMAIL: EmailStr
     FIRST_SUPERUSER_PASSWORD: str
@@ -75,17 +67,6 @@ class Settings(BaseSettings):
             host=values["DEFAULT_DATABASE_HOSTNAME"],
             port=values["DEFAULT_DATABASE_PORT"],
             path=f"/{values['DEFAULT_DATABASE_DB']}",
-        )
-
-    @validator("TEST_SQLALCHEMY_DATABASE_URI")
-    def _assemble_test_db_connection(cls, v: str, values: dict[str, str]) -> str:
-        return AnyUrl.build(
-            scheme="postgresql+asyncpg",
-            user=values["TEST_DATABASE_USER"],
-            password=values["TEST_DATABASE_PASSWORD"],
-            host=values["TEST_DATABASE_HOSTNAME"],
-            port=values["TEST_DATABASE_PORT"],
-            path=f"/{values['TEST_DATABASE_DB']}",
         )
 
     class Config:

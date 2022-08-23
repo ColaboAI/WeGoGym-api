@@ -1,6 +1,5 @@
 # Test DBs
-default_database_data
-test_database_data
+db
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
