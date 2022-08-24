@@ -6,7 +6,6 @@ from sqlalchemy import pool
 from sqlalchemy.ext.asyncio import AsyncEngine
 
 # import os, sys
-from dotenv import load_dotenv
 from app.core import config as app_config
 from alembic import context
 
@@ -37,6 +36,10 @@ target_metadata = Base.metadata
 
 
 def get_database_uri():
+    # print(app_config.settings.ENVIRONMENT)
+    # if app_config.settings.ENVIRONMENT == "DEV":
+    #     return app_config.settings.LOCAL_SQLALCHEMY_DATABASE_URI
+    # else:
     return app_config.settings.DEFAULT_SQLALCHEMY_DATABASE_URI
 
 
@@ -95,7 +98,7 @@ async def run_migrations_online() -> None:
     async with connectable.connect() as connection:
         await connection.run_sync(do_run_migrations)
 
-    await connectable.dispose()
+    # await connectable.dispose()
 
 
 if context.is_offline_mode():

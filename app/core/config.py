@@ -45,7 +45,9 @@ class Settings(BaseSettings):
     DEFAULT_DATABASE_PASSWORD: str
     DEFAULT_DATABASE_PORT: str
     DEFAULT_DATABASE_DB: str
+    LOCAL_DATABASE_HOSTNAME: str
     DEFAULT_SQLALCHEMY_DATABASE_URI: str = ""
+    LOCAL_SQLALCHEMY_DATABASE_URI: str = ""
 
     # FIRST SUPERUSER
     FIRST_SUPERUSER_EMAIL: EmailStr
@@ -65,6 +67,17 @@ class Settings(BaseSettings):
             user=values["DEFAULT_DATABASE_USER"],
             password=values["DEFAULT_DATABASE_PASSWORD"],
             host=values["DEFAULT_DATABASE_HOSTNAME"],
+            port=values["DEFAULT_DATABASE_PORT"],
+            path=f"/{values['DEFAULT_DATABASE_DB']}",
+        )
+
+    @validator("LOCAL_SQLALCHEMY_DATABASE_URI")
+    def _assemble_local_db_connection(cls, v: str, values: dict[str, str]) -> str:
+        return AnyUrl.build(
+            scheme="postgresql+asyncpg",
+            user=values["DEFAULT_DATABASE_USER"],
+            password=values["DEFAULT_DATABASE_PASSWORD"],
+            host=values["LOCAL_DATABASE_HOSTNAME"],
             port=values["DEFAULT_DATABASE_PORT"],
             path=f"/{values['DEFAULT_DATABASE_DB']}",
         )

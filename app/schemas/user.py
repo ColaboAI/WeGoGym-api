@@ -10,27 +10,27 @@ from pydantic import EmailStr
 
 
 class UserRead(schemas.BaseUser[uuid.UUID]):
-    pass
-    # email: EmailStr
-    # is_active: bool = True
-    # is_superuser: bool = False
-    # is_verified: bool = False
+    email: EmailStr
     # hashed_password: Optional[str]
+    nickname: str
+    is_active: bool = True
+    is_superuser: bool = False
+    is_verified: bool = False
 
 
 class UserCreate(schemas.BaseUserCreate):
-    pass
-    # email: EmailStr
-    # password: str
-    # is_active: Optional[bool] = True
-    # is_superuser: Optional[bool] = False
-    # is_verified: Optional[bool] = False
+    email: EmailStr
+    password: str
+    nickname: str
+    is_active: Optional[bool] = True
+    is_superuser: Optional[bool] = False
+    is_verified: Optional[bool] = False
 
 
 class UserUpdate(schemas.BaseUserUpdate):
-    pass
-    # password: Optional[str]
-    # email: Optional[EmailStr]
-    # is_active: Optional[bool]
-    # is_superuser: Optional[bool]
-    # is_verified: Optional[bool]
+    email: Optional[EmailStr]
+    password: Optional[str]
+    is_active: Optional[bool]
+    is_superuser: Optional[bool]
+    is_verified: Optional[bool]
+    nickname: Optional[str]
