@@ -1,3 +1,6 @@
 .gitignore
 .pre-commit-config.yaml
 .LICENSE
+db
+venv
+.mypy_cache
