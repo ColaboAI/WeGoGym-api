@@ -17,7 +17,6 @@ Base: DeclarativeMeta = declarative_base()
 async def create_db_and_tables():
     async with async_engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
-        print("db created")
 
 
 # database adapter dep

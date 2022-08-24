@@ -19,7 +19,6 @@ async def get_user_manager(user_db: SQLAlchemyUserDatabase = Depends(get_user_db
 
 
 fastapi_users = FastAPIUsers[User, uuid.UUID](get_user_manager, [auth_backend])
-print(fastapi_users)
 get_current_user = fastapi_users.current_user()
 get_current_active_user = fastapi_users.current_user(active=True)
 get_current_superuser = fastapi_users.current_user(active=True, superuser=True)

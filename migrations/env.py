@@ -1,4 +1,5 @@
 from asyncio import get_event_loop
+import asyncio
 from logging.config import fileConfig
 from sqlalchemy import engine_from_config
 from sqlalchemy import pool
@@ -94,10 +95,14 @@ async def run_migrations_online() -> None:
     async with connectable.connect() as connection:
         await connection.run_sync(do_run_migrations)
 
+    await connectable.dispose()
+
 
 if context.is_offline_mode():
     run_migrations_offline()
 # else:
 #     run_migrations_online()
+# else:
+#     get_event_loop().run_until_complete(run_migrations_online())
 else:
-    get_event_loop().run_until_complete(run_migrations_online())
+    asyncio.run(run_migrations_online())

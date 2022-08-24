@@ -7,6 +7,24 @@ version: "3.8"
 #
 
 services:
+  db:
+    restart: always
+    image: postgres:14.5
+    container_name: db
+    hostname: db
+    volumes:
+      - ${POSTGRES_HOME_DIR}/data:/var/lib/postgresql/data
+    environment:
+      - POSTGRES_DB=${DEFAULT_DATABASE_DB}
+      - POSTGRES_USER=${DEFAULT_DATABASE_USER}
+      - POSTGRES_PASSWORD=${DEFAULT_DATABASE_PASSWORD}
+    env_file:
+      - .env
+    ports:
+      - "${DEFAULT_DATABASE_PORT}:5432"
+    networks:
+      - backend
+  
   api:
     build:
       context: .
@@ -24,23 +42,6 @@ services:
       - db
 
 
-  db:
-    restart: always
-    image: postgres
-    container_name: db
-    hostname: db
-    volumes:
-      - ${POSTGRES_HOME_DIR}/data:/var/lib/postgresql/data
-    environment:
-      - POSTGRES_DB=${DEFAULT_DATABASE_DB}
-      - POSTGRES_USER=${DEFAULT_DATABASE_USER}
-      - POSTGRES_PASSWORD=${DEFAULT_DATABASE_PASSWORD}
-    env_file:
-      - .env
-    ports:
-      - "${DEFAULT_DATABASE_PORT}:5432"
-    networks:
-      - backend
 
   redis:
     build:
