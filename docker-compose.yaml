@@ -31,15 +31,16 @@ services:
     build:
       context: .
       dockerfile: docker/api/Dockerfile
+      args:
+        USER_ID: $USER_ID
+        GROUP_ID: $GROUP_ID
+        USER_NAME: "$API_CONTAINER_USER_NAME"
+        ostype: "Mac"
+
     container_name: api
     hostname: api
-    environment:
-      - USER_NAME=${API_CONTAINER_USER}
-      - USER_ID=${API_CONTAINER_USER_ID}
-      - GROUP_NAME=${API_CONTAINER_GROUP}
-      - GROUP_ID=${API_CONTAINER_GROUP_ID}
     volumes:
-      - .:/home
+      - $PWD:/home
     env_file:
       - .env
     tty: true
