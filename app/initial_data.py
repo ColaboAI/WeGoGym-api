@@ -28,7 +28,7 @@ async def main() -> None:
         user: Optional[User] = result.scalars().first()
 
         if user is None:
-            create_user(
+            await create_user(
                 app_config.settings.FIRST_SUPERUSER_EMAIL,
                 app_config.settings.FIRST_SUPERUSER_PASSWORD,
                 True,
