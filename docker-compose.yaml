@@ -9,7 +9,8 @@ version: "3.7"
 services:
   db:
     restart: always
-    image: postgres:14.5
+    image: postgres
+    user: postgres
     container_name: db
     hostname: db
     volumes:

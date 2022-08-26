@@ -9,7 +9,9 @@ from fastapi_users.db import (
     SQLAlchemyBaseOAuthAccountTableUUID,
     SQLAlchemyBaseUserTableUUID,
 )
-from app.session import Base
+from sqlalchemy.orm import declarative_base, DeclarativeMeta
+
+Base: DeclarativeMeta = declarative_base()
 
 
 class OAuthAccount(SQLAlchemyBaseOAuthAccountTableUUID, Base):

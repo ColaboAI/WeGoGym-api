@@ -36,11 +36,10 @@ target_metadata = Base.metadata
 
 
 def get_database_uri():
-    # print(app_config.settings.ENVIRONMENT)
-    # if app_config.settings.ENVIRONMENT == "DEV":
-    #     return app_config.settings.LOCAL_SQLALCHEMY_DATABASE_URI
-    # else:
-    return app_config.settings.DEFAULT_SQLALCHEMY_DATABASE_URI
+    if app_config.settings.ENVIRONMENT == "DEV":
+        return app_config.settings.LOCAL_SQLALCHEMY_DATABASE_URI
+    else:
+        return app_config.settings.DEFAULT_SQLALCHEMY_DATABASE_URI
 
 
 def run_migrations_offline() -> None:
