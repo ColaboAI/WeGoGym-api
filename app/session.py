@@ -2,7 +2,7 @@ from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
 from typing import AsyncGenerator
 from sqlalchemy.orm.session import sessionmaker
 from app.core import config
-from app.models import Base
+from app.models.user import Base
 
 sqlalchemy_database_uri = ""
 if config.settings.ENVIRONMENT == "DEV":

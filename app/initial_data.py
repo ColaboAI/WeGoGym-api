@@ -9,7 +9,7 @@ import asyncio
 from typing import Optional
 
 from sqlalchemy import select
-from app.models import User
+from app.models.user import User
 from app.session import create_db_and_tables, get_async_session
 import contextlib
 

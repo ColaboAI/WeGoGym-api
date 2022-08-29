@@ -26,7 +26,7 @@ from fastapi_users.authentication import (
 )
 from fastapi_users.manager import BaseUserManager, UUIDIDMixin
 from httpx_oauth.clients.google import GoogleOAuth2
-from app.models import User
+from app.models.user import User
 from app.core import config
 
 
