@@ -17,8 +17,6 @@ def get_application():
             allow_headers=["*"],
         )
     ]
-    print(settings.BACKEND_CORS_ORIGINS)
-    print([str(origin) for origin in settings.BACKEND_CORS_ORIGINS])
     _app = FastAPI(title=settings.PROJECT_NAME, middleware=middleware)
 
     return _app
