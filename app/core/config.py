@@ -53,6 +53,10 @@ class Settings(BaseSettings):
     FIRST_SUPERUSER_EMAIL: EmailStr
     FIRST_SUPERUSER_PASSWORD: str
 
+    S3_BUCKET: str
+    AWS_ACCESS_KEY_ID: str
+    AWS_SECRET_ACCESS_KEY: str
+
     # VALIDATORS
     @validator("BACKEND_CORS_ORIGINS")
     def _assemble_cors_origins(cls, cors_origins: Union[str, list[AnyHttpUrl]]):
