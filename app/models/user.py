@@ -9,7 +9,7 @@ from fastapi_users.db import (
     SQLAlchemyBaseUserTableUUID,
 )
 from sqlalchemy.orm import relationship
-from app.session import Base
+from app.models.base import Base
 
 
 class OAuthAccount(SQLAlchemyBaseOAuthAccountTableUUID, Base):

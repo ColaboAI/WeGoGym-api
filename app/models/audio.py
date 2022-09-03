@@ -1,6 +1,7 @@
-from email.policy import default
 from sqlalchemy import Column, Integer, String
-from app.session import Base
+from sqlalchemy.orm import relationship
+from app.models.base import Base
+from .hashtag import audio_hashtag_association_table
 
 # TODO: User relationship to be added
 
@@ -11,4 +12,6 @@ class Audio(Base):
     title = Column(String(100), nullable=False)
     artist_name = Column(String(100), nullable=False)
     audio_url = Column(String(256), nullable=False)
-    hash_tags = Column(String(256), nullable=False, default="")
+    hashtag = relationship(
+        "Hashtag", secondary=audio_hashtag_association_table, back_populates="audio"
+    )
