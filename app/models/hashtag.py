@@ -4,7 +4,7 @@ from sqlalchemy.orm import relationship
 
 
 audio_hashtag_association_table = Table(
-    "association",
+    "audio_hashtag_association",
     Base.metadata,
     Column("audio_id", Integer, ForeignKey("audio.id"), primary_key=True),
     Column("hashtag_id", Integer, ForeignKey("hashtag.id"), primary_key=True),
