@@ -9,6 +9,9 @@ class AudioRead(BaseModel):
     audio_url: str
     hash_tags: list[str]
 
+    class Config:
+        orm_mode = True
+
 
 class AudioCreate(BaseModel):
     title: str
