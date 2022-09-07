@@ -1,5 +1,6 @@
 from pydantic import BaseModel
-from fastapi import UploadFile
+
+from .hashtag import Hashtag
 
 
 class AudioRead(BaseModel):
@@ -7,7 +8,7 @@ class AudioRead(BaseModel):
     title: str
     artist_name: str
     audio_url: str
-    hash_tags: list[str]
+    hashtag: list[Hashtag]
 
     class Config:
         orm_mode = True
@@ -16,5 +17,4 @@ class AudioRead(BaseModel):
 class AudioCreate(BaseModel):
     title: str
     artist_name: str
-    audio: UploadFile
-    hash_tags: list[str]
+    hashtag: list[str]
