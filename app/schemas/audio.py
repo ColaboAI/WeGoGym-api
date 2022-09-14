@@ -8,6 +8,7 @@ class AudioRead(BaseModel):
     title: str
     artist_name: str
     audio_url: str
+    cover_image_url: str
     hashtag: list[Hashtag]
 
     class Config:

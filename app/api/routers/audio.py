@@ -25,26 +25,53 @@ async def get_audio_items(session: AsyncSession = Depends(get_async_session)):
 
 @audio_router.post("/upload", response_model=AudioRead, status_code=201)
 async def create_audio(
-    file: Optional[UploadFile],
+    audio_file: Optional[UploadFile],
+    image_file: Optional[UploadFile],
     metadata: Json[AudioCreate] = Form(...),
     session: AsyncSession = Depends(get_async_session),
 ):
-    url = None
-    if file:
+    audio_url = None
+    image_url = None
+    if audio_file:
         try:
-            key = f"audio/{file.filename}"
+            audio_key = f"audio/{audio_file.filename}"
             s3_client.upload_fileobj(
-                file.file, bucket_name, key, ExtraArgs={"ACL": "public-read"}
+                audio_file.file,
+                bucket_name,
+                audio_key,
+                ExtraArgs={"ACL": "public-read"},
             )
-            url = f"https://{bucket_name}.s3.ap-northeast-2.amazonaws.com/{key}"
+
+            audio_url = (
+                f"https://{bucket_name}.s3.ap-northeast-2.amazonaws.com/{audio_key}"
+            )
         except ClientError as e:
             logger.debug(e)
 
-    if url:
+    if image_file:
+        try:
+            image_key = f"image/{metadata.title}/{metadata.artist_name}.jpeg"
+            s3_client.upload_fileobj(
+                image_file.file,
+                bucket_name,
+                image_key,
+                ExtraArgs={"ACL": "public-read"},
+            )
+
+            image_url = (
+                f"https://{bucket_name}.s3.ap-northeast-2.amazonaws.com/{image_key}"
+            )
+        except ClientError as e:
+            logger.debug(e)
+
+    if audio_url and image_url:
         hashtags = metadata.hashtag
 
         audio_obj = Audio(
-            title=metadata.title, artist_name=metadata.artist_name, audio_url=url
+            title=metadata.title,
+            artist_name=metadata.artist_name,
+            audio_url=audio_url,
+            cover_image_url=image_url,
         )
         for h in hashtags:
             result = await session.execute(select(Hashtag).where(Hashtag.name == h))
