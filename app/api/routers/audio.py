@@ -32,14 +32,18 @@ async def create_audio(
 ):
     audio_url = None
     image_url = None
+    print(audio_file.content_type, image_file.content_type)
     if audio_file:
         try:
-            audio_key = f"audio/{audio_file.filename}"
+            audio_key = f"audio/{metadata.title}/{metadata.artist_name}"
             s3_client.upload_fileobj(
                 audio_file.file,
                 bucket_name,
                 audio_key,
-                ExtraArgs={"ACL": "public-read"},
+                ExtraArgs={
+                    "ACL": "public-read",
+                    "ContentType": audio_file.content_type,
+                },
             )
 
             audio_url = (
@@ -50,12 +54,15 @@ async def create_audio(
 
     if image_file:
         try:
-            image_key = f"image/{metadata.title}/{metadata.artist_name}.jpeg"
+            image_key = f"image/{metadata.title}/{metadata.artist_name}"
             s3_client.upload_fileobj(
                 image_file.file,
                 bucket_name,
                 image_key,
-                ExtraArgs={"ACL": "public-read"},
+                ExtraArgs={
+                    "ACL": "public-read",
+                    "ContentType": image_file.content_type,
+                },
             )
 
             image_url = (
