@@ -17,7 +17,8 @@ class Audio(Base):
         "Hashtag", secondary=audio_hashtag_association_table, back_populates="audio"
     )
 
-class PretoTyping(Base):
+
+class Proto(Base):
     __tablename__ = "prototyping"
     id = Column(Integer, primary_key=True, index=True)
     email = Column(String(100), nullable=False)
