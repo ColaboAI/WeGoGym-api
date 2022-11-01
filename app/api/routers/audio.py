@@ -7,7 +7,7 @@ from botocore.exceptions import ClientError
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.models.hashtag import Hashtag
 from app.models.audio import Audio
-from app.schemas import AudioRead, AudioCreate
+from app.schemas import AudioRead, AudioCreate, ProtoRead, ProtoCreate
 from app.session import get_async_session
 from app.utils.aws import s3_client, bucket_name
 from app.utils.ecs_log import logger
@@ -98,3 +98,7 @@ async def create_audio(
         return audio_obj
     else:
         raise HTTPException(status_code=400, detail="업로드 실패")
+
+
+# @audio_router.post('/proto', response_model=ProtoRead, status_code=201)
+# async def create_proto(session: AsyncSession = Depends(get_async_session))
