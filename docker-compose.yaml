@@ -10,7 +10,7 @@ services:
   db:
     restart: always
     image: postgres
-    user: postgres
+    user: "${USER_ID}:${GROUP_ID}"
     container_name: db
     hostname: db
     volumes:
