@@ -2,8 +2,8 @@ FROM tiangolo/uvicorn-gunicorn-fastapi:python3.9
 
 ARG USER_NAME=default_user
 ARG ostype=Linux
-ARG USER_ID=1000
-ARG GROUP_ID=1000
+ARG USER_ID
+ARG GROUP_ID
 
 ENV WORK_DIR=/code
 ENV USER_NAME=${USER_NAME}
@@ -11,7 +11,7 @@ ENV PYTHONPATH "${PYTHONPATH}:/"
 ENV ENV=dev
 ENV PORT=8000
 
-RUN bash -c 'if [ ${ostype} == Linux ]; then groupadd -r --gid ${GROUP_ID} ${USER_NAM}; fi && \
+RUN bash -c 'if [ ${ostype} == Linux ]; then groupadd -r --gid ${GROUP_ID} ${USER_NAME}; fi && \
     useradd -r --create-home --shell /bin/bash --uid ${USER_ID} --gid ${GROUP_ID} ${USER_NAME}' && \
     mkdir -p ${WORK_DIR} && chown ${USER_NAME} ${WORK_DIR}
 
