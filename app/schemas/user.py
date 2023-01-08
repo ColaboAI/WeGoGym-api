@@ -5,6 +5,9 @@ All fields in schemas are defaults from FastAPI Users, repeated below for easier
 import uuid
 from fastapi_users import schemas
 
+from pydantic import EmailStr
+
+
 
 class UserRead(schemas.BaseUser[uuid.UUID]):
     pass

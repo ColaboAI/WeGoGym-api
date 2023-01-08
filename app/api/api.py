@@ -7,6 +7,7 @@ from app.api.deps import fastapi_users
 from app.schemas.user import UserRead, UserCreate, UserUpdate
 from app.api.routers.audio import audio_router
 
+
 api_router = APIRouter()
 
 api_router.include_router(

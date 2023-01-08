@@ -19,6 +19,7 @@ RUN bash -c 'if [ ${ostype} == Linux ]; then groupadd -r --gid ${GROUP_ID} ${USE
 # RUN mkdir ${WORK_DIR}
 # RUN chown ${USER_NAME}:${USER_NAME} ${WORK_DIR}
 
+
 COPY --chown=${USER_NAME}:${USER_NAME} . ${WORK_DIR}
 WORKDIR ${WORK_DIR}
 

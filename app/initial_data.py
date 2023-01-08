@@ -11,6 +11,7 @@ from typing import Optional
 from sqlalchemy import select
 from app.models.user import User
 from app.session import get_async_session
+
 import contextlib
 
 from app.api.deps import get_async_session, get_user_db, get_user_manager
