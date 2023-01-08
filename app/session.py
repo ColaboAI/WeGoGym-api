@@ -17,12 +17,6 @@ async_session_maker = sessionmaker(
     async_engine, expire_on_commit=False, class_=AsyncSession
 )
 
-
-async def create_db_and_tables():
-    async with async_engine.begin() as conn:
-        await conn.run_sync(Base.metadata.create_all)
-
-
 # database adapter dep
 async def get_async_session() -> AsyncGenerator[AsyncSession, None]:
     async with async_session_maker() as session:

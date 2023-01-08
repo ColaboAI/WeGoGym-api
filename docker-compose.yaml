@@ -10,7 +10,6 @@ services:
   db:
     restart: always
     image: postgres
-    user: postgres
     container_name: db
     hostname: db
     volumes:
