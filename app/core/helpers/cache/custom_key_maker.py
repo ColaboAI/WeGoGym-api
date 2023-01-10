@@ -1,7 +1,7 @@
 import inspect
 from typing import Callable
 
-from core.helpers.cache.base import BaseKeyMaker
+from .base import BaseKeyMaker
 
 
 class CustomKeyMaker(BaseKeyMaker):

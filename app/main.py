@@ -4,7 +4,7 @@ from fastapi.middleware import Middleware
 
 from app.api.api import api_router
 from app.core.config import settings
-from core.helpers.cache import Cache, RedisBackend, CustomKeyMaker
+from app.core.helpers.cache import Cache, RedisBackend, CustomKeyMaker
 
 
 def init_cache() -> None:
