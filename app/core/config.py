@@ -35,6 +35,8 @@ class Settings(BaseSettings):
     BACKEND_CORS_ORIGINS: Union[str, list[AnyHttpUrl]]
     REDIS_HOST: str = "localhost"
     REDIS_PORT: int = 6379
+    REDIS_USERNAME: str = "wegogym-redis"
+    REDIS_PASSWORD: str = "password"
 
     # PROJECT NAME, VERSION AND DESCRIPTION
     PROJECT_NAME: str
