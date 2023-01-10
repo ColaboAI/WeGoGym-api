@@ -1,4 +1,4 @@
-from core.exceptions import CustomException
+from app.core.exceptions import CustomException
 
 
 class DecodeTokenException(CustomException):

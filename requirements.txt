@@ -7,3 +7,4 @@ asyncpg==0.26.0
 databases==0.6.1
 python-dotenv==0.20.0
 boto3==1.24.65
+redis==4.4.1

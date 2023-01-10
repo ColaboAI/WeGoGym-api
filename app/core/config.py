@@ -30,9 +30,13 @@ PROJECT_DIR = Path(__file__).parent.parent.parent
 class Settings(BaseSettings):
     # CORE SETTINGS
     SECRET_KEY: str
-    ENVIRONMENT: Literal["DEV", "PYTEST", "STAGE", "PRODUCTION"]
+    ENVIRONMENT: Literal["DEV", "PYTEST", "STAGE", "PRODUCTION"] = "DEV"
     ACCESS_TOKEN_EXPIRE_MINUTES: int
     BACKEND_CORS_ORIGINS: Union[str, list[AnyHttpUrl]]
+    REDIS_HOST: str = "localhost"
+    REDIS_PORT: int = 6379
+    REDIS_USERNAME: str = "wegogym-redis"
+    REDIS_PASSWORD: str = "password"
 
     # PROJECT NAME, VERSION AND DESCRIPTION
     PROJECT_NAME: str

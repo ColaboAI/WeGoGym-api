@@ -54,9 +54,9 @@ services:
       context: .
       dockerfile: docker/redis/Dockerfile
     container_name: redis
-    hostname: redis
+    hostname: ${REDIS_HOST}
     ports:
-      - '6379:6379'
+      - '${REDIS_PORT}:6379'
     networks:
       - backend
 

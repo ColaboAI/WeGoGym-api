@@ -4,6 +4,11 @@ from fastapi.middleware import Middleware
 
 from app.api.api import api_router
 from app.core.config import settings
+from app.core.helpers.cache import Cache, RedisBackend, CustomKeyMaker
+
+
+def init_cache() -> None:
+    Cache.init(backend=RedisBackend(), key_maker=CustomKeyMaker())
 
 
 def get_application():
@@ -18,7 +23,7 @@ def get_application():
         )
     ]
     _app = FastAPI(title=settings.PROJECT_NAME, middleware=middleware)
-
+    init_cache()
     return _app
 
 
