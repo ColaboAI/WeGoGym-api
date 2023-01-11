@@ -19,12 +19,3 @@ class AudioCreate(BaseModel):
     title: str
     artist_name: str
     hashtag: list[str]
-class ProtoCreate(BaseModel):
-    email: str
-
-class ProtoRead(BaseModel):
-    id: int
-    email: str
-
-    class Config:
-        orm_mode = True

@@ -6,8 +6,8 @@ from fastapi import APIRouter, Depends, UploadFile, Form, HTTPException
 from botocore.exceptions import ClientError
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.models.hashtag import Hashtag
-from app.models.audio import Audio, Proto
-from app.schemas import AudioRead, AudioCreate, ProtoRead, ProtoCreate
+from app.models.audio import Audio
+from app.schemas import AudioRead, AudioCreate
 from app.session import get_async_session
 from app.utils.aws import s3_client, bucket_name
 from app.utils.ecs_log import logger
