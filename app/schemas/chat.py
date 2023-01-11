@@ -8,8 +8,8 @@ class ChatRoomMemberRead(BaseModel):
     id: UUID
     user_id: UUID
     chat_room_id: UUID
-    joined_datetime: datetime
-    left_datetime: datetime
+    joined_at: datetime
+    left_at: datetime
 
     class Config:
         orm_mode = True
@@ -24,8 +24,8 @@ class ChatRoomRead(BaseModel):
     id: UUID
     name: str
     description: str
-    created_datetime: datetime
-    updated_datetime: datetime
+    created_at: datetime
+    updated_at: datetime
     chat_room_members: list[ChatRoomMemberRead]
 
     class Config:
@@ -49,7 +49,7 @@ class MessageRead(BaseModel):
     chat_room_id: UUID
     user_id: UUID
     text: Union[str, None]
-    created_datetime: datetime
+    created_at: datetime
     media_url: Union[str, None]
 
     class Config:
