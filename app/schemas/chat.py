@@ -1,13 +1,13 @@
 import datetime
 from typing import Union
 from pydantic import BaseModel
-import uuid
+from uuid import UUID
 
 
 class ChatRoomGroupMemberRead(BaseModel):
-    id: uuid.uuid4
-    user_id: uuid.uuid4
-    chatroom_id: uuid.uuid4
+    id: UUID
+    user_id: UUID
+    chatroom_id: UUID
     joined_datetime: datetime
     left_datetime: datetime
 
@@ -16,12 +16,12 @@ class ChatRoomGroupMemberRead(BaseModel):
 
 
 class ChatRoomGroupMemberCreate(BaseModel):
-    user_id: uuid.uuid4
-    chatroom_id: uuid.uuid4
+    user_id: UUID
+    chatroom_id: UUID
 
 
 class ChatRoomRead(BaseModel):
-    id: uuid.uuid4
+    id: UUID
     name: str
     description: str
     created_datetime: datetime
@@ -35,19 +35,19 @@ class ChatRoomRead(BaseModel):
 class ChatRoomCreate(BaseModel):
     name: str
     description: str
-    chatroom_group_members: list[uuid.uuid4]
+    chatroom_group_members: list[UUID]
 
 
 class ChatRoomUpdate(BaseModel):
     name: Union[str, None]
     description: Union[str, None]
-    chatroom_group_members: list[uuid.uuid4]
+    chatroom_group_members: list[UUID]
 
 
 class MessageRead(BaseModel):
-    id: uuid.uuid4
-    chatroom_id: uuid.uuid4
-    user_id: uuid.uuid4
+    id: UUID
+    chatroom_id: UUID
+    user_id: UUID
     text: Union[str, None]
     created_datetime: datetime
     media_url: Union[str, None]
@@ -57,7 +57,7 @@ class MessageRead(BaseModel):
 
 
 class MessageCreate(BaseModel):
-    chatroom_id: uuid.uuid4
-    user_id: uuid.uuid4
+    chatroom_id: UUID
+    user_id: UUID
     text: Union[str, None]
     media_url: Union[str, None]
