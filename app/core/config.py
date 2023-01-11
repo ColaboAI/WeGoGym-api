@@ -56,6 +56,8 @@ class Settings(BaseSettings):
     # FIRST SUPERUSER
     FIRST_SUPERUSER_EMAIL: EmailStr
     FIRST_SUPERUSER_PASSWORD: str
+    FIRST_SUPERUSER_NAME: str
+    FIRST_SUPERUSER_PHONE_NUMBER: str
 
     S3_BUCKET: str
     AWS_ACCESS_KEY_ID: str
