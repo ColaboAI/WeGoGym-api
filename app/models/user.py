@@ -4,6 +4,7 @@ SQL Alchemy models declaration.
 Note, imported by alembic migrations logic, see `alembic/env.py`
 """
 
+from typing import Union
 from fastapi_users.db import (
     SQLAlchemyBaseOAuthAccountTableUUID,
     SQLAlchemyBaseUserTableUUID,
@@ -11,26 +12,24 @@ from fastapi_users.db import (
 from sqlalchemy import Column, Float, Integer, String
 from sqlalchemy.orm import relationship
 
-# from app.models import Base
-from sqlalchemy.ext.declarative import declarative_base, DeclarativeMeta
-
-UserBase: DeclarativeMeta = declarative_base()
+from app.models import Base
 
 
-class OAuthAccount(SQLAlchemyBaseOAuthAccountTableUUID, UserBase):
+class OAuthAccount(SQLAlchemyBaseOAuthAccountTableUUID, Base):
     pass
 
 
-class User(SQLAlchemyBaseUserTableUUID, UserBase):
+# @declarative_mixin
+class User(SQLAlchemyBaseUserTableUUID, Base):
+
     oauth_accounts: list[OAuthAccount] = relationship("OAuthAccount", lazy="joined")
-    username: Column(String(100), nullable=False)
-    phone_number: Column(String(100), nullable=False)
-    profile_pic: Column(String(100))
-    bio: Column(String(100))
-    age: Column(Integer)
-    weight: Column(Integer)
-    longitude: Column(Float)
-    latitude: Column(Float)
-    last_active_at: Column(Integer)
-    workout_per_week: Column(Integer)
-    # TODO: Add relations
+    username: str = Column(String(100), nullable=False)
+    phone_number: str = Column(String(100), nullable=False)
+    profile_pic: Union[str, None] = Column(String(100))
+    bio: Union[str, None] = Column(String(100))
+    age: Union[int, None] = Column(Integer)
+    weight: Union[int, None] = Column(Integer)
+    longitude: Union[float, None] = Column(Float)
+    latitude: Union[float, None] = Column(Float)
+    last_active_at: Union[int, None] = Column(Integer)
+    workout_per_week: Union[int, None] = Column(Integer)
