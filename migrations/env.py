@@ -25,9 +25,8 @@ fileConfig(config.config_file_name)
 # from myapp import mymodel
 # target_metadata = mymodel.Base.metadata
 import app.models as app_models
-from app.models.user import UserBase
 
-target_metadata = [app_models.Base.metadata, UserBase.metadata]
+target_metadata = app_models.Base.metadata
 
 
 # other values from the config, defined by the needs of env.py,
@@ -73,8 +72,6 @@ def do_run_migrations(connection):
         target_metadata=target_metadata,
         compare_type=True,
     )
-    insp = inspect(connection)
-    print(insp.get_schema_names())
 
     with context.begin_transaction():
         context.run_migrations()
