@@ -4,10 +4,10 @@ from pydantic import BaseModel
 from uuid import UUID
 
 
-class ChatRoomGroupMemberRead(BaseModel):
+class ChatRoomMemberRead(BaseModel):
     id: UUID
     user_id: UUID
-    chatroom_id: UUID
+    chat_room_id: UUID
     joined_datetime: datetime
     left_datetime: datetime
 
@@ -15,9 +15,9 @@ class ChatRoomGroupMemberRead(BaseModel):
         orm_mode = True
 
 
-class ChatRoomGroupMemberCreate(BaseModel):
+class ChatRoomMemberCreate(BaseModel):
     user_id: UUID
-    chatroom_id: UUID
+    chat_room_id: UUID
 
 
 class ChatRoomRead(BaseModel):
@@ -26,7 +26,7 @@ class ChatRoomRead(BaseModel):
     description: str
     created_datetime: datetime
     updated_datetime: datetime
-    chatroom_group_members: list[ChatRoomGroupMemberRead]
+    chat_room_members: list[ChatRoomMemberRead]
 
     class Config:
         orm_mode = True
@@ -35,18 +35,18 @@ class ChatRoomRead(BaseModel):
 class ChatRoomCreate(BaseModel):
     name: str
     description: str
-    chatroom_group_members: list[UUID]
+    chat_room_members: list[UUID]
 
 
 class ChatRoomUpdate(BaseModel):
     name: Union[str, None]
     description: Union[str, None]
-    chatroom_group_members: list[UUID]
+    chat_room_members: list[UUID]
 
 
 class MessageRead(BaseModel):
     id: UUID
-    chatroom_id: UUID
+    chat_room_id: UUID
     user_id: UUID
     text: Union[str, None]
     created_datetime: datetime
@@ -57,7 +57,7 @@ class MessageRead(BaseModel):
 
 
 class MessageCreate(BaseModel):
-    chatroom_id: UUID
+    chat_room_id: UUID
     user_id: UUID
     text: Union[str, None]
     media_url: Union[str, None]
