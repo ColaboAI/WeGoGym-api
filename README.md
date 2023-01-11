@@ -96,7 +96,7 @@ source venv/bin/activate
 
 ## Migration (Alembic)
 ### Make Migration
-> 주의사항: .env에서 `ENVIRONMENT=DEV`로 설정되어 있어야 함. 추후에 자동적으로 설정되도록 변경 예정.
+> 주의사항: `.env`에서 `ENVIRONMENT=DEV`로 설정되어 있어야 함. 추후에 자동적으로 설정되도록 변경 예정. docker 컨테이너 내부의 DB 이미지 실행 중이어야 함.
 
 ```bash
 alembic revision --autogenerate -m "type your commit message"
