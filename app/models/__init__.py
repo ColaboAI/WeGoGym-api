@@ -3,5 +3,14 @@
 from .base import Base
 from .audio import Audio
 from .user import User, OAuthAccount
+from .chat import ChatRoom, ChatRoomMember, Message
 
-__all__ = ["Base", "Audio", "User", "OAuthAccount"]
+__all__ = [
+    "Base",
+    "Audio",
+    "User",
+    "OAuthAccount",
+    "ChatRoom",
+    "ChatRoomMember",
+    "Message",
+]
