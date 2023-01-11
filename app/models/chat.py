@@ -1,6 +1,6 @@
 from sqlalchemy import TIMESTAMP, Boolean, Column, String
 from sqlalchemy.orm import relationship
-from app.models.base import Base
+from app.models import Base
 import uuid
 from fastapi_users_db_sqlalchemy import GUID
 

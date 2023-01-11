@@ -10,14 +10,18 @@ from fastapi_users.db import (
 )
 from sqlalchemy import Column, Float, Integer, String
 from sqlalchemy.orm import relationship
-from app.models.base import Base
+
+# from app.models import Base
+from sqlalchemy.ext.declarative import declarative_base, DeclarativeMeta
+
+UserBase: DeclarativeMeta = declarative_base()
 
 
-class OAuthAccount(SQLAlchemyBaseOAuthAccountTableUUID, Base):
+class OAuthAccount(SQLAlchemyBaseOAuthAccountTableUUID, UserBase):
     pass
 
 
-class User(SQLAlchemyBaseUserTableUUID, Base):
+class User(SQLAlchemyBaseUserTableUUID, UserBase):
     oauth_accounts: list[OAuthAccount] = relationship("OAuthAccount", lazy="joined")
     username: Column(String(100), nullable=False)
     phone_number: Column(String(100), nullable=False)
