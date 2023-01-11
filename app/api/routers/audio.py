@@ -98,19 +98,3 @@ async def create_audio(
         return audio_obj
     else:
         raise HTTPException(status_code=400, detail="업로드 실패")
-
-
-@audio_router.post("/proto", response_model=ProtoRead, status_code=201)
-async def create_proto(
-    proto: ProtoCreate,
-    session: AsyncSession = Depends(get_async_session),
-):
-    result = await session.execute(select(Proto).where(Proto.email == proto.email))
-    selected = result.scalars().first()
-    if selected is None:
-        proto_obj = Proto(email=proto.email)
-        session.add(proto_obj)
-    else:
-        raise HTTPException(status_code=400, detail="중복된 이메일입니다.")
-    await session.commit()
-    return proto_obj
