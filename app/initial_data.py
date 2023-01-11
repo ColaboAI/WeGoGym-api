@@ -32,7 +32,9 @@ async def main() -> None:
             await create_user(
                 app_config.settings.FIRST_SUPERUSER_EMAIL,
                 app_config.settings.FIRST_SUPERUSER_PASSWORD,
+                app_config.settings.FIRST_SUPERUSER_PHONE_NUMBER,
                 True,
+                app_config.settings.FIRST_SUPERUSER_NAME,
             )
             print("Superuser was created")
         else:
@@ -46,14 +48,24 @@ get_user_db_context = contextlib.asynccontextmanager(get_user_db)
 get_user_manager_context = contextlib.asynccontextmanager(get_user_manager)
 
 
-async def create_user(email: str, password: str, is_superuser: bool = False):
+async def create_user(
+    email: str,
+    password: str,
+    phone_number: str,
+    is_superuser: bool = False,
+    name: str = "anonymous",
+):
     try:
         async with get_async_session_context() as session:
             async with get_user_db_context(session) as user_db:
                 async with get_user_manager_context(user_db) as user_manager:
                     user = await user_manager.create(
                         UserCreate(
-                            email=email, password=password, is_superuser=is_superuser
+                            email=email,
+                            password=password,
+                            is_superuser=is_superuser,
+                            username=name,
+                            phone_number=phone_number,
                         )
                     )
                     print(f"User created {user}")
