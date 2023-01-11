@@ -1,4 +1,4 @@
-from sqlalchemy import TIMESTAMP, Boolean, Column, Integer, String
+from sqlalchemy import TIMESTAMP, Boolean, Column, String
 from sqlalchemy.orm import relationship
 from app.models.base import Base
 import uuid
