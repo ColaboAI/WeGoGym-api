@@ -6,7 +6,7 @@ from fastapi_users_db_sqlalchemy import GUID
 
 
 class ChatRoomMember(Base):
-    __tablename__ = "chat_group_member"
+    __tablename__ = "chat_room_member"
     id = Column(GUID, primary_key=True, index=True, default=uuid.uuid4)
 
     chat_room = relationship("ChatRoom", back_populates="members")
