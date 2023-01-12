@@ -13,6 +13,7 @@ from sqlalchemy import Column, Float, Integer, String
 from sqlalchemy.orm import relationship
 
 from app.models import Base
+from app.models.chat import ChatRoom, Message
 
 
 class OAuthAccount(SQLAlchemyBaseOAuthAccountTableUUID, Base):
@@ -33,3 +34,15 @@ class User(SQLAlchemyBaseUserTableUUID, Base):
     latitude: Union[float, None] = Column(Float)
     last_active_at: Union[int, None] = Column(Integer)
     workout_per_week: Union[int, None] = Column(Integer)
+
+    chat_rooms: list[ChatRoom] = relationship(
+        "ChatRoom",
+        lazy="joined",
+        cascade="save-update, merge, delete",
+        passive_deletes=True,
+    )
+    messages: list[Message] = relationship(
+        "Message",
+        cascade="save-update, merge, delete",
+        passive_deletes=True,
+    )
