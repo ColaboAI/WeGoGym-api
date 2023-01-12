@@ -16,6 +16,7 @@ import uuid
 
 
 class User(Base):
+    __tablename__ = "user"
     id = Column(GUID, primary_key=True, default=uuid.uuid4)
     username: str = Column(String(100), nullable=False)
     phone_number: str = Column(String(100), nullable=False)
