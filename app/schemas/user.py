@@ -5,10 +5,25 @@ All fields in schemas are defaults from FastAPI Users, repeated below for easier
 from datetime import datetime
 from typing import Union
 import uuid
-from fastapi_users import schemas
+from pydantic import BaseModel
 
 
-class UserRead(schemas.BaseUser[uuid.UUID]):
+class CreateUpdateDictModel(BaseModel):
+    def create_update_dict(self):
+        return self.dict(
+            exclude_unset=True,
+            exclude={
+                # TODO: 일반적인 update에서 수정 불가능한 필드 설정
+                "id"
+            },
+        )
+
+    def create_update_dict_superuser(self):
+        return self.dict(exclude_unset=True, exclude={"id"})
+
+
+class UserRead(CreateUpdateDictModel):
+    id: uuid.UUID
     username: str
     profile_pic: str
 
@@ -30,7 +45,7 @@ class MyInfoRead(UserRead):
     # goal_id: uuid.UUID
 
 
-class UserCreate(schemas.BaseUserCreate):
+class UserCreate(CreateUpdateDictModel):
     phone_number: str
     username: str
     profile_pic: Union[str, None]
@@ -42,7 +57,7 @@ class UserCreate(schemas.BaseUserCreate):
     latitude: Union[float, None]
 
 
-class UserUpdate(schemas.BaseUserUpdate):
+class UserUpdate(CreateUpdateDictModel):
     phone_number: Union[str, None]
     username: Union[str, None]
     profile_pic: Union[str, None]

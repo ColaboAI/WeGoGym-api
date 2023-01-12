@@ -5,25 +5,18 @@ Note, imported by alembic migrations logic, see `alembic/env.py`
 """
 
 from typing import Union
-from fastapi_users.db import (
-    SQLAlchemyBaseOAuthAccountTableUUID,
-    SQLAlchemyBaseUserTableUUID,
-)
+
 from sqlalchemy import Column, Float, Integer, String
 from sqlalchemy.orm import relationship
 
 from app.models import Base
 from app.models.chat import ChatRoom, Message
+from app.models.guid import GUID
+import uuid
 
 
-class OAuthAccount(SQLAlchemyBaseOAuthAccountTableUUID, Base):
-    pass
-
-
-# @declarative_mixin
-class User(SQLAlchemyBaseUserTableUUID, Base):
-
-    oauth_accounts: list[OAuthAccount] = relationship("OAuthAccount", lazy="joined")
+class User(Base):
+    id = Column(GUID, primary_key=True, default=uuid.uuid4)
     username: str = Column(String(100), nullable=False)
     phone_number: str = Column(String(100), nullable=False)
     profile_pic: Union[str, None] = Column(String(100))
