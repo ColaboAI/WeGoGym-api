@@ -1,5 +1,4 @@
 from datetime import datetime
-from typing import Union
 from pydantic import BaseModel
 from uuid import UUID
 
@@ -39,8 +38,8 @@ class ChatRoomCreate(BaseModel):
 
 
 class ChatRoomUpdate(BaseModel):
-    name: Union[str, None]
-    description: Union[str, None]
+    name: str | None
+    description: str | None
     chat_room_members: list[UUID]
 
 
@@ -48,9 +47,9 @@ class MessageRead(BaseModel):
     id: UUID
     chat_room_id: UUID
     user_id: UUID
-    text: Union[str, None]
+    text: str | None
     created_at: datetime
-    media_url: Union[str, None]
+    media_url: str | None
 
     class Config:
         orm_mode = True
@@ -59,5 +58,5 @@ class MessageRead(BaseModel):
 class MessageCreate(BaseModel):
     chat_room_id: UUID
     user_id: UUID
-    text: Union[str, None]
-    media_url: Union[str, None]
+    text: str | None
+    media_url: str | None

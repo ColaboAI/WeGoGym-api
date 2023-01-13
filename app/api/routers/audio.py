@@ -1,4 +1,3 @@
-from typing import Optional
 from pydantic import Json
 from sqlalchemy import select
 from sqlalchemy.orm import selectinload
@@ -25,8 +24,8 @@ async def get_audio_items(session: AsyncSession = Depends(get_async_session)):
 
 @audio_router.post("/upload", response_model=AudioRead, status_code=201)
 async def create_audio(
-    audio_file: Optional[UploadFile],
-    image_file: Optional[UploadFile],
+    audio_file: UploadFile | None,
+    image_file: UploadFile | None,
     metadata: Json[AudioCreate] = Form(...),
     session: AsyncSession = Depends(get_async_session),
 ):
