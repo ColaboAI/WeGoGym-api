@@ -55,6 +55,8 @@ services:
       dockerfile: docker/redis/Dockerfile
     container_name: redis
     hostname: ${REDIS_HOST}
+    env_file:
+      - .env
     ports:
       - '${REDIS_PORT}:6379'
     networks:
