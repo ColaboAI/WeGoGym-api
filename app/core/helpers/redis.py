@@ -2,18 +2,20 @@ import aioredis
 
 from app.core.config import settings
 
-redis = aioredis.from_url(
-    url=f"redis://{settings.REDIS_USERNAME}:{settings.REDIS_PASSWORD}@{settings.REDIS_HOST}:{settings.REDIS_PORT}/0",
-)
+
+def get_redis_url():
+    if settings.ENVIRONMENT == "DEV":
+        return f"redis://localhost:{settings.REDIS_PORT}/0"
+    return f"redis://{settings.REDIS_HOST}:{settings.REDIS_PORT}/0"
 
 
-async def get_redis_conn(self) -> str:
+redis = aioredis.from_url(url=get_redis_url(), decode_responses=True)
+
+
+async def get_redis_conn() -> str:
     """
     Assemble database URL from self.
     :return: database URL.
     """
-    return await aioredis.from_url(
-        url=f"redis://{settings.REDIS_USERNAME}:{settings.REDIS_PASSWORD}@{settings.REDIS_HOST}:{settings.REDIS_PORT}/0",
-        decode_responses=True,
-        encoding="utf-8",
-    )
+
+    return await aioredis.from_url(url=get_redis_url(), decode_responses=True)
