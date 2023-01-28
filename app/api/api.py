@@ -1,12 +1,75 @@
-from fastapi import APIRouter
+from fastapi.responses import HTMLResponse
+
+from fastapi import APIRouter, Depends, WebSocket
 
 from app.api.routers.audio import audio_router
-
+from app.api.websockets.chat import chat_ws_router
+from app.session import get_async_session
+from app.service.chat_service import ChatService
+from sqlalchemy.ext.asyncio import AsyncSession
+from app.core.conn import conn_manager
 
 api_router = APIRouter()
+
+
+@api_router.get("/")
+async def get():
+    return HTMLResponse(html)
+
 
 api_router.include_router(
     audio_router,
     prefix="/audio",
     tags=["audio"],
 )
+
+
+html = """
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Chat</title>
+    </head>
+    <body>
+        <h1>Chat</h1>
+        <h2>Room: <span id="room-id"></span><br> Your ID: <span id="client-id"></span></h2>
+        <label>Room: <input type="text" id="channelId" autocomplete="off" value="foo"/></label>
+        <button onclick="connect(event)">Connect</button>
+        <hr>
+        <form style="position: absolute; bottom:0" action="" onsubmit="sendMessage(event)">
+            <input type="text" id="messageText" autocomplete="off"/>
+            <button>Send</button>
+        </form>
+        <ul id='messages'>
+        </ul>
+        <script>
+            var ws = null;
+            function connect(event) {
+                var client_id = Date.now()
+                document.querySelector("#client-id").textContent = client_id;
+                document.querySelector("#room-id").textContent = channelId.value;
+                if (ws) ws.close()
+                ws = new WebSocket(`ws://localhost:8000/ws/chat/${channelId.value}/${client_id}`);
+                
+                ws.onmessage = function(event) {
+                    var messages = document.getElementById('messages')
+                    var message = document.createElement('li')
+                    var content = document.createTextNode(event.data)
+                    message.appendChild(content)
+                    messages.appendChild(message)
+                };
+                event.preventDefault();
+                
+            }
+            function sendMessage(event) {
+                var input = document.getElementById("messageText")
+                ws.send(input.value)
+                input.value = ''
+                event.preventDefault()
+                document.getElementById("messageText").focus()
+            }
+            
+        </script>
+    </body>
+</html>
+"""
