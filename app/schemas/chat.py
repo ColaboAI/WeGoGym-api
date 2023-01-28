@@ -8,13 +8,18 @@ class ChatRoomMemberRead(BaseModel):
     user_id: UUID
     chat_room_id: UUID
     joined_at: datetime
-    left_at: datetime
+    left_at: datetime | None
 
     class Config:
         orm_mode = True
 
 
 class ChatRoomMemberCreate(BaseModel):
+    user_id: UUID
+    chat_room_id: UUID
+
+
+class ChatRoomMemberUpdate(BaseModel):
     user_id: UUID
     chat_room_id: UUID
 
