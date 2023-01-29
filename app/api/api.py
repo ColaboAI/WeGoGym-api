@@ -3,11 +3,7 @@ from fastapi.responses import HTMLResponse
 from fastapi import APIRouter, Depends, WebSocket
 
 from app.api.routers.audio import audio_router
-from app.api.websockets.chat import chat_ws_router
-from app.session import get_async_session
-from app.service.chat_service import ChatService
-from sqlalchemy.ext.asyncio import AsyncSession
-from app.core.conn import conn_manager
+from app.api.routers.chat import chat_router
 
 api_router = APIRouter()
 
@@ -21,6 +17,12 @@ api_router.include_router(
     audio_router,
     prefix="/audio",
     tags=["audio"],
+)
+
+api_router.include_router(
+    chat_router,
+    prefix="/chat",
+    tags=["chat"],
 )
 
 

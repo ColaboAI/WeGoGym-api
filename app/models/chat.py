@@ -19,7 +19,7 @@ class ChatRoomMember(Base):
 
     joined_at = Column(TIMESTAMP, nullable=False)
     left_at = Column(TIMESTAMP, nullable=True)
-    is_superuser = Column(Boolean, default=False, nullable=False)
+    is_admin = Column(Boolean, default=False, nullable=False)
     last_read_message_id = Column(GUID, nullable=True)
     last_read_at = Column(TIMESTAMP)
 
