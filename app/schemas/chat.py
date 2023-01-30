@@ -39,7 +39,7 @@ class ChatRoomRead(BaseModel):
 class ChatRoomCreate(BaseModel):
     name: str
     description: str
-    creator_id: UUID
+    creator_by: UUID
     members_user_id: list[UUID]
 
 
