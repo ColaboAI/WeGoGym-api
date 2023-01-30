@@ -1,8 +1,9 @@
-from sqlalchemy import TIMESTAMP, Boolean, Column, String, ForeignKey
+from sqlalchemy import Boolean, Column, String, ForeignKey, DateTime
 from sqlalchemy.orm import relationship
 from app.models import Base
 import uuid
 from app.models.guid import GUID
+from app.utils.generics import utcnow
 
 
 class ChatRoomMember(Base):
@@ -17,11 +18,11 @@ class ChatRoomMember(Base):
     user = relationship("User", back_populates="chat_rooms")
     user_id = Column(GUID, ForeignKey("user.id", ondelete="CASCADE"), nullable=False)
 
-    joined_at = Column(TIMESTAMP, nullable=False)
-    left_at = Column(TIMESTAMP, nullable=True)
+    joined_at = Column(DateTime, server_default=utcnow())
+    left_at = Column(DateTime, nullable=True)
     is_admin = Column(Boolean, default=False, nullable=False)
     last_read_message_id = Column(GUID, nullable=True)
-    last_read_at = Column(TIMESTAMP)
+    last_read_at = Column(DateTime, server_default=utcnow())
 
 
 class ChatRoom(Base):
@@ -30,8 +31,8 @@ class ChatRoom(Base):
     name = Column(String(100), nullable=False)
     description = Column(String(200), nullable=False)
     created_by = Column(GUID, nullable=False, default=uuid.uuid4)
-    created_at = Column(TIMESTAMP, nullable=False)
-    updated_at = Column(TIMESTAMP, nullable=False)
+    created_at = Column(DateTime, server_default=utcnow())
+    updated_at = Column(DateTime, server_default=utcnow())
 
     members = relationship(
         "ChatRoomMember",
@@ -61,4 +62,4 @@ class Message(Base):
 
     text = Column(String(300), nullable=True)
     media_url = Column(String(256), nullable=True)
-    created_at = Column(TIMESTAMP, nullable=False)
+    created_at = Column(DateTime, server_default=utcnow())

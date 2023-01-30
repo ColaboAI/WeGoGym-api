@@ -5,13 +5,15 @@ Note, imported by alembic migrations logic, see `alembic/env.py`
 """
 
 
-from sqlalchemy import Column, Float, Integer, String
+from sqlalchemy import DateTime, Column, Float, Integer, String
 from sqlalchemy.orm import relationship
 
 from app.models import Base
 from app.models.chat import ChatRoom, Message
 from app.models.guid import GUID
 import uuid
+
+from app.utils.generics import utcnow
 
 
 class User(Base):
@@ -27,6 +29,7 @@ class User(Base):
     latitude: float | None = Column(Float)
     last_active_at: int | None = Column(Integer)
     workout_per_week: int | None = Column(Integer)
+    cretaed_at: int | None = Column(DateTime, server_default=utcnow())
 
     chat_rooms: list[ChatRoom] = relationship(
         "ChatRoom",
