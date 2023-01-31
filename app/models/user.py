@@ -5,31 +5,32 @@ Note, imported by alembic migrations logic, see `alembic/env.py`
 """
 
 
-from sqlalchemy import DateTime, Column, Float, Integer, String
+from sqlalchemy import Boolean, Column, Float, Integer, String
+from sqlalchemy.sql import expression
 from sqlalchemy.orm import relationship
+from app.core.db.mixins.timestamp_mixin import TimestampMixin
 
 from app.models import Base
 from app.models.chat import ChatRoom, Message
 from app.models.guid import GUID
 import uuid
 
-from app.utils.generics import utcnow
 
-
-class User(Base):
+class User(TimestampMixin, Base):
     __tablename__ = "user"
     id = Column(GUID, primary_key=True, default=uuid.uuid4)
     username: str = Column(String(100), nullable=False)
     phone_number: str = Column(String(100), nullable=False)
-    profile_pic: str | None = Column(String(100))
-    bio: str | None = Column(String(100))
-    age: int | None = Column(Integer)
-    weight: int | None = Column(Integer)
-    longitude: float | None = Column(Float)
-    latitude: float | None = Column(Float)
-    last_active_at: int | None = Column(Integer)
-    workout_per_week: int | None = Column(Integer)
-    cretaed_at: int | None = Column(DateTime, server_default=utcnow())
+    is_superuser: bool = Column(
+        Boolean, server_default=expression.false(), nullable=False
+    )
+    profile_pic: str | None = Column(String(100), nullable=True)
+    bio: str | None = Column(String(100), nullable=True)
+    age: int | None = Column(Integer, nullable=True)
+    weight: int | None = Column(Integer, nullable=True)
+    longitude: float | None = Column(Float, nullable=True)
+    latitude: float | None = Column(Float, nullable=True)
+    workout_per_week: int | None = Column(Integer, nullable=True)
 
     chat_rooms: list[ChatRoom] = relationship(
         "ChatRoom",
