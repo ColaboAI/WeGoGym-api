@@ -17,4 +17,5 @@ __all__ = [
     "ChatRoomMemberRead",
     "ChatRoomMemberCreate",
     "ChatRoomMemberUpdate",
+    "LoginResponseSchema",
 ]
