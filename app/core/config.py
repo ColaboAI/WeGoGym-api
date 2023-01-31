@@ -30,6 +30,8 @@ PROJECT_DIR = Path(__file__).parent.parent.parent
 class Settings(BaseSettings):
     # CORE SETTINGS
     SECRET_KEY: str
+    JWT_SECRET_KEY: str
+    JWT_ALGORITHM: str = "HS256"
     ENVIRONMENT: Literal["DEV", "PYTEST", "STAGE", "PRODUCTION"] = "DEV"
     ACCESS_TOKEN_EXPIRE_MINUTES: int
     BACKEND_CORS_ORIGINS: str | list[AnyHttpUrl]
