@@ -1,12 +1,13 @@
 from sqlalchemy import Boolean, Column, String, ForeignKey, DateTime
 from sqlalchemy.orm import relationship
+from app.core.db.mixins.timestamp_mixin import TimestampMixin
 from app.models import Base
 import uuid
 from app.models.guid import GUID
 from app.utils.generics import utcnow
 
 
-class ChatRoomMember(Base):
+class ChatRoomMember(TimestampMixin, Base):
     __tablename__ = "chat_room_member"
     id = Column(GUID, primary_key=True, index=True, default=uuid.uuid4)
 
@@ -25,14 +26,12 @@ class ChatRoomMember(Base):
     last_read_at = Column(DateTime, server_default=utcnow())
 
 
-class ChatRoom(Base):
+class ChatRoom(TimestampMixin, Base):
     __tablename__ = "chat_room"
     id = Column(GUID, primary_key=True, index=True, default=uuid.uuid4)
     name = Column(String(100), nullable=False)
     description = Column(String(200), nullable=False)
     created_by = Column(GUID, nullable=False, default=uuid.uuid4)
-    created_at = Column(DateTime, server_default=utcnow())
-    updated_at = Column(DateTime, server_default=utcnow())
 
     members = relationship(
         "ChatRoomMember",
@@ -50,7 +49,7 @@ class ChatRoom(Base):
 
 
 # 유저 삭제 및 채팅방 삭제 시, text는 삭제되지 않음.
-class Message(Base):
+class Message(TimestampMixin, Base):
     __tablename__ = "message"
     id = Column(GUID, primary_key=True, index=True, default=uuid.uuid4)
 
