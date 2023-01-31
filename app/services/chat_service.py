@@ -108,3 +108,53 @@ async def make_chat_room(user_id: GUID, session: AsyncSession):
     session.add(chat_room)
     await session.commit()
     return chat_room
+
+
+async def make_chat_room_member(user_id: GUID, room_id: GUID, session: AsyncSession):
+    chat_room_member = ChatRoomMember(user_id=user_id, chat_room_id=room_id)
+    session.add(chat_room_member)
+    await session.commit()
+    return chat_room_member
+
+
+async def delete_chat_room_member(user_id: GUID, room_id: GUID, session: AsyncSession):
+    stmt = text(
+        "DELETE FROM chat_room_members WHERE user_id = :user_id AND chat_room_id = :room_id"
+    )
+    await session.execute(stmt, {"user_id": user_id, "room_id": room_id})
+    await session.commit()
+
+
+async def delete_chat_room(room_id: GUID, session: AsyncSession):
+    stmt = text("DELETE FROM chat_rooms WHERE id = :room_id")
+
+    await session.execute(stmt, {"room_id": room_id})
+    await session.commit()
+
+
+async def get_chat_room_members(room_id: GUID, session: AsyncSession):
+
+    stmt = text("SELECT user_id FROM chat_room_members WHERE chat_room_id = :room_id")
+
+    result = await session.execute(stmt, {"room_id": room_id})
+    return result.fetchall()
+
+
+async def get_chat_room_members_count(room_id: GUID, session: AsyncSession):
+
+    stmt = text("SELECT COUNT(*) FROM chat_room_members WHERE chat_room_id = :room_id")
+
+    result = await session.execute(stmt, {"room_id": room_id})
+    return result.fetchone()
+
+
+async def post_chat_message(
+    user_id: GUID, room_id: GUID, message: str, session: AsyncSession
+):
+    stmt = text(
+        "INSERT INTO chat_messages (user_id, chat_room_id, text) VALUES (:user_id, :room_id, :message)"
+    )
+    await session.execute(
+        stmt, {"user_id": user_id, "room_id": room_id, "message": message}
+    )
+    await session.commit()
