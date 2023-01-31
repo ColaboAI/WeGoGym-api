@@ -37,7 +37,7 @@ class MyInfoRead(UserRead):
     age: int | None
     weight: int | None
     workout_per_week: int | None
-    longitute: float | None
+    longitude: float | None
     latitude: float | None
 
     # TODO: return object or id
@@ -50,13 +50,16 @@ class UserCreate(CreateUpdateDictModel):
     phone_number: str
     username: str
     is_superuser: bool = False
-    profile_pic: str | None
-    bio: str | None
-    age: int | None
-    weight: int | None
-    workout_per_week: int | None
-    longitute: float | None
-    latitude: float | None
+    profile_pic: str | None = None
+    bio: str | None = None
+    age: int | None = None
+    weight: int | None = None
+    workout_per_week: int | None = None
+    longitude: float | None = None
+    latitude: float | None = None
+
+    class Config:
+        orm_mode = True
 
 
 class UserUpdate(CreateUpdateDictModel):
@@ -67,10 +70,14 @@ class UserUpdate(CreateUpdateDictModel):
     age: int | None
     weight: int | None
     workout_per_week: int | None
-    longitute: float | None
+    longitude: float | None
     latitude: float | None
 
 
-class LoginResponseSchema(BaseModel):
+class LoginRequest(BaseModel):
+    phone_number: str = Field(..., description="Phone number: +821012345678")
+
+
+class LoginResponse(BaseModel):
     token: str = Field(..., description="Token")
     refresh_token: str = Field(..., description="Refresh token")
