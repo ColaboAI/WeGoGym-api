@@ -7,8 +7,6 @@ class ChatRoomMemberRead(BaseModel):
     id: UUID
     user_id: UUID
     chat_room_id: UUID
-    joined_at: datetime
-    left_at: datetime | None
 
     class Config:
         orm_mode = True
@@ -30,7 +28,7 @@ class ChatRoomRead(BaseModel):
     description: str
     created_at: datetime
     updated_at: datetime
-    chat_room_members: list[ChatRoomMemberRead]
+    members: list[ChatRoomMemberRead]
 
     class Config:
         orm_mode = True
@@ -66,3 +64,11 @@ class MessageCreate(BaseModel):
     user_id: UUID
     text: str | None
     media_url: str | None
+
+
+class ChatRoomCreateResponse(BaseModel):
+    name: str
+    description: str
+
+    class Config:
+        orm_mode = True
