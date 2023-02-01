@@ -1,3 +1,4 @@
+from datetime import datetime
 from typing import Optional, Tuple
 
 import jwt
@@ -37,6 +38,11 @@ class AuthBackend(AuthenticationBackend):
                 credentials,
             )
             user_id = payload.get("user_id")
+            exp = payload.get("exp")
+            now = datetime.now().timestamp()
+            # Check if token is expired
+            if exp < now:
+                return False, current_user
         except jwt.exceptions.PyJWTError:
             return False, current_user
 
