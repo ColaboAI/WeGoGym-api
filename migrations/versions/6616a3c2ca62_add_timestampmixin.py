@@ -49,6 +49,7 @@ def upgrade() -> None:
         "left_at",
         type=sa.DateTime(),
         existing_type=postgresql.TIMESTAMP(),
+        server_default=None,
         nullable=True,
     )
     op.drop_column("chat_room_member", "joined_at")
