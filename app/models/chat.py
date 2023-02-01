@@ -9,6 +9,8 @@ from app.utils.generics import utcnow
 
 class ChatRoomMember(TimestampMixin, Base):
     __tablename__ = "chat_room_member"
+    __mapper_args__ = {"eager_defaults": True}
+
     id = Column(GUID, primary_key=True, index=True, default=uuid.uuid4)
 
     chat_room = relationship("ChatRoom", back_populates="members")
@@ -27,6 +29,8 @@ class ChatRoomMember(TimestampMixin, Base):
 
 class ChatRoom(TimestampMixin, Base):
     __tablename__ = "chat_room"
+    __mapper_args__ = {"eager_defaults": True}
+
     id = Column(GUID, primary_key=True, index=True, default=uuid.uuid4)
     name = Column(String(100), nullable=False)
     description = Column(String(200), nullable=False)
@@ -50,6 +54,8 @@ class ChatRoom(TimestampMixin, Base):
 # 유저 삭제 및 채팅방 삭제 시, text는 삭제되지 않음.
 class Message(TimestampMixin, Base):
     __tablename__ = "message"
+    __mapper_args__ = {"eager_defaults": True}
+
     id = Column(GUID, primary_key=True, index=True, default=uuid.uuid4)
 
     user = relationship("User", back_populates="messages")
