@@ -33,8 +33,7 @@ class User(TimestampMixin, Base):
     workout_per_week: int | None = Column(Integer, nullable=True)
 
     chat_rooms: list[ChatRoom] = relationship(
-        "ChatRoom",
-        lazy="joined",
+        "ChatRoomMember",
         cascade="save-update, merge, delete",
         passive_deletes=True,
     )
