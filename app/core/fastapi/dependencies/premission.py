@@ -1,12 +1,15 @@
 from abc import ABC, abstractmethod
-from typing import List, Type
-
-from fastapi import Request
+from typing import Type
+from fastapi import Depends, Request
 from fastapi.openapi.models import APIKey, APIKeyIn
 from fastapi.security.base import SecurityBase
+import jwt
+from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.user.services import UserService
-from core.exceptions import CustomException, UnauthorizedException
+from app.core.config import settings as config
+from app.services.user_service import UserService
+from app.core.exceptions import CustomException, UnauthorizedException
+from app.utils.token_helper import TokenHelper
 
 
 class BasePermission(ABC):
@@ -29,10 +32,8 @@ class IsAdmin(BasePermission):
 
     async def has_permission(self, request: Request) -> bool:
         user_id = request.user.id
-        if not user_id:
-            return False
-
-        return await UserService().is_admin(user_id=user_id)
+        is_superuser = request.user.is_superuser
+        return user_id is not None and is_superuser
 
 
 class AllowAll(BasePermission):
@@ -41,7 +42,7 @@ class AllowAll(BasePermission):
 
 
 class PermissionDependency(SecurityBase):
-    def __init__(self, permissions: List[Type[BasePermission]]):
+    def __init__(self, permissions: list[Type[BasePermission]]):
         self.permissions = permissions
         self.model: APIKey = APIKey(**{"in": APIKeyIn.header}, name="Authorization")
         self.scheme_name = self.__class__.__name__
