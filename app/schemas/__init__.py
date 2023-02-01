@@ -19,3 +19,7 @@ __all__ = [
     "ChatRoomMemberUpdate",
     "LoginResponseSchema",
 ]
+
+
+class ExceptionResponseSchema(BaseModel):
+    error: str = Field(..., description="Error message")

@@ -26,7 +26,10 @@ class CreateUpdateDictModel(BaseModel):
 class UserRead(CreateUpdateDictModel):
     id: uuid.UUID
     username: str
-    profile_pic: str
+    profile_pic: str | None
+
+    class Config:
+        orm_mode = True
 
 
 class MyInfoRead(UserRead):
@@ -57,9 +60,6 @@ class UserCreate(CreateUpdateDictModel):
     workout_per_week: int | None = None
     longitude: float | None = None
     latitude: float | None = None
-
-    class Config:
-        orm_mode = True
 
 
 class UserUpdate(CreateUpdateDictModel):
