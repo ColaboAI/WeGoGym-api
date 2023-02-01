@@ -4,6 +4,8 @@ from fastapi import APIRouter, Depends, WebSocket
 
 from app.api.routers.audio import audio_router
 from app.api.routers.chat import chat_router
+from app.api.routers.auth import auth_router
+from app.api.routers.user import user_router
 
 api_router = APIRouter()
 
@@ -25,6 +27,17 @@ api_router.include_router(
     tags=["chat"],
 )
 
+api_router.include_router(
+    auth_router,
+    prefix="/auth",
+    tags=["auth"],
+)
+
+api_router.include_router(
+    user_router,
+    prefix="/user",
+    tags=["user"],
+)
 
 html = """
 <!DOCTYPE html>
