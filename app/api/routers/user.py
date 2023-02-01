@@ -1,5 +1,9 @@
 from fastapi import APIRouter, Depends, Query
-from app.core.fastapi.dependencies.premission import IsAdmin, PermissionDependency
+from app.core.fastapi.dependencies.premission import (
+    AllowAll,
+    IsAdmin,
+    PermissionDependency,
+)
 from app.models.user import User
 from app.schemas import ExceptionResponseSchema
 from app.schemas.user import LoginResponse, UserRead, UserCreate, UserUpdate
@@ -34,18 +38,19 @@ async def get_user_list(
     summary="Register New User",
     description="Create user with phone number and username and return tokens",
     response_model_exclude={"id"},
+    dependencies=[Depends(PermissionDependency([AllowAll]))],
 )
 async def create_user(
     create_req: UserCreate,
-    session: AsyncSession = Depends(get_db_transactional_session),
 ):
-    usr_svc = UserService(session)
+    usr_svc = UserService()
     await usr_svc.create_user(**create_req.dict())
     token = await usr_svc.login(phone_number=create_req.phone_number)
 
     return {"token": token.token, "refresh_token": token.refresh_token}
 
 
+# TODO: get firebase token or user id
 @user_router.post(
     "/login",
     response_model=LoginResponse,
