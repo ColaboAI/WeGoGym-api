@@ -19,7 +19,6 @@ from app.schemas.chat import (
     ChatRoomCreate,
     ChatRoomMemberRead,
     MessageRead,
-    MessageCreate,
 )
 from app.models.chat import ChatRoom, ChatRoomMember, Message
 from app.session import get_db_transactional_session
@@ -42,37 +41,43 @@ async def create_chat_room(
     session: AsyncSession = Depends(get_db_transactional_session),
 ):
     try:
-        chat_room_obj = ChatRoom(**chat_room.dict())
+        chat_room_obj = ChatRoom(**chat_room.dict(exclude={"members_user_id"}))
 
-        admin_user = await session.get(User, chat_room.created_by)
+        stmt = select(User).where(User.id == chat_room.created_by)
+        admin_user = await session.execute(stmt)
+        admin_user = admin_user.scalars().first()
 
         if not admin_user:
             raise HTTPException(status_code=404, detail="Room Admin User is not found")
 
         admin_member_obj = ChatRoomMember(
             user=admin_user,
+            chat_room=chat_room_obj,
             is_admin=True,
         )
-        admin_user.chat_rooms.append(chat_room_obj)
-
         chat_room_obj.members.append(admin_member_obj)
-        session.add(admin_member_obj)
 
         for id in chat_room.members_user_id:
-            user = await session.get(User, id)
+            user = await session.execute(select(User).where(User.id == id))
+            user = user.scalars().first()
             if not user:
                 raise HTTPException(status_code=404, detail="User not found")
             chat_room_member_obj = ChatRoomMember(
                 user=user,
+                chat_room=chat_room_obj,
             )
             chat_room_obj.members.append(chat_room_member_obj)
-            session.add(chat_room_member_obj)
-
         session.add(chat_room_obj)
+
         await session.commit()
-        return chat_room
+
+        print(
+            "chat_room_obj", chat_room_obj.__dict__, chat_room_obj.members[0].__dict__
+        )
+        return chat_room_obj
     except Exception as e:
         await session.rollback()
+        print("error", e)
         raise HTTPException(status_code=500, detail=str(e))
 
 
