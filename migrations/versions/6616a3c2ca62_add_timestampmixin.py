@@ -49,7 +49,6 @@ def upgrade() -> None:
         "left_at",
         type=sa.DateTime(),
         existing_type=postgresql.TIMESTAMP(),
-        server_default=sa.text("TIMEZONE('utc', CURRENT_TIMESTAMP)"),
         nullable=True,
     )
     op.drop_column("chat_room_member", "joined_at")
@@ -133,9 +132,7 @@ def downgrade() -> None:
     op.drop_column("message", "updated_at")
     op.add_column(
         "chat_room_member",
-        sa.Column(
-            "joined_at", postgresql.TIMESTAMP(), autoincrement=False, nullable=False
-        ),
+        sa.Column("joined_at", postgresql.TIMESTAMP(), nullable=False),
     )
     op.alter_column(
         "chat_room_member",
