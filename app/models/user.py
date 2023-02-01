@@ -32,7 +32,7 @@ class User(TimestampMixin, Base):
     latitude: float | None = Column(Float, nullable=True)
     workout_per_week: int | None = Column(Integer, nullable=True)
 
-    chat_rooms: list[ChatRoom] = relationship(
+    chat_room_members: list[ChatRoom] = relationship(
         "ChatRoomMember",
         cascade="save-update, merge, delete",
         passive_deletes=True,

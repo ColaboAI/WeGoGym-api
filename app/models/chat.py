@@ -16,14 +16,13 @@ class ChatRoomMember(TimestampMixin, Base):
         GUID, ForeignKey("chat_room.id", ondelete="CASCADE"), nullable=False
     )
 
-    user = relationship("User", back_populates="chat_rooms")
+    user = relationship("User", back_populates="chat_room_members")
     user_id = Column(GUID, ForeignKey("user.id", ondelete="CASCADE"), nullable=False)
 
-    joined_at = Column(DateTime, server_default=utcnow())
-    left_at = Column(DateTime, nullable=True)
+    left_at = Column(DateTime, server_default=utcnow(), nullable=True)
     is_admin = Column(Boolean, default=False, nullable=False)
     last_read_message_id = Column(GUID, nullable=True)
-    last_read_at = Column(DateTime, server_default=utcnow())
+    last_read_at = Column(DateTime, server_default=utcnow(), nullable=False)
 
 
 class ChatRoom(TimestampMixin, Base):
@@ -61,4 +60,3 @@ class Message(TimestampMixin, Base):
 
     text = Column(String(300), nullable=True)
     media_url = Column(String(256), nullable=True)
-    created_at = Column(DateTime, server_default=utcnow())
