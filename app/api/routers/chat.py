@@ -12,6 +12,7 @@
 
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy import select
+from app.models.user import User
 from app.schemas import user
 from app.schemas.chat import (
     ChatRoomRead,
@@ -21,8 +22,7 @@ from app.schemas.chat import (
     MessageCreate,
 )
 from app.models.chat import ChatRoom, ChatRoomMember, Message
-from app.service.user_service import get_current_user
-from app.session import get_async_session
+from app.session import get_db_transactional_session
 from sqlalchemy.ext.asyncio import AsyncSession
 
 
@@ -30,7 +30,7 @@ chat_router = APIRouter()
 
 
 @chat_router.get("/rooms", response_model=list[ChatRoomRead])
-async def get_chat_rooms(session: AsyncSession = Depends(get_async_session)):
+async def get_chat_rooms(session: AsyncSession = Depends(get_db_transactional_session)):
     stmt = select(ChatRoom)
     result = await session.execute(stmt)
     return result.scalars().all()
@@ -39,18 +39,47 @@ async def get_chat_rooms(session: AsyncSession = Depends(get_async_session)):
 @chat_router.post("/rooms", response_model=ChatRoomRead, status_code=201)
 async def create_chat_room(
     chat_room: ChatRoomCreate,
-    session: AsyncSession = Depends(get_async_session),
+    session: AsyncSession = Depends(get_db_transactional_session),
 ):
-    chat_room = ChatRoom(**chat_room.dict())
-    session.add(chat_room)
-    await session.commit()
-    return chat_room
+    try:
+        chat_room_obj = ChatRoom(**chat_room.dict())
+
+        admin_user = await session.get(User, chat_room.created_by)
+
+        if not admin_user:
+            raise HTTPException(status_code=404, detail="Room Admin User is not found")
+
+        admin_member_obj = ChatRoomMember(
+            user=admin_user,
+            is_admin=True,
+        )
+        admin_user.chat_rooms.append(chat_room_obj)
+
+        chat_room_obj.members.append(admin_member_obj)
+        session.add(admin_member_obj)
+
+        for id in chat_room.members_user_id:
+            user = await session.get(User, id)
+            if not user:
+                raise HTTPException(status_code=404, detail="User not found")
+            chat_room_member_obj = ChatRoomMember(
+                user=user,
+            )
+            chat_room_obj.members.append(chat_room_member_obj)
+            session.add(chat_room_member_obj)
+
+        session.add(chat_room_obj)
+        await session.commit()
+        return chat_room
+    except Exception as e:
+        await session.rollback()
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 @chat_router.get("/rooms/{chat_room_id}", response_model=ChatRoomRead)
 async def get_chat_room(
     chat_room_id: str,
-    session: AsyncSession = Depends(get_async_session),
+    session: AsyncSession = Depends(get_db_transactional_session),
 ):
     stmt = select(ChatRoom).where(ChatRoom.id == chat_room_id)
     result = await session.execute(stmt)
@@ -65,7 +94,7 @@ async def get_chat_room(
 )
 async def get_chat_room_members(
     chat_room_id: str,
-    session: AsyncSession = Depends(get_async_session),
+    session: AsyncSession = Depends(get_db_transactional_session),
 ):
     stmt = select(ChatRoomMember).where(ChatRoomMember.chat_room_id == chat_room_id)
     result = await session.execute(stmt)
@@ -75,11 +104,11 @@ async def get_chat_room_members(
 @chat_router.get("/rooms/{chat_room_id}/messages", response_model=list[MessageRead])
 async def get_chat_room_messages(
     chat_room_id: str,
-    user: user.MyInfoRead = Depends(get_current_user),
-    session: AsyncSession = Depends(get_async_session),
+    user_id: str,
+    session: AsyncSession = Depends(get_db_transactional_session),
 ):
     get_chat_room_members_stmt = select(ChatRoomMember).where(
-        ChatRoomMember.chat_room_id == chat_room_id, ChatRoomMember.user_id == user.id
+        ChatRoomMember.chat_room_id == chat_room_id, ChatRoomMember.user_id == user_id
     )
     chat_mem_result = await session.execute(get_chat_room_members_stmt)
 
@@ -93,25 +122,3 @@ async def get_chat_room_messages(
 
     result = await session.execute(msg_stmt)
     return result.scalars().all()
-
-
-@chat_router.post("/rooms/{chat_room_id}/messages", response_model=MessageRead)
-async def create_chat_room_message(
-    chat_room_id: str,
-    message: MessageCreate,
-    user: user.MyInfoRead = Depends(get_current_user),
-    session: AsyncSession = Depends(get_async_session),
-):
-    get_chat_room_members_stmt = select(ChatRoomMember).where(
-        ChatRoomMember.chat_room_id == chat_room_id, ChatRoomMember.user_id == user.id
-    )
-    chat_mem_result = await session.execute(get_chat_room_members_stmt)
-
-    chat_mem: ChatRoomMember = chat_mem_result.fetchone()
-    if chat_mem is None:
-        raise HTTPException(status_code=404, detail="Chat room not found")
-
-    message = Message(**message.dict(), chat_room_id=chat_room_id, user_id=user.id)
-    session.add(message)
-    await session.commit()
-    return message
