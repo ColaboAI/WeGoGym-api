@@ -88,3 +88,11 @@ class UserService:
         )
         await self.session.close()
         return response
+
+
+async def get_my_info_by_id(user_id: UUID, session: AsyncSession) -> User:
+    result = await session.execute(select(User).where(User.id == user_id))
+    user = result.scalars().first()
+    if not user:
+        raise UserNotFoundException
+    return user
