@@ -7,6 +7,9 @@ class ChatRoomMemberRead(BaseModel):
     id: UUID
     user_id: UUID
     chat_room_id: UUID
+    is_admin: bool
+    created_at: datetime
+    last_read_at: datetime
 
     class Config:
         orm_mode = True
@@ -20,6 +23,7 @@ class ChatRoomMemberCreate(BaseModel):
 class ChatRoomMemberUpdate(BaseModel):
     user_id: UUID
     chat_room_id: UUID
+    is_admin: bool
 
 
 class ChatRoomRead(BaseModel):
@@ -28,6 +32,29 @@ class ChatRoomRead(BaseModel):
     description: str
     created_at: datetime
     updated_at: datetime
+    is_private: bool
+
+    class Config:
+        orm_mode = True
+
+
+class ChatRoomList(BaseModel):
+    total: int
+    rooms: list[ChatRoomRead]
+
+
+class ChatRoomMemberList(BaseModel):
+    total: int
+    members: list[ChatRoomMemberRead]
+
+
+class ChatRoomWithMembersRead(BaseModel):
+    id: UUID
+    name: str
+    description: str
+    created_at: datetime
+    updated_at: datetime
+    is_private: bool
     members: list[ChatRoomMemberRead]
 
     class Config:
@@ -39,6 +66,7 @@ class ChatRoomCreate(BaseModel):
     description: str
     created_by: UUID
     members_user_id: list[UUID]
+    is_private: bool
 
 
 class ChatRoomUpdate(BaseModel):
@@ -57,6 +85,11 @@ class MessageRead(BaseModel):
 
     class Config:
         orm_mode = True
+
+
+class MessateListRead(BaseModel):
+    total: int
+    messages: list[MessageRead]
 
 
 class MessageCreate(BaseModel):

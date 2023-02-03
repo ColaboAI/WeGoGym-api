@@ -1,4 +1,4 @@
-from sqlalchemy import Boolean, Column, String, ForeignKey, DateTime
+from sqlalchemy import Boolean, Column, String, ForeignKey, DateTime, func, true
 from sqlalchemy.orm import relationship
 from app.core.db.mixins.timestamp_mixin import TimestampMixin
 from app.models import Base
@@ -35,7 +35,7 @@ class ChatRoom(TimestampMixin, Base):
     name = Column(String(100), nullable=False)
     description = Column(String(200), nullable=False)
     created_by = Column(GUID, nullable=False, default=uuid.uuid4)
-
+    is_private = Column(Boolean, default=True, nullable=False, server_default=true())
     members = relationship(
         "ChatRoomMember",
         back_populates="chat_room",
