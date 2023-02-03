@@ -1,4 +1,5 @@
-from fastapi import APIRouter, Depends, Query, Request
+from fastapi import APIRouter, Depends, Form, Query, Request, UploadFile
+from pydantic import Json
 from app.core.fastapi.dependencies.premission import (
     AllowAll,
     IsAdmin,
@@ -15,8 +16,13 @@ from app.schemas.user import (
     UserCreate,
     UserUpdate,
 )
+from app.services.aws_service import upload_image_to_s3
 from app.session import get_db_transactional_session
-from app.services.user_service import UserService, get_my_info_by_id
+from app.services.user_service import (
+    UserService,
+    get_my_info_by_id,
+    update_my_info_by_id,
+)
 from sqlalchemy.ext.asyncio import AsyncSession
 
 user_router = APIRouter()
@@ -87,4 +93,26 @@ async def get_my_info(
 ):
     user = await get_my_info_by_id(req.user.id, session)
 
+    return user
+
+
+@user_router.put(
+    "/me",
+    response_model=MyInfoRead,
+    summary="Update My Info",
+    description="Update my info with token",
+    dependencies=[Depends(PermissionDependency([IsAuthenticated]))],
+)
+async def put_my_info(
+    req: Request,
+    update_req: Json[UserUpdate] = Form(...),
+    profile_image: UploadFile | None = None,
+    session: AsyncSession = Depends(get_db_transactional_session),
+):
+    img_url: str = (
+        upload_image_to_s3(profile_image, req.user.id) if profile_image else None
+    )
+    if img_url:
+        update_req.profile_pic = img_url
+    user = await update_my_info_by_id(req.user.id, update_req, session)
     return user

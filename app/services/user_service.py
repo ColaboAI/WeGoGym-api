@@ -8,6 +8,7 @@ from app.core.exceptions import (
     DuplicatePhoneNumberOrUsernameException,
     UserNotFoundException,
 )
+from app.schemas.user import UserUpdate
 from app.utils.token_helper import TokenHelper
 from app.session import transactional_session_factory
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -89,6 +90,20 @@ class UserService:
         )
         await self.session.close()
         return response
+
+
+async def update_my_info_by_id(
+    user_id: UUID, update_req: UserUpdate, session: AsyncSession
+) -> User:
+    user = await get_my_info_by_id(user_id, session)
+    for k, v in update_req.dict().items():
+        if v is not None:
+            setattr(user, k, v)
+
+    session.add(user)
+    await session.commit()
+    await session.refresh(user)
+    return user
 
 
 async def get_my_info_by_id(user_id: UUID, session: AsyncSession) -> User:

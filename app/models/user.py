@@ -24,7 +24,7 @@ class User(TimestampMixin, Base):
     is_superuser: bool = Column(
         Boolean, server_default=expression.false(), nullable=False
     )
-    profile_pic: str | None = Column(String(100), nullable=True)
+    profile_pic: str | None = Column(String(255), nullable=True)
     bio: str | None = Column(String(100), nullable=True)
     age: int | None = Column(Integer, nullable=True)
     weight: int | None = Column(Integer, nullable=True)
