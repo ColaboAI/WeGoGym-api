@@ -1,14 +1,22 @@
-from fastapi import APIRouter, Depends, Query
+from fastapi import APIRouter, Depends, Query, Request
 from app.core.fastapi.dependencies.premission import (
     AllowAll,
     IsAdmin,
+    IsAuthenticated,
     PermissionDependency,
 )
 from app.models.user import User
 from app.schemas import ExceptionResponseSchema
-from app.schemas.user import LoginResponse, UserRead, UserCreate, UserUpdate
+from app.schemas.user import (
+    LoginResponse,
+    MyInfoRead,
+    UserListRead,
+    UserRead,
+    UserCreate,
+    UserUpdate,
+)
 from app.session import get_db_transactional_session
-from app.services.user_service import UserService
+from app.services.user_service import UserService, get_my_info_by_id
 from sqlalchemy.ext.asyncio import AsyncSession
 
 user_router = APIRouter()
@@ -16,21 +24,22 @@ user_router = APIRouter()
 # For testing?
 @user_router.get(
     "",
-    response_model=list[UserRead],
+    response_model=UserListRead,
     summary="Get users with limits",
-    description="Get users",
+    description="Get users (Only admin user can use this API)",
     responses={"400": {"model": ExceptionResponseSchema}},
     dependencies=[Depends(PermissionDependency([IsAdmin]))],
 )
 async def get_user_list(
     limit: int = Query(10, description="Limit"),
-    prev_id: str = Query(None, description="Previous ID"),
-    session: AsyncSession = Depends(get_db_transactional_session),
+    offset: int = Query(None, description="offset(= skip)"),
 ):
-    res = await UserService().get_user_list(limit=limit, prev_id=prev_id)
-    return res
+    t, res = await UserService().get_user_list(limit=limit, offset=offset)
+    return {"total": t, "users": res}
 
 
+# TODO: get firebase token or user id and check if user exists
+# user profile image upload to s3
 @user_router.post(
     "",
     response_model=LoginResponse,
@@ -60,7 +69,22 @@ async def create_user(
 )
 async def login(
     phone_number: str,
-    session: AsyncSession = Depends(get_db_transactional_session),
 ):
     token = await UserService().login(phone_number=phone_number)
     return {"token": token.token, "refresh_token": token.refresh_token}
+
+
+@user_router.get(
+    "/me",
+    response_model=MyInfoRead,
+    summary="Get My Info",
+    description="Get my info with token",
+    dependencies=[Depends(PermissionDependency([IsAuthenticated]))],
+)
+async def get_my_info(
+    req: Request,
+    session: AsyncSession = Depends(get_db_transactional_session),
+):
+    user = await get_my_info_by_id(req.user.id, session)
+
+    return user

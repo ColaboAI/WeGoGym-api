@@ -1,6 +1,6 @@
 from uuid import UUID
 
-from sqlalchemy import or_, select, and_
+from sqlalchemy import func, or_, select, and_
 
 from app.models import User
 from app.schemas import LoginResponse
@@ -22,20 +22,21 @@ class UserService:
     async def get_user_list(
         self,
         limit: int = 10,
-        prev_id: UUID | None = None,
+        offset: int | None = None,
     ) -> list[User]:
         self.session: AsyncSession = self.session_maker()
         query = select(User).order_by(User.created_at.desc())
-        if prev_id:
-            query = query.where(User.id < prev_id)
+        total = select(func.count("*")).select_from(User)
 
-        if limit > 12:
-            limit = 12
+        if offset:
+            query = query.offset(offset)
 
-        query = query.limit(limit)
+        if limit:
+            query = query.limit(limit)
+        total = await self.session.execute(total)
         result = await self.session.execute(query)
         await self.session.close()
-        return result.scalars().all()
+        return total.scalars().first(), result.scalars().all()
 
     async def create_user(self, phone_number: str, username: str, **kwargs) -> None:
         try:

@@ -6,6 +6,8 @@ from datetime import datetime
 import uuid
 from pydantic import BaseModel, Field
 
+from app.schemas.chat import MessageRead
+
 
 class CreateUpdateDictModel(BaseModel):
     def create_update_dict(self):
@@ -32,21 +34,22 @@ class UserRead(CreateUpdateDictModel):
         orm_mode = True
 
 
+class UserListRead(BaseModel):
+    total: int
+    users: list[UserRead]
+
+
 class MyInfoRead(UserRead):
     phone_number: str
-    last_active_at: datetime
-    username: str
-    profile_pic: str | None
     age: int | None
+    bio: str | None
     weight: int | None
     workout_per_week: int | None
     longitude: float | None
     latitude: float | None
-
-    # TODO: return object or id
-    # exercise_level_id: uuid.UUID
-    # gym_id: uuid.UUID
-    # goal_id: uuid.UUID
+    created_at: datetime
+    updated_at: datetime
+    is_superuser: bool
 
 
 class UserCreate(CreateUpdateDictModel):
