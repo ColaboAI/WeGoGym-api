@@ -32,7 +32,9 @@ class IsAdmin(BasePermission):
 
     async def has_permission(self, request: Request) -> bool:
         user_id = request.user.id
-        is_superuser = request.user.is_superuser
+        is_superuser = await UserService().is_superuser(user_id=user_id)
+
+        request.user.is_superuser = is_superuser
         return user_id is not None and is_superuser
 
 

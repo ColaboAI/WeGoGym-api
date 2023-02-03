@@ -47,7 +47,6 @@ class AuthBackend(AuthenticationBackend):
             return False, current_user
 
         current_user.id = user_id
-        current_user.is_superuser = await UserService().is_superuser(user_id=user_id)
         return True, current_user
 
 
