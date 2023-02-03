@@ -49,6 +49,7 @@ html = """
         <h1>Chat</h1>
         <h2>Room: <span id="room-id"></span><br> Your ID: <span id="client-id"></span></h2>
         <label>Room: <input type="text" id="channelId" autocomplete="off" value="foo"/></label>
+        <label>User id: <input type="text" id="clientID" autocomplete="off" value="bar"/></label>
         <button onclick="connect(event)">Connect</button>
         <hr>
         <form style="position: absolute; bottom:0" action="" onsubmit="sendMessage(event)">
@@ -60,11 +61,10 @@ html = """
         <script>
             var ws = null;
             function connect(event) {
-                var client_id = Date.now()
-                document.querySelector("#client-id").textContent = client_id;
+                document.querySelector("#client-id").textContent = clientID.value;
                 document.querySelector("#room-id").textContent = channelId.value;
                 if (ws) ws.close()
-                ws = new WebSocket(`ws://localhost:8000/ws/chat/${channelId.value}/${client_id}`);
+                ws = new WebSocket(`ws://localhost:8000/ws/chat/${channelId.value}/${clientID.value}`);
                 
                 ws.onmessage = function(event) {
                     var messages = document.getElementById('messages')
