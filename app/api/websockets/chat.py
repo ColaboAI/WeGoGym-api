@@ -29,4 +29,4 @@ async def chat_websocket_endpoint(
     await conn_manager.connect(websocket)
     chat_service = ChatService(websocket, chat_room_id, user_id, session=session)
     await chat_service.run()
-    await conn_manager.disconnect(websocket)
+    conn_manager.disconnect(websocket)

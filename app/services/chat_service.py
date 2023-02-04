@@ -83,6 +83,8 @@ class ChatService:
                     await self.ws.accept()
         except Exception as e:
             logger.debug(e)
+            await self.websocket.close()
+            await self.conn.close()
 
     async def run(self):
         conn: Redis = await self.get_redis_conn()
@@ -90,9 +92,16 @@ class ChatService:
         pubsub: PubSub = conn.pubsub()
 
         tasks = [self.publish_handler(conn), self.subscribe_handler(pubsub)]
-        results = await asyncio.gather(*tasks)
-        print(f"Done task: {results}")
-        logger.info(f"Done task: {results}")
+        done, pending = await asyncio.wait(
+            tasks,
+            return_when=asyncio.FIRST_COMPLETED,
+        )
+        logger.info(f"Done task: {done}")
+        for task in pending:
+            logger.debug(f"Canceling task: {task}")
+            task.cancel()
+        for task in done:
+            task.result()
 
 
 @dataclass(slots=True)
