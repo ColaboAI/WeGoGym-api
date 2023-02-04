@@ -17,7 +17,7 @@ def get_ecs_logger():
     ecs_handler = ECSLoggingHandler()
     ecs_handler.setLevel(logging.DEBUG)
     ecs_handler.setFormatter(ecs_formatter)
-    ecs_logger = logging.getLogger("colaboai.api")
+    ecs_logger = logging.getLogger("wegogym.api")
     ecs_logger.addHandler(ecs_handler)
     ecs_logger.propagate = False
     ecs_logger.setLevel(logging.DEBUG)

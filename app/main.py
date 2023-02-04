@@ -1,18 +1,52 @@
-from fastapi import FastAPI
+from fastapi import Depends, FastAPI, Request, WebSocket
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.middleware import Middleware
+from fastapi.responses import JSONResponse
 
 from app.api.api import api_router
 from app.core.config import settings
+from app.core.exceptions.base import CustomException
 from app.core.helpers.cache import Cache, RedisBackend, CustomKeyMaker
+from app.api.websockets.chat import chat_ws_router
+from app.core.fastapi.middlewares import (
+    AuthBackend,
+    AuthenticationMiddleware,
+)
+
+
+def init_router(app_: FastAPI) -> None:
+    app_.include_router(api_router)
+    app_.include_router(chat_ws_router, tags="websocket_chat")
 
 
 def init_cache() -> None:
     Cache.init(backend=RedisBackend(), key_maker=CustomKeyMaker())
 
 
-def get_application():
+def init_listeners(app_: FastAPI) -> None:
+    # Exception handler
+    @app_.exception_handler(CustomException)
+    async def custom_exception_handler(request: Request, exc: CustomException):
+        return JSONResponse(
+            status_code=exc.code,
+            content={"error_code": exc.error_code, "message": exc.message},
+        )
 
+
+def on_auth_error(request: Request, exc: Exception):
+    status_code, error_code, message = 401, None, str(exc)
+    if isinstance(exc, CustomException):
+        status_code = int(exc.code)
+        error_code = exc.error_code
+        message = exc.message
+
+    return JSONResponse(
+        status_code=status_code,
+        content={"error_code": error_code, "message": message},
+    )
+
+
+def make_middleware() -> list[Middleware]:
     middleware = [
         Middleware(
             CORSMiddleware,
@@ -20,12 +54,29 @@ def get_application():
             allow_credentials=True,
             allow_methods=["*"],
             allow_headers=["*"],
-        )
+        ),
+        Middleware(
+            AuthenticationMiddleware,
+            backend=AuthBackend(),
+            on_error=on_auth_error,
+        ),
     ]
-    _app = FastAPI(title=settings.PROJECT_NAME, middleware=middleware)
+    return middleware
+
+
+def get_application() -> FastAPI:
+    _app = FastAPI(
+        title=settings.PROJECT_NAME,
+        description=settings.DESCRIPTION,
+        version=settings.VERSION,
+        docs_url=None if settings.ENVIRONMENT == "PRODUCTION" else "/docs",
+        redoc_url=None if settings.ENVIRONMENT == "PRODUCTION" else "/redoc",
+        middleware=make_middleware(),
+    )
+    init_router(app_=_app)
+    init_listeners(app_=_app)
     init_cache()
     return _app
 
 
 app = get_application()
-app.include_router(api_router)

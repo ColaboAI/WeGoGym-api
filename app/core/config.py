@@ -20,7 +20,7 @@ See https://pydantic-docs.helpmanual.io/usage/settings/
 """
 
 from pathlib import Path
-from typing import Literal, Union
+from typing import Literal
 
 from pydantic import AnyHttpUrl, AnyUrl, BaseSettings, EmailStr, validator
 
@@ -30,9 +30,11 @@ PROJECT_DIR = Path(__file__).parent.parent.parent
 class Settings(BaseSettings):
     # CORE SETTINGS
     SECRET_KEY: str
+    JWT_SECRET_KEY: str
+    JWT_ALGORITHM: str = "HS256"
     ENVIRONMENT: Literal["DEV", "PYTEST", "STAGE", "PRODUCTION"] = "DEV"
     ACCESS_TOKEN_EXPIRE_MINUTES: int
-    BACKEND_CORS_ORIGINS: Union[str, list[AnyHttpUrl]]
+    BACKEND_CORS_ORIGINS: str | list[AnyHttpUrl]
     REDIS_HOST: str = "localhost"
     REDIS_PORT: int = 6379
     REDIS_USERNAME: str = "wegogym-redis"
@@ -56,6 +58,8 @@ class Settings(BaseSettings):
     # FIRST SUPERUSER
     FIRST_SUPERUSER_EMAIL: EmailStr
     FIRST_SUPERUSER_PASSWORD: str
+    FIRST_SUPERUSER_NAME: str
+    FIRST_SUPERUSER_PHONE_NUMBER: str
 
     S3_BUCKET: str
     AWS_ACCESS_KEY_ID: str
@@ -63,7 +67,7 @@ class Settings(BaseSettings):
 
     # VALIDATORS
     @validator("BACKEND_CORS_ORIGINS")
-    def _assemble_cors_origins(cls, cors_origins: Union[str, list[AnyHttpUrl]]):
+    def _assemble_cors_origins(cls, cors_origins: str | list[AnyHttpUrl]):
         if isinstance(cors_origins, str):
             return [item.strip() for item in cors_origins.split(",")]
         return cors_origins

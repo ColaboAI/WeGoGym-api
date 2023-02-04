@@ -1,35 +1,68 @@
-from sqlalchemy import TIMESTAMP, Boolean, Column, String
+from sqlalchemy import Boolean, Column, String, ForeignKey, DateTime, func, true
 from sqlalchemy.orm import relationship
-from app.models.base import Base
+from app.core.db.mixins.timestamp_mixin import TimestampMixin
+from app.models import Base
 import uuid
-from fastapi_users_db_sqlalchemy import GUID
+from app.models.guid import GUID
+from app.utils.generics import utcnow
 
 
-class ChatRoomMember(Base):
-    __tablename__ = "chat_group_member"
+class ChatRoomMember(TimestampMixin, Base):
+    __tablename__ = "chat_room_member"
+    __mapper_args__ = {"eager_defaults": True}
+
     id = Column(GUID, primary_key=True, index=True, default=uuid.uuid4)
+
     chat_room = relationship("ChatRoom", back_populates="members")
-    user = relationship("User", back_populates="chat_rooms")
-    joined_at = Column(TIMESTAMP, nullable=False)
-    left_at = Column(TIMESTAMP, nullable=True)
-    is_superuser = Column(Boolean, default=False, nullable=False)
+    chat_room_id = Column(
+        GUID, ForeignKey("chat_room.id", ondelete="CASCADE"), nullable=False
+    )
+
+    user = relationship("User", back_populates="chat_room_members")
+    user_id = Column(GUID, ForeignKey("user.id", ondelete="CASCADE"), nullable=False)
+
+    left_at = Column(DateTime, server_default=utcnow(), nullable=True)
+    is_admin = Column(Boolean, default=False, nullable=False)
+    last_read_message_id = Column(GUID, nullable=True)
+    last_read_at = Column(DateTime, server_default=utcnow(), nullable=False)
 
 
-class ChatRoom(Base):
+class ChatRoom(TimestampMixin, Base):
     __tablename__ = "chat_room"
+    __mapper_args__ = {"eager_defaults": True}
+
     id = Column(GUID, primary_key=True, index=True, default=uuid.uuid4)
     name = Column(String(100), nullable=False)
     description = Column(String(200), nullable=False)
     created_by = Column(GUID, nullable=False, default=uuid.uuid4)
-    created_at = Column(TIMESTAMP, nullable=False)
-    updated_at = Column(TIMESTAMP, nullable=False)
+    is_private = Column(Boolean, default=True, nullable=False, server_default=true())
+    members = relationship(
+        "ChatRoomMember",
+        back_populates="chat_room",
+        cascade="save-update, merge, delete",
+        passive_deletes=True,
+    )
+
+    messages = relationship(
+        "Message",
+        back_populates="chat_room",
+        cascade="save-update, merge, delete",
+        passive_deletes=True,
+    )
 
 
-class Message(Base):
+# 유저 삭제 및 채팅방 삭제 시, text는 삭제되지 않음.
+class Message(TimestampMixin, Base):
     __tablename__ = "message"
+    __mapper_args__ = {"eager_defaults": True}
+
     id = Column(GUID, primary_key=True, index=True, default=uuid.uuid4)
+
     user = relationship("User", back_populates="messages")
+    user_id = Column(GUID, ForeignKey("user.id", ondelete="SET NULL"))
+
     chat_room = relationship("ChatRoom", back_populates="messages")
+    chat_room_id = Column(GUID, ForeignKey("chat_room.id", ondelete="SET NULL"))
+
     text = Column(String(300), nullable=True)
     media_url = Column(String(256), nullable=True)
-    created_at = Column(TIMESTAMP, nullable=False)

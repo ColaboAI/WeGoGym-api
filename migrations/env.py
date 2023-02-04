@@ -1,8 +1,7 @@
-from asyncio import get_event_loop
 import asyncio
 from logging.config import fileConfig
-from sqlalchemy import engine_from_config
-from sqlalchemy import pool
+from sqlalchemy import engine_from_config, pool, inspect
+
 from sqlalchemy.ext.asyncio import AsyncEngine
 
 # import os, sys
@@ -25,9 +24,9 @@ fileConfig(config.config_file_name)
 # for 'autogenerate' support
 # from myapp import mymodel
 # target_metadata = mymodel.Base.metadata
-from app import models
+import app.models as app_models
 
-target_metadata = models.base.Base.metadata
+target_metadata = app_models.Base.metadata
 
 
 # other values from the config, defined by the needs of env.py,
@@ -69,7 +68,9 @@ def run_migrations_offline() -> None:
 
 def do_run_migrations(connection):
     context.configure(
-        connection=connection, target_metadata=target_metadata, compare_type=True
+        connection=connection,
+        target_metadata=target_metadata,
+        compare_type=True,
     )
 
     with context.begin_transaction():

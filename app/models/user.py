@@ -4,29 +4,41 @@ SQL Alchemy models declaration.
 Note, imported by alembic migrations logic, see `alembic/env.py`
 """
 
-from fastapi_users.db import (
-    SQLAlchemyBaseOAuthAccountTableUUID,
-    SQLAlchemyBaseUserTableUUID,
-)
-from sqlalchemy import Column, Float, Integer, String
+
+from sqlalchemy import Boolean, Column, Float, Integer, String
+from sqlalchemy.sql import expression
 from sqlalchemy.orm import relationship
-from app.models.base import Base
+from app.core.db.mixins.timestamp_mixin import TimestampMixin
+
+from app.models import Base
+from app.models.chat import ChatRoom, Message
+from app.models.guid import GUID
+import uuid
 
 
-class OAuthAccount(SQLAlchemyBaseOAuthAccountTableUUID, Base):
-    pass
+class User(TimestampMixin, Base):
+    __tablename__ = "user"
+    id = Column(GUID, primary_key=True, default=uuid.uuid4)
+    username: str = Column(String(100), nullable=False)
+    phone_number: str = Column(String(100), nullable=False)
+    is_superuser: bool = Column(
+        Boolean, server_default=expression.false(), nullable=False
+    )
+    profile_pic: str | None = Column(String(255), nullable=True)
+    bio: str | None = Column(String(100), nullable=True)
+    age: int | None = Column(Integer, nullable=True)
+    weight: int | None = Column(Integer, nullable=True)
+    longitude: float | None = Column(Float, nullable=True)
+    latitude: float | None = Column(Float, nullable=True)
+    workout_per_week: int | None = Column(Integer, nullable=True)
 
-
-class User(SQLAlchemyBaseUserTableUUID, Base):
-    oauth_accounts: list[OAuthAccount] = relationship("OAuthAccount", lazy="joined")
-    username: Column(String(100), nullable=False)
-    phone_number: Column(String(100), nullable=False)
-    profile_pic: Column(String(100))
-    bio: Column(String(100))
-    age: Column(Integer)
-    weight: Column(Integer)
-    longitude: Column(Float)
-    latitude: Column(Float)
-    last_active_at: Column(Integer)
-    workout_per_week: Column(Integer)
-    # TODO: Add relations
+    chat_room_members: list[ChatRoom] = relationship(
+        "ChatRoomMember",
+        cascade="save-update, merge, delete",
+        passive_deletes=True,
+    )
+    messages: list[Message] = relationship(
+        "Message",
+        cascade="save-update, merge, delete",
+        passive_deletes=True,
+    )

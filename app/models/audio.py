@@ -1,6 +1,6 @@
 from sqlalchemy import Column, Integer, String
 from sqlalchemy.orm import relationship
-from app.models.base import Base
+from app.models import Base
 from .hashtag import audio_hashtag_association_table
 
 # TODO: User relationship to be added

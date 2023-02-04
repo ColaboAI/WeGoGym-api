@@ -1,4 +1,3 @@
-from typing import Optional
 from pydantic import Json
 from sqlalchemy import select
 from sqlalchemy.orm import selectinload
@@ -8,7 +7,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.models.hashtag import Hashtag
 from app.models.audio import Audio
 from app.schemas import AudioRead, AudioCreate
-from app.session import get_async_session
+from app.session import get_db_transactional_session
 from app.utils.aws import s3_client, bucket_name
 from app.utils.ecs_log import logger
 
@@ -17,7 +16,9 @@ audio_router = APIRouter()
 
 
 @audio_router.get("/items", response_model=list[AudioRead])
-async def get_audio_items(session: AsyncSession = Depends(get_async_session)):
+async def get_audio_items(
+    session: AsyncSession = Depends(get_db_transactional_session),
+):
     stmt = select(Audio).options(selectinload(Audio.hashtag))
     result = await session.execute(stmt)
     return result.scalars().all()
@@ -25,10 +26,10 @@ async def get_audio_items(session: AsyncSession = Depends(get_async_session)):
 
 @audio_router.post("/upload", response_model=AudioRead, status_code=201)
 async def create_audio(
-    audio_file: Optional[UploadFile],
-    image_file: Optional[UploadFile],
+    audio_file: UploadFile | None,
+    image_file: UploadFile | None,
     metadata: Json[AudioCreate] = Form(...),
-    session: AsyncSession = Depends(get_async_session),
+    session: AsyncSession = Depends(get_db_transactional_session),
 ):
     audio_url = None
     image_url = None
