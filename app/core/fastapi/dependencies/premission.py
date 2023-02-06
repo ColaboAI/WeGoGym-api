@@ -3,7 +3,6 @@ from typing import Type
 from fastapi import Depends, Request
 from fastapi.openapi.models import APIKey, APIKeyIn
 from fastapi.security.base import SecurityBase
-import jwt
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import settings as config
