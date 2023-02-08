@@ -47,7 +47,7 @@ async def get_user_list(
 # TODO: get firebase token or user id and check if user exists
 # user profile image upload to s3
 @user_router.post(
-    "",
+    "/register",
     response_model=LoginResponse,
     responses={"400": {"model": ExceptionResponseSchema}},
     summary="Register New User",
