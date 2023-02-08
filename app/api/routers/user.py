@@ -12,7 +12,6 @@ from app.schemas.user import (
     LoginResponse,
     MyInfoRead,
     UserListRead,
-    UserRead,
     UserCreate,
     UserUpdate,
 )
