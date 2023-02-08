@@ -7,7 +7,7 @@ from app.api.routers.chat import chat_router
 from app.api.routers.auth import auth_router
 from app.api.routers.user import user_router
 
-api_router = APIRouter()
+api_router = APIRouter(prefix="/api/v1")
 
 
 @api_router.get("/")
