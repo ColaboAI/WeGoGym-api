@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, Form, Query, Request, UploadFile
+from fastapi import APIRouter, Body, Depends, Form, Query, Request, UploadFile
 from pydantic import Json
 from app.core.fastapi.dependencies.premission import (
     AllowAll,
@@ -72,9 +72,7 @@ async def create_user(
     description="Login with phone number and return tokens",
     responses={"404": {"model": ExceptionResponseSchema}},
 )
-async def login(
-    phone_number: str,
-):
+async def login(phone_number: str = Body(...)):
     token = await UserService().login(phone_number=phone_number)
     return {"token": token.token, "refresh_token": token.refresh_token}
 
