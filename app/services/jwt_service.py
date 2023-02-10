@@ -14,10 +14,13 @@ class JwtService:
     ) -> RefreshTokenSchema:
         token = TokenHelper.decode(token=token)
         refresh_token = TokenHelper.decode(token=refresh_token)
+
         if refresh_token.get("sub") != "refresh":
             raise DecodeTokenException
 
         return RefreshTokenSchema(
             token=TokenHelper.encode(payload={"user_id": token.get("user_id")}),
-            refresh_token=TokenHelper.encode(payload={"sub": "refresh"}),
+            refresh_token=TokenHelper.encode(
+                payload={"sub": "refresh"}, expire_period=60 * 60 * 24 * 30
+            ),
         )

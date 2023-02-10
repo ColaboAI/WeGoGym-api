@@ -86,7 +86,9 @@ class UserService:
 
         response = LoginResponse(
             token=TokenHelper.encode(payload={"user_id": str(user.id)}),
-            refresh_token=TokenHelper.encode(payload={"sub": "refresh"}),
+            refresh_token=TokenHelper.encode(
+                payload={"sub": "refresh"}, expire_period=60 * 60 * 24 * 30
+            ),
         )
         await self.session.close()
         return response
