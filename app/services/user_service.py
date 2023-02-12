@@ -82,7 +82,7 @@ class UserService:
         user = result.scalars().first()
 
         if not user:
-            raise UserNotFoundException
+            raise UserNotFoundException("User not found")
 
         response = LoginResponse(
             token=TokenHelper.encode(payload={"user_id": str(user.id)}),

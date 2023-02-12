@@ -45,24 +45,24 @@ class MyInfoRead(UserRead):
     bio: str | None
     weight: int | None
     workout_per_week: int | None
-    longitude: float | None
-    latitude: float | None
     created_at: datetime
     updated_at: datetime
     is_superuser: bool
 
 
 class UserCreate(CreateUpdateDictModel):
-    phone_number: str
-    username: str
+    phone_number: str = Field(..., description="Phone number: 01012345678")
+    username: str = Field(..., description="닉네임")
     is_superuser: bool = False
-    profile_pic: str | None = None
-    bio: str | None = None
-    age: int | None = None
-    weight: int | None = None
-    workout_per_week: int | None = None
-    longitude: float | None = None
-    latitude: float | None = None
+    age: int = Field(..., description="나이")
+    weight: int = Field(..., description="몸무게")
+    height: int = Field(..., description="키")
+    workout_per_week: int = Field(..., description="일주일에 몇 번 운동하는지")
+    workout_goal: str | None = Field(description="운동 목표 ex) '다이어트,체중 유지,근육량 증가'")
+    workout_level: str = Field(..., description="초급, 중급, 고급")
+    workout_time_per_day: str = Field(..., description="하루에 몇 시간 운동하는지")
+    workout_time_period: str = Field(..., description="오전, 오후, 저녁 등의 시간")
+    gender: str = Field(..., description="성별")
 
 
 class UserUpdate(CreateUpdateDictModel):
@@ -78,7 +78,7 @@ class UserUpdate(CreateUpdateDictModel):
 
 
 class LoginRequest(BaseModel):
-    phone_number: str = Field(..., description="Phone number: +821012345678")
+    phone_number: str = Field(..., description="Phone number: 01012345678")
 
 
 class LoginResponse(BaseModel):
