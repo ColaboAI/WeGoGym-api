@@ -5,7 +5,7 @@ Note, imported by alembic migrations logic, see `alembic/env.py`
 """
 
 
-from sqlalchemy import Boolean, Column, Float, Integer, String
+from sqlalchemy import Boolean, Column, Integer, String, text
 from sqlalchemy.sql import expression
 from sqlalchemy.orm import relationship
 from app.core.db.mixins.timestamp_mixin import TimestampMixin
@@ -26,11 +26,15 @@ class User(TimestampMixin, Base):
     )
     profile_pic: str | None = Column(String(255), nullable=True)
     bio: str | None = Column(String(100), nullable=True)
-    age: int | None = Column(Integer, nullable=True)
-    weight: int | None = Column(Integer, nullable=True)
-    longitude: float | None = Column(Float, nullable=True)
-    latitude: float | None = Column(Float, nullable=True)
-    workout_per_week: int | None = Column(Integer, nullable=True)
+    age: int = Column(Integer, server_default=text("0"), nullable=False)
+    weight: int = Column(Integer, server_default=text("0"), nullable=False)
+    height: int = Column(Integer, server_default=text("0"), nullable=False)
+    gender: str = Column(String(50), server_default="other", nullable=False)
+    workout_per_week: int = Column(Integer, server_default=text("0"), nullable=False)
+    workout_level: str | None = Column(String(100), nullable=True)
+    workout_goal: str | None = Column(String(255), nullable=True)
+    workout_time_per_day: str | None = Column(String(100), nullable=True)
+    workout_time_period: str | None = Column(String(50), nullable=True)
 
     chat_room_members: list[ChatRoom] = relationship(
         "ChatRoomMember",

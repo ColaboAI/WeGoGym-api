@@ -1,4 +1,4 @@
-from sqlalchemy import Boolean, Column, String, ForeignKey, DateTime, func, true
+from sqlalchemy import Boolean, Column, String, ForeignKey, DateTime, true
 from sqlalchemy.orm import relationship
 from app.core.db.mixins.timestamp_mixin import TimestampMixin
 from app.models import Base
