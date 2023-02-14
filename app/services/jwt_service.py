@@ -1,5 +1,5 @@
 from app.schemas.jwt import RefreshTokenSchema
-from app.core.exceptions.token import DecodeTokenException
+from app.core.exceptions.token import DecodeTokenException, ExpiredTokenException
 from app.utils.token_helper import TokenHelper
 
 
@@ -12,11 +12,15 @@ class JwtService:
         token: str,
         refresh_token: str,
     ) -> RefreshTokenSchema:
-        token = TokenHelper.decode(token=token)
+        try:
+            token = TokenHelper.decode(token=token)
+        except ExpiredTokenException:
+            token = TokenHelper.decode_expired_token(token=token)
+
         refresh_token = TokenHelper.decode(token=refresh_token)
 
         if refresh_token.get("sub") != "refresh":
-            raise DecodeTokenException
+            raise DecodeTokenException("Invalid refresh token")
 
         return RefreshTokenSchema(
             token=TokenHelper.encode(payload={"user_id": token.get("user_id")}),
