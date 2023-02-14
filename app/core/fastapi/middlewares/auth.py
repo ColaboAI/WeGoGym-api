@@ -8,8 +8,8 @@ from starlette.middleware.authentication import (
 )
 from starlette.requests import HTTPConnection
 
-from app.core.config import settings as config
-from app.services.user_service import UserService
+from app.core.exceptions import ExpiredTokenException
+from app.core.exceptions.token import DecodeTokenException
 from app.utils.token_helper import TokenHelper
 from ..schemas import CurrentUser
 
@@ -38,12 +38,12 @@ class AuthBackend(AuthenticationBackend):
                 credentials,
             )
             user_id = payload.get("user_id")
-            exp = payload.get("exp")
-            now = datetime.now().timestamp()
-            # Check if token is expired
-            if exp < now:
-                return False, current_user
+
         except jwt.exceptions.PyJWTError:
+            return False, current_user
+        except ExpiredTokenException:
+            return False, current_user
+        except DecodeTokenException:
             return False, current_user
 
         current_user.id = user_id
