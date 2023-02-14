@@ -19,7 +19,7 @@ import uuid
 class User(TimestampMixin, Base):
     __tablename__ = "user"
     id = Column(GUID, primary_key=True, default=uuid.uuid4)
-    username: str = Column(String(100), nullable=False)
+    username: str = Column(String(100), nullable=False, unique=True, index=True)
     phone_number: str = Column(String(100), nullable=False)
     is_superuser: bool = Column(
         Boolean, server_default=expression.false(), nullable=False
@@ -35,7 +35,8 @@ class User(TimestampMixin, Base):
     workout_goal: str | None = Column(String(255), nullable=True)
     workout_time_per_day: str | None = Column(String(100), nullable=True)
     workout_time_period: str | None = Column(String(50), nullable=True)
-
+    address: str | None = Column(String(255), nullable=True)
+    gym: str | None = Column(String(255), nullable=True)
     chat_room_members: list[ChatRoom] = relationship(
         "ChatRoomMember",
         cascade="save-update, merge, delete",

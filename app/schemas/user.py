@@ -18,6 +18,7 @@ class CreateUpdateDictModel(BaseModel):
                 "id",
                 "is_superuser",
                 "created_at",
+                "gender",
             },
         )
 
@@ -41,10 +42,18 @@ class UserListRead(BaseModel):
 
 class MyInfoRead(UserRead):
     phone_number: str
+    username: str
     age: int | None
     bio: str | None
-    weight: int | None
-    workout_per_week: int | None
+    weight: int
+    height: int
+    workout_per_week: int
+    workout_level: str
+    workout_goal: str | None
+    workout_time_per_day: str
+    workout_time_period: str
+    address: str | None
+    gym: str | None
     created_at: datetime
     updated_at: datetime
     is_superuser: bool
@@ -62,19 +71,23 @@ class UserCreate(CreateUpdateDictModel):
     workout_level: str = Field(..., description="초급, 중급, 고급")
     workout_time_per_day: str = Field(..., description="하루에 몇 시간 운동하는지")
     workout_time_period: str = Field(..., description="오전, 오후, 저녁 등의 시간")
-    gender: str = Field(..., description="성별")
 
 
 class UserUpdate(CreateUpdateDictModel):
     phone_number: str | None
-    username: str | None
-    profile_pic: str | None
-    bio: str | None
-    age: int | None
-    weight: int | None
-    workout_per_week: int | None
-    longitude: float | None
-    latitude: float | None
+    username: str | None = Field(description="닉네임")
+    bio: str | None = Field(description="자기소개")
+    age: int | None = Field(description="나이")
+    weight: int | None = Field(description="몸무게")
+    height: int | None = Field(description="키")
+    workout_per_week: int | None = Field(description="일주일에 몇 번 운동하는지")
+    workout_goal: str | None = Field(description="운동 목표 ex) '다이어트,체중 유지,근육량 증가'")
+    workout_level: str | None = Field(description="초급, 중급, 고급")
+    workout_time_per_day: str | None = Field(description="하루에 몇 시간 운동하는지")
+    workout_time_period: str | None = Field(description="오전, 오후, 저녁 등의 시간")
+    gender: str | None = Field(description="성별")
+    address: str | None = Field(description="주소")
+    gym: str | None = Field(description="헬스장 이름")
 
 
 class LoginRequest(BaseModel):
