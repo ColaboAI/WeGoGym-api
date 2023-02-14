@@ -28,9 +28,9 @@ class TokenHelper:
                 config.JWT_ALGORITHM,
             )
         except jwt.exceptions.DecodeError:
-            raise DecodeTokenException
+            raise DecodeTokenException("Invalid token")
         except jwt.exceptions.ExpiredSignatureError:
-            raise ExpiredTokenException
+            raise ExpiredTokenException("Token expired")
 
     @staticmethod
     def decode_expired_token(token: str) -> dict:
@@ -42,4 +42,4 @@ class TokenHelper:
                 options={"verify_exp": False},
             )
         except jwt.exceptions.DecodeError:
-            raise DecodeTokenException
+            raise DecodeTokenException("Invalid token")
