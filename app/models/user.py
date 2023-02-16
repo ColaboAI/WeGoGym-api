@@ -37,6 +37,7 @@ class User(TimestampMixin, Base):
     workout_time_period: str | None = Column(String(50), nullable=True)
     address: str | None = Column(String(255), nullable=True)
     gym: str | None = Column(String(255), nullable=True)
+    gym_address: str | None = Column(String(255), nullable=True)
     chat_room_members: list[ChatRoom] = relationship(
         "ChatRoomMember",
         cascade="save-update, merge, delete",
