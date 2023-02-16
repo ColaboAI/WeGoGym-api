@@ -1,4 +1,5 @@
 from uuid import UUID
+from fastapi import HTTPException
 
 from sqlalchemy import func, or_, select, and_
 
@@ -92,6 +93,15 @@ class UserService:
         )
         await self.session.close()
         return response
+
+
+async def delete_user_by_id(user_id: UUID, session: AsyncSession) -> User:
+    user = await get_my_info_by_id(user_id, session)
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    await session.delete(user)
+    await session.commit()
+    return user
 
 
 async def update_my_info_by_id(

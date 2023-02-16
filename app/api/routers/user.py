@@ -19,6 +19,7 @@ from app.services.aws_service import upload_image_to_s3
 from app.session import get_db_transactional_session
 from app.services.user_service import (
     UserService,
+    delete_user_by_id,
     get_my_info_by_id,
     update_my_info_by_id,
 )
@@ -62,6 +63,22 @@ async def create_user(
     token = await usr_svc.login(phone_number=create_req.phone_number)
 
     return {"token": token.token, "refresh_token": token.refresh_token}
+
+
+@user_router.delete(
+    "/unregister",
+    summary="Unregister user",
+    description="Unregister user From WeGoGym",
+    dependencies=[Depends(PermissionDependency([IsAuthenticated]))],
+)
+async def delete_user(
+    req: Request,
+    session: AsyncSession = Depends(get_db_transactional_session),
+):
+    print("delete user", req.__dict__)
+    await delete_user_by_id(req.user.id, session)
+
+    return {"message": f"User {req.user.id} deleted successfully"}
 
 
 # TODO: get firebase token or user id
