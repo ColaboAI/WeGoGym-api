@@ -1,3 +1,4 @@
+import uuid
 from sqlalchemy import Column, String, DateTime, Integer, ForeignKey, Boolean, Table
 from sqlalchemy.orm import relationship
 from app.core.db.mixins.timestamp_mixin import TimestampMixin
@@ -10,7 +11,7 @@ from app.utils.generics import utcnow
 class WorkoutPromise(TimestampMixin, Base):
     __tablename__ = "workout_promise"
     __mapper_args__ = {"eager_defaults": True}
-    id = Column(GUID, primary_key=True, index=True)
+    id = Column(GUID, primary_key=True, index=True, default=uuid.uuid4)
     title = Column(String, index=True)
     description = Column(String, index=True)
     max_participants = Column(Integer, default=3)
@@ -34,7 +35,7 @@ class WorkoutPromise(TimestampMixin, Base):
 class WorkoutParticipant(TimestampMixin, Base):
     __tablename__ = "workout_participant"
     __mapper_args__ = {"eager_defaults": True}
-    id = Column(GUID, primary_key=True, index=True)
+    id = Column(GUID, primary_key=True, index=True, default=uuid.uuid4)
     name = Column(String, index=True)
     # 참여신청 시, 상태메세지를 입력할 수 있음
     # 참여 후에는 상태메세지로 참여자의 운동 등의 상태를 알 수 있음
@@ -75,17 +76,17 @@ gym_info_facility_association = Table(
 class GymInfo(TimestampMixin, Base):
     __tablename__ = "gym_info"
     __mapper_args__ = {"eager_defaults": True}
-    id = Column(GUID, primary_key=True, index=True)
+    id = Column(GUID, primary_key=True, index=True, default=uuid.uuid4)
     # 헬스장 이름
     name = Column(String, index=True, nullable=False)
     # 사용자가 직접 등록한 헬스장인지 여부
     is_custom_gym = Column(Boolean, default=False)
     # 도로명 주소
-    address = Column(String, index=True, nullable=False)
+    address = Column(String, index=True, nullable=False, unique=True)
     # 우편번호
     zip_code = Column(String)
     # 영업 상태
-    status: str = Column(String)
+    status = Column(String)
 
     # Parent relationship (Many to One)
     users = relationship(
@@ -106,7 +107,7 @@ class GymInfo(TimestampMixin, Base):
 
 class GymFacility(Base):
     __tablename__ = "gym_facility"
-    id = Column(GUID, primary_key=True, index=True)
+    id = Column(GUID, primary_key=True, index=True, default=uuid.uuid4)
     name = Column(String, index=True, nullable=False, unique=True)
     description = Column(String, index=True)
 
@@ -123,7 +124,7 @@ class GymFacility(Base):
 # class Workout(TimestampMixin, Base):
 #     __tablename__ = "workout"
 #     __mapper_args__ = {"eager_defaults": True}
-#     id = Column(GUID, primary_key=True, index=True)
+#     id = Column(GUID, primary_key=True, index=True, default=uuid.uuid4)
 #     name = Column(String, index=True, nullable=False)
 #     description = Column(String, index=True)
 #     category = Column(String, index=True, nullable=False)

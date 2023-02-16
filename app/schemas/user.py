@@ -7,6 +7,8 @@ import json
 import uuid
 from pydantic import BaseModel, Field
 
+from app.schemas.workout_promise import GymInfoBase, GymInfoRead
+
 
 class CreateUpdateDictModel(BaseModel):
     def create_update_dict(self):
@@ -54,11 +56,9 @@ class MyInfoRead(UserRead):
     workout_time_per_day: str
     workout_time_period: str
     address: str | None
-    gym: str | None
-    gym_address: str | None
     created_at: datetime
     updated_at: datetime
-    is_superuser: bool
+    gym_info: GymInfoRead | None
 
 
 class UserCreate(CreateUpdateDictModel):
@@ -89,8 +89,7 @@ class UserUpdate(CreateUpdateDictModel):
     workout_time_period: str | None = Field(description="오전, 오후, 저녁 등의 시간")
     gender: str | None = Field(description="성별")
     address: str | None = Field(description="주소")
-    gym: str | None = Field(description="헬스장 이름")
-    gym_address: str | None = Field(description="헬스장 주소")
+    gym_info: GymInfoBase | None = Field(None, description="헬스장 정보")
 
     @classmethod
     def __get_validators__(cls):
