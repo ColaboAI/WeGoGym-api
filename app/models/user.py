@@ -5,7 +5,7 @@ Note, imported by alembic migrations logic, see `alembic/env.py`
 """
 
 
-from sqlalchemy import Boolean, Column, Integer, String, text
+from sqlalchemy import Boolean, Column, ForeignKey, Integer, String, text
 from sqlalchemy.sql import expression
 from sqlalchemy.orm import relationship
 from app.core.db.mixins.timestamp_mixin import TimestampMixin
@@ -14,6 +14,8 @@ from app.models import Base
 from app.models.chat import ChatRoom, Message
 from app.models.guid import GUID
 import uuid
+
+from app.models.workout_promise import GymInfo, WorkoutParticipant
 
 
 class User(TimestampMixin, Base):
@@ -36,15 +38,32 @@ class User(TimestampMixin, Base):
     workout_time_per_day: str | None = Column(String(100), nullable=True)
     workout_time_period: str | None = Column(String(50), nullable=True)
     address: str | None = Column(String(255), nullable=True)
-    gym: str | None = Column(String(255), nullable=True)
-    gym_address: str | None = Column(String(255), nullable=True)
+
+    # Child relationship with GymInfo many
+    gym_info_id: str | None = Column(
+        GUID, ForeignKey("gym_info.id", ondelete="SET NULL"), nullable=True
+    )
+    gym_info: list[GymInfo] = relationship("GymInfo", back_populates="users")
+
+    # Parent relationship with ChatRoomMember (Many to "One")
     chat_room_members: list[ChatRoom] = relationship(
         "ChatRoomMember",
+        back_populates="user",
         cascade="save-update, merge, delete",
         passive_deletes=True,
     )
+    # Parent relationship with Message (Many to "One")
     messages: list[Message] = relationship(
         "Message",
+        back_populates="user",
+        cascade="save-update, merge, delete",
+        passive_deletes=True,
+    )
+
+    # Parent relationship with WorkoutParticipant (Many to "One")
+    workout_participants: list[WorkoutParticipant] = relationship(
+        "WorkoutParticipant",
+        back_populates="user",
         cascade="save-update, merge, delete",
         passive_deletes=True,
     )

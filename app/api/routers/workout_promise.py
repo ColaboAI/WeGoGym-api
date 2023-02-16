@@ -15,11 +15,11 @@ from app.schemas.workout_promise import (
 from app.session import get_db_transactional_session
 from sqlalchemy import select
 
-workout_router = APIRouter()
+workout_promise_router = APIRouter()
 
 # 운동 약속 정보 조회 엔드포인트
-@workout_router.get(
-    "/workout-promises",
+@workout_promise_router.get(
+    "",
     response_model=list[WorkoutPromiseRead],
     dependencies=[Depends(PermissionDependency([IsAuthenticated]))],
 )
@@ -29,8 +29,8 @@ async def get_workout_promise(session: Session = Depends(get_db_transactional_se
 
 
 # 운동 약속 정보 생성 엔드포인트
-@workout_router.post(
-    "/workout-promises",
+@workout_promise_router.post(
+    "",
     response_model=WorkoutPromiseRead,
     dependencies=[Depends(PermissionDependency([IsAuthenticated]))],
 )
@@ -46,7 +46,7 @@ async def create_workout_promise(
 
 
 # 운동 약속에 참여하기
-@workout_router.post("/workout-promises/{workout_promise_id}/participants")
+@workout_promise_router.post("/{workout_promise_id}/participants")
 async def join_workout_promise(
     workout_promise_id: int,
     user_id: int,
@@ -78,7 +78,7 @@ async def join_workout_promise(
 
 
 # 운동 약속에 참여 취소하기
-@workout_router.delete("/workout-promises/{workout_promise_id}/participants")
+@workout_promise_router.delete("/{workout_promise_id}/participants")
 async def leave_workout_promise(
     workout_promise_id: int,
     user_id: int,
@@ -97,8 +97,8 @@ async def leave_workout_promise(
 
 
 # 운동 약속 정보 수정 엔드포인트
-@workout_router.patch(
-    "/workout-promises/{workout_promise_id}",
+@workout_promise_router.patch(
+    "/{workout_promise_id}",
     response_model=WorkoutPromiseRead,
     dependencies=[Depends(PermissionDependency([IsAuthenticated]))],
 )
@@ -120,9 +120,9 @@ async def update_workout_promise(
 
 
 # 방장이 참여자 상태 관리 (참여자 승인, 참여자 거절, 참여자 강퇴)
-@workout_router.patch(
-    "/workout-promises/{workout_promise_id}/participants/{user_id}",
-    response_model=WorkoutParticipant,
+@workout_promise_router.patch(
+    "/{workout_promise_id}/participants/{user_id}",
+    response_model=WorkoutParticipantBase,
     dependencies=[Depends(PermissionDependency([IsAuthenticated]))],
 )
 async def update_workout_promise_participant(
