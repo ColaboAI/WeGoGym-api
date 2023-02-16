@@ -98,7 +98,7 @@ async def update_my_info_by_id(
     user_id: UUID, update_req: UserUpdate, session: AsyncSession
 ) -> User:
     user = await get_my_info_by_id(user_id, session)
-    for k, v in update_req.dict().items():
+    for k, v in update_req.dict(exclude_unset=True).items():
         if v is not None:
             setattr(user, k, v)
 
