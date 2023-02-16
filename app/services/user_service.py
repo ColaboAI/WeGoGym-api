@@ -4,6 +4,7 @@ from fastapi import HTTPException
 from sqlalchemy import func, or_, select, and_
 
 from app.models import User
+from app.models.workout_promise import GymInfo
 from app.schemas import LoginResponse
 from app.core.exceptions import (
     DuplicatePhoneNumberOrUsernameException,
@@ -13,6 +14,7 @@ from app.schemas.user import UserUpdate
 from app.utils.token_helper import TokenHelper
 from app.session import transactional_session_factory
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import selectinload
 
 # User service: user adaptor for sqlalchemy
 class UserService:
@@ -110,7 +112,20 @@ async def update_my_info_by_id(
     user = await get_my_info_by_id(user_id, session)
     for k, v in update_req.dict(exclude_unset=True).items():
         if v is not None:
-            setattr(user, k, v)
+            if k == "gym_info":
+                if user.gym_info is not None:
+                    gym_info = user.gym_info
+                    if v["address"] == gym_info.address:
+                        continue
+
+                stmt = select(GymInfo).where(GymInfo.address == v["address"])
+                result = await session.execute(stmt)
+                gym_info = result.scalars().first()
+                if gym_info is None:
+                    gym_info = GymInfo(**v)
+                user.gym_info = gym_info
+            else:
+                setattr(user, k, v)
 
     session.add(user)
     await session.commit()
@@ -119,7 +134,9 @@ async def update_my_info_by_id(
 
 
 async def get_my_info_by_id(user_id: UUID, session: AsyncSession) -> User:
-    result = await session.execute(select(User).where(User.id == user_id))
+    result = await session.execute(
+        select(User).options(selectinload(User.gym_info)).where(User.id == user_id)
+    )
     user = result.scalars().first()
     if not user:
         raise UserNotFoundException

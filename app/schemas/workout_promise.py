@@ -1,7 +1,24 @@
 from datetime import datetime
 from enum import Enum
+from uuid import UUID
 
 from pydantic import BaseModel
+
+
+class GymInfoBase(BaseModel):
+    name: str
+    address: str
+    zip_code: str | None
+    status: str | None
+
+
+class GymInfoRead(GymInfoBase):
+    id: UUID
+    created_at: datetime
+    updated_at: datetime
+
+    class Config:
+        orm_mode = True
 
 
 class ParticipantStatus(str, Enum):

@@ -39,11 +39,9 @@ class User(TimestampMixin, Base):
     workout_time_period: str | None = Column(String(50), nullable=True)
     address: str | None = Column(String(255), nullable=True)
 
-    # Child relationship with GymInfo many
-    gym_info_id: str | None = Column(
-        GUID, ForeignKey("gym_info.id", ondelete="SET NULL"), nullable=True
-    )
-    gym_info: list[GymInfo] = relationship("GymInfo", back_populates="users")
+    # Child relationship with GymInfo ("many" to one)
+    gym_info_id = Column(GUID, ForeignKey("gym_info.id", ondelete="SET NULL"))
+    gym_info = relationship("GymInfo", back_populates="users")
 
     # Parent relationship with ChatRoomMember (Many to "One")
     chat_room_members: list[ChatRoom] = relationship(
