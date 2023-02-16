@@ -3,10 +3,9 @@ All fields in schemas are defaults from FastAPI Users, repeated below for easier
 """
 
 from datetime import datetime
+import json
 import uuid
 from pydantic import BaseModel, Field
-
-from app.schemas.chat import MessageRead
 
 
 class CreateUpdateDictModel(BaseModel):
@@ -19,6 +18,7 @@ class CreateUpdateDictModel(BaseModel):
                 "is_superuser",
                 "created_at",
                 "gender",
+                "phone_number",
             },
         )
 
@@ -45,6 +45,7 @@ class MyInfoRead(UserRead):
     username: str
     age: int | None
     bio: str | None
+    gender: str
     weight: int
     height: int
     workout_per_week: int
@@ -54,6 +55,7 @@ class MyInfoRead(UserRead):
     workout_time_period: str
     address: str | None
     gym: str | None
+    gym_address: str | None
     created_at: datetime
     updated_at: datetime
     is_superuser: bool
@@ -74,7 +76,7 @@ class UserCreate(CreateUpdateDictModel):
 
 
 class UserUpdate(CreateUpdateDictModel):
-    phone_number: str | None
+    profile_pic: str | None = Field(description="기존 프로필 사진")
     username: str | None = Field(description="닉네임")
     bio: str | None = Field(description="자기소개")
     age: int | None = Field(description="나이")
@@ -88,6 +90,17 @@ class UserUpdate(CreateUpdateDictModel):
     gender: str | None = Field(description="성별")
     address: str | None = Field(description="주소")
     gym: str | None = Field(description="헬스장 이름")
+    gym_address: str | None = Field(description="헬스장 주소")
+
+    @classmethod
+    def __get_validators__(cls):
+        yield cls.validate_to_json
+
+    @classmethod
+    def validate_to_json(cls, value):
+        if isinstance(value, str):
+            return cls(**json.loads(value))
+        return value
 
 
 class LoginRequest(BaseModel):

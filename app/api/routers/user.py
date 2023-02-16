@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Body, Depends, Form, Query, Request, UploadFile
+from fastapi import APIRouter, Body, Depends, File, Form, Query, Request, UploadFile
 from pydantic import Json
 from app.core.fastapi.dependencies.premission import (
     AllowAll,
@@ -6,7 +6,6 @@ from app.core.fastapi.dependencies.premission import (
     IsAuthenticated,
     PermissionDependency,
 )
-from app.models.user import User
 from app.schemas import ExceptionResponseSchema
 from app.schemas.user import (
     LoginResponse,
@@ -94,23 +93,23 @@ async def get_my_info(
     return user
 
 
-@user_router.put(
+@user_router.patch(
     "/me",
     response_model=MyInfoRead,
     summary="Update My Info",
     description="Update my info with token",
     dependencies=[Depends(PermissionDependency([IsAuthenticated]))],
 )
-async def put_my_info(
+async def patch_my_info(
     req: Request,
-    update_req: Json[UserUpdate] = Form(...),
-    profile_image: UploadFile | None = None,
+    data: UserUpdate = Body(...),
+    file: UploadFile | None = File(None, description="새로운 프로필 사진"),
     session: AsyncSession = Depends(get_db_transactional_session),
 ):
-    img_url: str = (
-        upload_image_to_s3(profile_image, req.user.id) if profile_image else None
-    )
+    img_url: str = upload_image_to_s3(file, req.user.id) if file else None
     if img_url:
-        update_req.profile_pic = img_url
-    user = await update_my_info_by_id(req.user.id, update_req, session)
+        data.profile_pic = img_url
+    else:
+        del data.profile_pic
+    user = await update_my_info_by_id(req.user.id, data, session)
     return user
