@@ -12,18 +12,26 @@ class WorkoutPromise(TimestampMixin, Base):
     __tablename__ = "workout_promise"
     __mapper_args__ = {"eager_defaults": True}
     id = Column(GUID, primary_key=True, index=True, default=uuid.uuid4)
-    title = Column(String, index=True)
-    description = Column(String, index=True)
+    title = Column(String, index=True, nullable=False)
+    description = Column(String, index=True, nullable=False)
     max_participants = Column(Integer, default=3)
     is_private = Column(Boolean, default=False)
 
     recruit_end_time = Column(DateTime, index=True)
+    # TODO: workout_id and related table should be added
     promise_time = Column(DateTime, index=True, server_default=utcnow())
 
     # Child table (Many to One), no relationship
-    admin_user_id = Column(GUID, ForeignKey("user.id", ondelete="SET NULL"))
+    admin_user_id = Column(
+        GUID,
+        ForeignKey("user.id", ondelete="SET NULL"),
+    )
 
-    # Parent relationship (Many to One)
+    # 1:1 relationship
+    chat_room_id = Column(GUID, ForeignKey("chat_room.id", ondelete="SET NULL"))
+    chat_room = relationship("ChatRoom", back_populates="workout_promise")
+
+    # Parent relationship (Many to "One")
     participants = relationship(
         "WorkoutParticipant",
         back_populates="workout_promise",
@@ -37,21 +45,32 @@ class WorkoutParticipant(TimestampMixin, Base):
     __mapper_args__ = {"eager_defaults": True}
     id = Column(GUID, primary_key=True, index=True, default=uuid.uuid4)
     name = Column(String, index=True)
-    # 참여신청 시, 상태메세지를 입력할 수 있음
-    # 참여 후에는 상태메세지로 참여자의 운동 등의 상태를 알 수 있음
-    status_message = Column(String)
+
     # 참여 여부, 승인 여부
     status = Column(String, default=ParticipantStatus.PENDING, index=True)
 
-    # Child table(Many to one)
+    # 참여신청 시, 상태메세지를 입력할 수 있음
+    # 참여 후에는 상태메세지로 참여자의 운동 등의 상태를 알 수 있음
+    status_message = Column(String)
+    is_admin = Column(Boolean, default=False, nullable=False)
+
+    # ("Many" to one)
     user_id = Column(GUID, ForeignKey("user.id", ondelete="CASCADE"))
     user = relationship("User", back_populates="workout_participants")
 
-    # Child table(Many to one)
+    # ("Many" to one)
     workout_promise_id = Column(
         GUID, ForeignKey("workout_promise.id", ondelete="SET NULL")
     )
     workout_promise = relationship("WorkoutPromise", back_populates="participants")
+
+    # 1:1 relationship child
+    chat_room_member_id = Column(
+        GUID, ForeignKey("chat_room_member.id", ondelete="SET NULL")
+    )
+    chat_room_member = relationship(
+        "ChatRoomMember", back_populates="workout_participant"
+    )
 
 
 # Many to Many
@@ -73,7 +92,7 @@ gym_info_facility_association = Table(
 )
 
 
-class GymInfo(TimestampMixin, Base):
+class GymInfo(TimestampMixin, Base):  # type: ignore
     __tablename__ = "gym_info"
     __mapper_args__ = {"eager_defaults": True}
     id = Column(GUID, primary_key=True, index=True, default=uuid.uuid4)
@@ -88,7 +107,7 @@ class GymInfo(TimestampMixin, Base):
     # 영업 상태
     status = Column(String)
 
-    # Parent relationship (Many to One)
+    # Parent relationship (Many to "One")
     users = relationship(
         "User",
         back_populates="gym_info",

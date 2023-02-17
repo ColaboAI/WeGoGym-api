@@ -1,7 +1,7 @@
 from sqlalchemy import Boolean, Column, String, ForeignKey, DateTime, true
 from sqlalchemy.orm import relationship
 from app.core.db.mixins.timestamp_mixin import TimestampMixin
-from app.models import Base
+from app.models import Base, workout_promise
 import uuid
 from app.models.guid import GUID
 from app.utils.generics import utcnow
@@ -18,13 +18,22 @@ class ChatRoomMember(TimestampMixin, Base):
         GUID, ForeignKey("chat_room.id", ondelete="CASCADE"), nullable=False
     )
 
-    user = relationship("User", back_populates="chat_room_members")
-    user_id = Column(GUID, ForeignKey("user.id", ondelete="CASCADE"), nullable=False)
-
     left_at = Column(DateTime, server_default=utcnow(), nullable=True)
     is_admin = Column(Boolean, default=False, nullable=False)
     last_read_message_id = Column(GUID, nullable=True)
     last_read_at = Column(DateTime, server_default=utcnow(), nullable=False)
+
+    user = relationship("User", back_populates="chat_room_members")
+    user_id = Column(GUID, ForeignKey("user.id", ondelete="CASCADE"), nullable=False)
+
+    # 1:1 relationship with workout_participant
+    workout_participant = relationship(
+        "WorkoutParticipant",
+        back_populates="chat_room_member",
+        cascade="save-update, merge, delete",
+        passive_deletes=True,
+        uselist=False,
+    )
 
 
 class ChatRoom(TimestampMixin, Base):
@@ -48,6 +57,15 @@ class ChatRoom(TimestampMixin, Base):
         back_populates="chat_room",
         cascade="save-update, merge, delete",
         passive_deletes=True,
+    )
+
+    # 1:1 relationship with workout_promise (deactivate collection)
+    workout_promise = relationship(
+        "WorkoutPromise",
+        back_populates="chat_room",
+        cascade="save-update, merge, delete",
+        passive_deletes=True,
+        uselist=False,
     )
 
 
