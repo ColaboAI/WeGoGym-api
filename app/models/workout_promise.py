@@ -21,7 +21,7 @@ class WorkoutPromise(TimestampMixin, Base):
     # TODO: workout_id and related table should be added
     promise_time = Column(DateTime, index=True, server_default=utcnow())
 
-    # Child table (Many to One), no relationship
+    # Child table (One to "Many"), no relationship, one direction
     admin_user_id = Column(
         GUID,
         ForeignKey("user.id", ondelete="SET NULL"),
@@ -76,6 +76,7 @@ class WorkoutParticipant(TimestampMixin, Base):
 
 
 # Many to Many
+# TODO: 하나가 지워지면 다른 하나도 지워지지 않도록 수정
 gym_info_facility_association = Table(
     "gym_info_facility_association_table",
     Base.metadata,
@@ -124,13 +125,11 @@ class GymInfo(TimestampMixin, Base):  # type: ignore
         cascade="save-update, merge, delete",
         passive_deletes=True,
     )
-    # (Many to Many)
+    # (Many to Many, 삭제시 cascade 안함.)
     facilities = relationship(
         "GymFacility",
         secondary=gym_info_facility_association,
         back_populates="gym_infos",
-        cascade="save-update, merge, delete",
-        passive_deletes=True,
     )
 
 
@@ -145,8 +144,6 @@ class GymFacility(Base):
         "GymInfo",
         secondary=gym_info_facility_association,
         back_populates="facilities",
-        cascade="save-update, merge, delete",
-        passive_deletes=True,
     )
 
 
