@@ -1,4 +1,5 @@
-from fastapi import APIRouter, Depends, HTTPException
+from uuid import UUID
+from fastapi import APIRouter, Body, Depends, HTTPException
 from sqlalchemy.orm import Session
 from app.core.fastapi.dependencies.premission import (
     IsAuthenticated,
@@ -8,9 +9,13 @@ from app.models import WorkoutPromise
 from app.models.workout_promise import WorkoutParticipant
 from app.schemas.workout_promise import (
     WorkoutParticipantBase,
-    WorkoutPromiseCreate,
+    WorkoutPromiseBase,
     WorkoutPromiseRead,
     WorkoutPromiseUpdate,
+)
+from app.services.workout_promise_service import (
+    create_workout_participant,
+    get_workout_promise_by_id,
 )
 from app.session import get_db_transactional_session
 from sqlalchemy import select
@@ -24,7 +29,8 @@ workout_promise_router = APIRouter()
     dependencies=[Depends(PermissionDependency([IsAuthenticated]))],
 )
 async def get_workout_promise(session: Session = Depends(get_db_transactional_session)):
-    exercises = session.execute(select(WorkoutPromise)).scalars().all()
+    exercises = await session.execute(select(WorkoutPromise)).scalars().all()
+
     return exercises
 
 
@@ -35,7 +41,7 @@ async def get_workout_promise(session: Session = Depends(get_db_transactional_se
     dependencies=[Depends(PermissionDependency([IsAuthenticated]))],
 )
 async def create_workout_promise(
-    workout_promise: WorkoutPromiseCreate,
+    workout_promise: WorkoutPromiseBase,
     db: Session = Depends(get_db_transactional_session),
 ):
     db_exercise = WorkoutPromise(**workout_promise.dict())
@@ -46,54 +52,38 @@ async def create_workout_promise(
 
 
 # 운동 약속에 참여하기
-@workout_promise_router.post("/{workout_promise_id}/participants")
+@workout_promise_router.post(
+    "/{workout_promise_id}/participants",
+    response_model=WorkoutParticipantBase,
+)
 async def join_workout_promise(
-    workout_promise_id: int,
-    user_id: int,
+    workout_promise_id: UUID,
+    req_body: WorkoutParticipantBase = Body(...),
     db: Session = Depends(get_db_transactional_session),
 ):
 
-    stmt = select(WorkoutPromise).where(WorkoutPromise.id == workout_promise_id)
-    exercise = db.execute(stmt).scalars().first()
-    if not exercise:
-        raise HTTPException(status_code=404, detail="Workout Promise is not found")
-    if len(exercise.participants) >= exercise.max_participants:
-        raise HTTPException(status_code=400, detail="Workout Promise is full")
-
-    stmt = select(WorkoutParticipant).where(
-        WorkoutParticipant.exercise_id == workout_promise_id,
-        WorkoutParticipant.user_id == user_id,
+    db_workout_participant = create_workout_participant(
+        workout_promise_id, req_body, db
     )
-    participant = db.execute(stmt).scalars().first()
-
-    if participant:
-        raise HTTPException(status_code=400, detail="Already joined participant")
-    new_participant = WorkoutParticipant(
-        user_id=user_id, workout_promise_id=workout_promise_id
-    )
-    db.add(new_participant)
-    await db.commit()
-    await db.refresh(new_participant)
-    return new_participant
+    return db_workout_participant
 
 
 # 운동 약속에 참여 취소하기
-@workout_promise_router.delete("/{workout_promise_id}/participants")
+@workout_promise_router.delete("/{workout_promise_id}/participants/{user_id}")
 async def leave_workout_promise(
-    workout_promise_id: int,
-    user_id: int,
+    workout_promise_id: UUID,
+    user_id: UUID,
     db: Session = Depends(get_db_transactional_session),
 ):
-    stmt = select(WorkoutParticipant).where(
-        WorkoutParticipant.exercise_id == workout_promise_id,
-        WorkoutParticipant.user_id == user_id,
+    db_workout_promise = await get_workout_promise_by_id(workout_promise_id, db)
+
+    db_workout_participant = await get_workout_participant_by_id(
+        db_workout_promise, user_id, db
     )
-    participant = db.execute(stmt).scalars().first()
-    if not participant:
-        raise HTTPException(status_code=404, detail="Participant is not found")
-    await db.delete(participant)
+
+    db.delete(db_workout_participant)
     await db.commit()
-    return {"message": "Successfully deleted"}
+    return {"message": "success"}
 
 
 # 운동 약속 정보 수정 엔드포인트
