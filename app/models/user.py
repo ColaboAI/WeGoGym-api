@@ -63,3 +63,9 @@ class User(TimestampMixin, Base):  # type: ignore
         cascade="save-update, merge, delete",
         passive_deletes=True,
     )
+
+    # Parent relationship with WorkoutPromise (One to Many) (Admin)
+    # What promises this user has made or is Admin of
+    admin_workout_promises: list[WorkoutParticipant] = relationship(
+        "WorkoutPromise",
+    )
