@@ -2,6 +2,7 @@ from datetime import datetime
 from enum import Enum
 from uuid import UUID
 from pydantic import BaseModel, Field
+from app.models import workout_promise
 from app.schemas.chat import ChatRoomMemberRead, ChatRoomRead
 
 
@@ -13,10 +14,29 @@ class ParticipantStatus(str, Enum):
 
 
 class GymInfoBase(BaseModel):
-    name: str
-    address: str
-    zip_code: str | None
-    status: str | None
+    name: str = Field(..., min_length=1, max_length=100)
+    address: str = Field(..., min_length=1, max_length=100)
+    zip_code: str | None = Field(None, min_length=1, max_length=100)
+    status: str | None = Field(None)
+
+
+class GymInfoUpdate(BaseModel):
+    name: str | None = Field(None, min_length=1, max_length=100)
+    address: str | None = Field(None, min_length=1, max_length=100)
+    zip_code: str | None = Field(None, min_length=1, max_length=100)
+    status: str | None = Field(None)
+
+    def get_update_dict(self):
+        return self.dict(
+            exclude_unset=True,
+            exclude={
+                "id",
+                "created_at",
+                "updated_at",
+                "address",
+                "zip_code",
+            },
+        )
 
 
 class GymInfoRead(GymInfoBase):
@@ -28,31 +48,6 @@ class GymInfoRead(GymInfoBase):
         orm_mode = True
 
 
-class UpdateDictModel(BaseModel):
-    def get_update_dict(self):
-        return self.dict(
-            exclude_unset=True,
-            exclude={
-                "id",
-                "created_at",
-                "updated_at",
-                "user_id",
-                "workout_promise_id",
-                "chat_room_member_id",
-                "status",
-                "is_admin",
-            },
-        )
-
-
-class WorkoutParticipantUpdate(UpdateDictModel):
-    name: str | None = Field(None, min_length=1, max_length=100)
-    status: ParticipantStatus | None = Field(None)
-    status_message: str | None = Field(
-        None,
-    )
-
-
 class WorkoutPromiseBase(BaseModel):
     title: str = Field(..., min_length=1, max_length=100)
     description: str = Field(..., min_length=1, max_length=1000)
@@ -61,6 +56,7 @@ class WorkoutPromiseBase(BaseModel):
     promise_time: datetime = Field(...)
     recruit_end_time: datetime | None = Field(None, description="Recruit end time")
     admin_user_id: UUID = Field(..., description="Admin User ID")
+    gym_info_id: UUID | None = Field(None, description="Gym Info ID")
 
 
 class WorkoutPromiseRead(WorkoutPromiseBase):
@@ -68,22 +64,42 @@ class WorkoutPromiseRead(WorkoutPromiseBase):
     chat_room_id: UUID | None
     chat_room: ChatRoomRead | None
 
-    participants: list["WorkoutParticipantRead"]
     created_at: datetime
     updated_at: datetime
+
+    gym_info: GymInfoRead | None
+    participants: list["WorkoutParticipantRead"]
 
     class Config:
         orm_mode = True
 
 
 # id -> from path parameter
-class WorkoutPromiseUpdate(WorkoutPromiseBase):
+class WorkoutPromiseUpdate(BaseModel):
     title: str | None = Field(None, min_length=1, max_length=100)
     description: str | None = Field(None, min_length=1, max_length=1000)
+    is_private: bool = Field(False, description="Is Private workout promise?")
 
     max_participants: int | None = Field(None, ge=1, le=10)
     promise_time: datetime | None = Field(None, description="Promise datetime")
     recruit_end_time: datetime | None = Field(None, description="Recruit end datetime")
+    admin_user_id: UUID | None = Field(None, description="New Admin User ID")
+    gym_info_id: UUID | None = Field(None, description="Gym Info ID")
+
+    def get_update_dict(self):
+        return self.dict(
+            exclude_unset=True,
+            exclude={
+                "id",
+                "created_at",
+                "updated_at",
+                "chat_room_id",
+                "participants",
+                "gym_info",
+                "chat_room",
+                "chat_room_id",
+            },
+        )
 
 
 class WorkoutParticipantBase(BaseModel):
@@ -97,33 +113,40 @@ class WorkoutParticipantBase(BaseModel):
         None, description="Status message of participant"
     )
     is_admin: bool = Field(False, description="Is admin of Promise")
-
     user_id: UUID = Field(..., description="User ID of participant")
-    workout_promise_id: UUID = Field(..., description="Workout Promise ID")
 
 
 class WorkoutParticipantRead(WorkoutParticipantBase):
     id: UUID
     chat_room_member_id: UUID | None
-
+    workout_promise_id: UUID | None
     created_at: datetime
     updated_at: datetime
-
-    # workout_promise: WorkoutPromiseRead
-    # chat_room_member: ChatRoomMemberRead
 
     class Config:
         orm_mode = True
 
 
-class WorkoutParticipantUpdate(WorkoutParticipantBase):
+class WorkoutParticipantUpdate(BaseModel):
+    name: str | None = Field(None, min_length=1, max_length=100)
     status: ParticipantStatus | None = Field(None)
     status_message: str | None = Field(
         None, description="Status message of participant"
     )
 
-    user_id: None = None
-    workout_promise_id: None = None
+    def get_update_dict(self):
+        return self.dict(
+            exclude_unset=True,
+            exclude={
+                "id",
+                "created_at",
+                "updated_at",
+                "user_id",
+                "chat_room_member_id",
+                "status",
+                "is_admin",
+            },
+        )
 
 
 WorkoutPromiseRead.update_forward_refs()
