@@ -15,29 +15,27 @@ from app.models.chat import ChatRoom, Message
 from app.models.guid import GUID
 import uuid
 
-from app.models.workout_promise import GymInfo, WorkoutParticipant
+from app.models.workout_promise import WorkoutParticipant
 
 
-class User(TimestampMixin, Base):
+class User(TimestampMixin, Base):  # type: ignore
     __tablename__ = "user"
     id = Column(GUID, primary_key=True, default=uuid.uuid4)
-    username: str = Column(String(100), nullable=False, unique=True, index=True)
-    phone_number: str = Column(String(100), nullable=False)
-    is_superuser: bool = Column(
-        Boolean, server_default=expression.false(), nullable=False
-    )
-    profile_pic: str | None = Column(String(255), nullable=True)
-    bio: str | None = Column(String(100), nullable=True)
-    age: int = Column(Integer, server_default=text("0"), nullable=False)
-    weight: int = Column(Integer, server_default=text("0"), nullable=False)
-    height: int = Column(Integer, server_default=text("0"), nullable=False)
-    gender: str = Column(String(50), server_default="other", nullable=False)
-    workout_per_week: int = Column(Integer, server_default=text("0"), nullable=False)
-    workout_level: str | None = Column(String(100), nullable=True)
-    workout_goal: str | None = Column(String(255), nullable=True)
-    workout_time_per_day: str | None = Column(String(100), nullable=True)
-    workout_time_period: str | None = Column(String(50), nullable=True)
-    address: str | None = Column(String(255), nullable=True)
+    username = Column(String(100), nullable=False, unique=True, index=True)
+    phone_number = Column(String(100), nullable=False)
+    is_superuser = Column(Boolean, server_default=expression.false(), nullable=False)
+    profile_pic = Column(String(255), nullable=True)
+    bio = Column(String(100), nullable=True)
+    age = Column(Integer, server_default=text("0"), nullable=False)
+    weight = Column(Integer, server_default=text("0"), nullable=False)
+    height = Column(Integer, server_default=text("0"), nullable=False)
+    gender = Column(String(50), server_default="other", nullable=False)
+    workout_per_week = Column(Integer, server_default=text("0"), nullable=False)
+    workout_level = Column(String(100), nullable=True)
+    workout_goal = Column(String(255), nullable=True)
+    workout_time_per_day = Column(String(100), nullable=True)
+    workout_time_period = Column(String(50), nullable=True)
+    address = Column(String(255), nullable=True)
 
     # Child relationship with GymInfo ("many" to one)
     gym_info_id = Column(GUID, ForeignKey("gym_info.id", ondelete="SET NULL"))
