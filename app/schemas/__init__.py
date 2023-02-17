@@ -23,11 +23,9 @@ __all__ = [
     "ParticipantStatus",
     "WorkoutParticipantBase",
     "WorkoutParticipantRead",
-    "WorkoutParticipantCreate",
     "WorkoutParticipantUpdate",
     "WorkoutPromiseBase",
     "WorkoutPromiseRead",
-    "WorkoutPromiseCreate",
     "WorkoutPromiseUpdate",
 ]
 
