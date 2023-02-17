@@ -31,6 +31,8 @@ class WorkoutPromise(TimestampMixin, Base):
     chat_room_id = Column(GUID, ForeignKey("chat_room.id", ondelete="SET NULL"))
     chat_room = relationship("ChatRoom", back_populates="workout_promise")
 
+    gym_info_id = Column(GUID, ForeignKey("gym_info.id", ondelete="SET NULL"))
+    gym_info = relationship("GymInfo", back_populates="workout_promises")
     # Parent relationship (Many to "One")
     participants = relationship(
         "WorkoutParticipant",
@@ -106,6 +108,14 @@ class GymInfo(TimestampMixin, Base):  # type: ignore
     zip_code = Column(String)
     # 영업 상태
     status = Column(String)
+
+    # (Many to "one") with workout_promise
+    workout_promises = relationship(
+        "WorkoutPromise",
+        back_populates="gym_info",
+        cascade="save-update, merge, delete",
+        passive_deletes=True,
+    )
 
     # Parent relationship (Many to "One")
     users = relationship(
