@@ -1,16 +1,17 @@
 from sqlalchemy import Column, DateTime
-from sqlalchemy.ext.declarative import declared_attr
+from sqlalchemy.orm import declared_attr, declarative_mixin
 
 from app.utils.generics import utcnow
 
 
+@declarative_mixin
 class TimestampMixin:
     @declared_attr
-    def created_at(cls):
+    def created_at(cls) -> Column[DateTime]:
         return Column(DateTime, server_default=utcnow(), nullable=False)
 
     @declared_attr
-    def updated_at(cls):
+    def updated_at(cls) -> Column[DateTime]:
         return Column(
             DateTime,
             server_default=utcnow(),

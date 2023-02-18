@@ -1,6 +1,6 @@
 from sqlalchemy.orm import declarative_base, DeclarativeMeta
 
-Base: DeclarativeMeta = declarative_base()
+Base: DeclarativeMeta = declarative_base()  # type: ignore
 
 Base.metadata.naming_convention = {
     "ix": "ix_%(column_0_label)s",
