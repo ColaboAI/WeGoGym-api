@@ -17,11 +17,11 @@ from app.core.fastapi.middlewares import (
 
 def init_router(app_: FastAPI) -> None:
     app_.include_router(api_router)
-    app_.include_router(chat_ws_router, tags="websocket_chat")
+    app_.include_router(chat_ws_router)
 
 
 def init_cache() -> None:
-    Cache.init(backend=RedisBackend(), key_maker=CustomKeyMaker())
+    Cache.init(backend=RedisBackend(), key_maker=CustomKeyMaker())  # type: ignore
 
 
 def init_listeners(app_: FastAPI) -> None:

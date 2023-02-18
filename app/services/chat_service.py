@@ -11,7 +11,6 @@ from aioredis.client import Redis, PubSub
 from app.core.helpers.redis import get_redis_conn
 from dataclasses import asdict, dataclass
 from sqlalchemy.ext.asyncio import AsyncSession
-from app.models.guid import GUID
 from sqlalchemy.orm import selectinload
 from starlette.websockets import WebSocketState
 
@@ -20,8 +19,8 @@ class ChatService:
     def __init__(
         self,
         websocket: WebSocket,
-        chat_room_id: GUID,
-        user_id: GUID,
+        chat_room_id: str,
+        user_id: str,
         session: AsyncSession,
     ):
         super().__init__()
@@ -30,6 +29,7 @@ class ChatService:
         self.user_id = user_id
         self.get_redis_conn = get_redis_conn
         self.session = session
+        self.conn = None
 
     async def publish_handler(self, conn: Redis):
         try:
@@ -83,12 +83,13 @@ class ChatService:
                     await self.ws.accept()
         except Exception as e:
             logger.debug(e)
-            await self.websocket.close()
-            await self.conn.close()
+            await self.ws.close()
+            if self.conn:
+                await self.conn.close()
 
     async def run(self):
         conn: Redis = await self.get_redis_conn()
-
+        self.conn = conn
         pubsub: PubSub = conn.pubsub()
 
         tasks = [self.publish_handler(conn), self.subscribe_handler(pubsub)]
@@ -106,8 +107,8 @@ class ChatService:
 
 @dataclass(slots=True)
 class ChatMessage:
-    chat_room_id: GUID
-    user_id: GUID
+    chat_room_id: str
+    user_id: str
     created_at: str
     text: str
 
@@ -123,7 +124,10 @@ async def get_user_mem_with_ids(
         ChatRoomMember.chat_room_id == room_id, ChatRoomMember.user_id == user_id
     )
     result = await session.execute(stmt)
-    return result.scalars().first()
+    data = result.scalars().first()
+    if data is None:
+        raise HTTPException(status_code=404, detail="User not in room")
+    return data
 
 
 async def get_chat_room_and_members_by_id(chat_room_id: str, session: AsyncSession):
@@ -155,7 +159,7 @@ async def get_chat_room_mems_list_by_user_id(
         .order_by(ChatRoomMember.created_at.desc())
         .where(ChatRoomMember.user_id == user_id)
     )
-    total = (
+    total_stmt = (
         select(func.count(ChatRoomMember.id))
         .select_from(ChatRoomMember)
         .where(ChatRoomMember.user_id == user_id)
@@ -164,7 +168,7 @@ async def get_chat_room_mems_list_by_user_id(
         stmt = stmt.offset(offset)
     if limit:
         stmt = stmt.limit(limit)
-    total = await session.execute(total)
+    total = await session.execute(total_stmt)
     result = await session.execute(stmt)
     return total.scalars().first(), result.scalars().all()
 
@@ -177,38 +181,31 @@ async def get_public_chat_room_list(
     stmt = (
         select(ChatRoom)
         .order_by(ChatRoom.created_at.desc())
-        .where(ChatRoom.is_private == False)
+        .where(ChatRoom.is_private.is_(False))
     )
-    total = (
+    total_stmt = (
         select(func.count(ChatRoom.id))
         .select_from(ChatRoom)
-        .where(ChatRoom.is_private == False)
+        .where(ChatRoom.is_private.is_(False))
     )
     if offset:
         stmt = stmt.offset(offset)
     if limit:
         stmt = stmt.limit(limit)
-    total = await session.execute(total)
+    total = await session.execute(total_stmt)
 
     result = await session.execute(stmt)
     return total.scalars().first(), result.scalars().all()
 
 
-async def make_chat_room(user_id: GUID, session: AsyncSession):
-    chat_room = ChatRoom(user_id=user_id)
-    session.add(chat_room)
-    await session.commit()
-    return chat_room
-
-
-async def make_chat_room_member(user_id: GUID, room_id: GUID, session: AsyncSession):
+async def make_chat_room_member(user_id: str, room_id: str, session: AsyncSession):
     chat_room_member = ChatRoomMember(user_id=user_id, chat_room_id=room_id)
     session.add(chat_room_member)
     await session.commit()
     return chat_room_member
 
 
-async def delete_chat_room_member(user_id: GUID, room_id: GUID, session: AsyncSession):
+async def delete_chat_room_member(user_id: str, room_id: str, session: AsyncSession):
     stmt = text(
         "DELETE FROM chat_room_members WHERE user_id = :user_id AND chat_room_id = :room_id"
     )
@@ -216,14 +213,14 @@ async def delete_chat_room_member(user_id: GUID, room_id: GUID, session: AsyncSe
     await session.commit()
 
 
-async def delete_chat_room(room_id: GUID, session: AsyncSession):
+async def delete_chat_room(room_id: str, session: AsyncSession):
     stmt = text("DELETE FROM chat_rooms WHERE id = :room_id")
 
     await session.execute(stmt, {"room_id": room_id})
     await session.commit()
 
 
-async def get_chat_room_members(room_id: GUID, session: AsyncSession):
+async def get_chat_room_members(room_id: str, session: AsyncSession):
 
     stmt = text("SELECT user_id FROM chat_room_members WHERE chat_room_id = :room_id")
 
@@ -231,7 +228,7 @@ async def get_chat_room_members(room_id: GUID, session: AsyncSession):
     return result.fetchall()
 
 
-async def get_chat_room_members_count(room_id: GUID, session: AsyncSession):
+async def get_chat_room_members_count(room_id: str, session: AsyncSession):
 
     stmt = text("SELECT COUNT(*) FROM chat_room_members WHERE chat_room_id = :room_id")
 
@@ -239,14 +236,17 @@ async def get_chat_room_members_count(room_id: GUID, session: AsyncSession):
     return result.fetchone()
 
 
-async def get_user_by_id(user_id: GUID, session: AsyncSession) -> User:
+async def get_user_by_id(user_id: str, session: AsyncSession) -> User:
     stmt = select(User).where(User.id == user_id)
     result = await session.execute(stmt)
-    return result.fetchone()
+    usr: User | None = result.scalars().first()
+    if usr is None:
+        raise HTTPException(status_code=404, detail="User not found")
+    return usr
 
 
 async def post_chat_message(
-    user_id: GUID, room_id: GUID, message: str, session: AsyncSession
+    user_id: str, room_id: str, message: str, session: AsyncSession
 ):
     # get user from db
     # user = await get_user_by_id(user_id, session)
@@ -260,12 +260,13 @@ async def post_chat_message(
 
 
 async def get_chat_messages(
-    room_id: GUID,
-    last_read_at: datetime,
     session: AsyncSession,
+    room_id: str,
+    last_read_at: datetime | None = None,
     limit: int = 10,
     offset: int | None = None,
 ):
+    # last_read_at = None인 경우는 처음 메시지를 읽는 경우
     stmt = (
         select(Message)
         .where(
@@ -274,10 +275,10 @@ async def get_chat_messages(
         )
         .order_by(Message.created_at.desc(), Message.id.desc())
     )
-    total = select(func.count(Message.id)).where(
+    total_stmt = select(func.count(Message.id)).where(
         Message.chat_room_id == room_id, Message.created_at > last_read_at
     )
-    total = await session.execute(total)
+    total = await session.execute(total_stmt)
     if offset:
         stmt = stmt.offset(offset)
     if limit:
@@ -288,7 +289,7 @@ async def get_chat_messages(
 
 
 async def update_last_read_at_by_mem_id(
-    session: AsyncSession, chat_room_member_id: GUID
+    session: AsyncSession, chat_room_member_id: str
 ):
     stmt = select(ChatRoomMember).where(ChatRoomMember.id == chat_room_member_id)
     result = await session.execute(stmt)
@@ -302,7 +303,7 @@ async def update_last_read_at_by_mem_id(
 
 
 async def delete_chat_room_member_by_id(
-    session: AsyncSession, chat_room_member_id: GUID, user_id: GUID
+    session: AsyncSession, chat_room_member_id: str, user_id: str
 ):
 
     stmt = text(
@@ -315,7 +316,7 @@ async def delete_chat_room_member_by_id(
 
 
 async def delete_chat_room_member_admin_by_id(
-    session: AsyncSession, chat_room_member_id: GUID, admin_id: GUID, chat_room_id: GUID
+    session: AsyncSession, chat_room_member_id: str, admin_id: str, chat_room_id: str
 ):
 
     admin_mem = await get_user_mem_with_ids(admin_id, chat_room_id, session)

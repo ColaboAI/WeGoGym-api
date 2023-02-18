@@ -1,5 +1,4 @@
-from datetime import datetime
-from typing import Optional, Tuple
+from uuid import UUID
 
 import jwt
 from starlette.authentication import AuthenticationBackend
@@ -15,11 +14,9 @@ from ..schemas import CurrentUser
 
 
 class AuthBackend(AuthenticationBackend):
-    async def authenticate(
-        self, conn: HTTPConnection
-    ) -> Tuple[bool, Optional[CurrentUser]]:
+    async def authenticate(self, conn: HTTPConnection):
         current_user = CurrentUser(is_superuser=False)
-        authorization: str = conn.headers.get("Authorization")
+        authorization: str | None = conn.headers.get("Authorization")
         if not authorization:
             return False, current_user
 
@@ -37,7 +34,7 @@ class AuthBackend(AuthenticationBackend):
             payload = TokenHelper.decode(
                 credentials,
             )
-            user_id = payload.get("user_id")
+            user_id: UUID | None = payload.get("user_id")
 
         except jwt.exceptions.PyJWTError:
             return False, current_user
@@ -45,7 +42,8 @@ class AuthBackend(AuthenticationBackend):
             return False, current_user
         except DecodeTokenException:
             return False, current_user
-
+        if not user_id:
+            return False, current_user
         current_user.id = user_id
         return True, current_user
 

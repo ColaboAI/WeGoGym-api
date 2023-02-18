@@ -1,5 +1,4 @@
-from fastapi import APIRouter, Body, Depends, File, Form, Query, Request, UploadFile
-from pydantic import Json
+from fastapi import APIRouter, Body, Depends, File, Query, Request, UploadFile
 from app.core.fastapi.dependencies.premission import (
     AllowAll,
     IsAdmin,
@@ -26,6 +25,7 @@ from app.services.user_service import (
 from sqlalchemy.ext.asyncio import AsyncSession
 
 user_router = APIRouter()
+
 
 # For testing?
 @user_router.get(
@@ -123,7 +123,7 @@ async def patch_my_info(
     file: UploadFile | None = File(None, description="새로운 프로필 사진"),
     session: AsyncSession = Depends(get_db_transactional_session),
 ):
-    img_url: str = upload_image_to_s3(file, req.user.id) if file else None
+    img_url = upload_image_to_s3(file, req.user.id) if file else None
     if img_url:
         data.profile_pic = img_url
     else:

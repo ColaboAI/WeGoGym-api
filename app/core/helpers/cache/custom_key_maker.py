@@ -6,7 +6,7 @@ from .base import BaseKeyMaker
 
 class CustomKeyMaker(BaseKeyMaker):
     async def make(self, function: Callable, prefix: str) -> str:
-        path = f"{prefix}::{inspect.getmodule(function).__name__}.{function.__name__}"
+        path = f"{prefix}::{inspect.getmodule(function).__name__}.{function.__name__}"  # type: ignore
         args = ""
 
         for arg in inspect.signature(function).parameters.values():
@@ -15,4 +15,4 @@ class CustomKeyMaker(BaseKeyMaker):
         if args:
             return f"{path}.{args}"
 
-        return
+        return path
