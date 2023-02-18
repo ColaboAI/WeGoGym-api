@@ -1,6 +1,8 @@
 from .base import *
 from .token import *
 from .user import *
+from .chat import *
+from .workout_promise import *
 
 __all__ = [
     "CustomException",
@@ -15,4 +17,12 @@ __all__ = [
     "PasswordDoesNotMatchException",
     "DuplicateEmailOrNicknameException",
     "UserNotFoundException",
+    "WorkoutPromiseNotFoundException",
+    "WorkoutParticipantNotFoundException",
+    "AlreadyJoinedWorkoutPromiseException",
+    "WorkoutPromiseIsFullException",
+    "WorkoutPromiseIsWrongException",
+    "GymInfoNotFoundException",
+    "WorkoutPromiseAlreadyExistException",
+    "NotAdminOfWorkoutPromiseException",
 ]

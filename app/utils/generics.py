@@ -1,11 +1,10 @@
-from sqlalchemy import TIMESTAMP, TypeDecorator
-from sqlalchemy.sql import expression
+from sqlalchemy.sql.functions import FunctionElement
 from sqlalchemy.ext.compiler import compiles
 from sqlalchemy.types import DateTime
 
 
-class utcnow(expression.FunctionElement):
-    type = DateTime()
+class utcnow(FunctionElement):
+    type = DateTime()  # type: ignore
     inherit_cache = True
 
 
