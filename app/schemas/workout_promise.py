@@ -2,8 +2,7 @@ from datetime import datetime
 from enum import Enum
 from uuid import UUID
 from pydantic import BaseModel, Field
-from app.models import workout_promise
-from app.schemas.chat import ChatRoomMemberRead, ChatRoomRead
+from app.schemas.chat import ChatRoomRead
 
 
 class ParticipantStatus(str, Enum):
@@ -56,7 +55,6 @@ class WorkoutPromiseBase(BaseModel):
     promise_time: datetime = Field(...)
     recruit_end_time: datetime | None = Field(None, description="Recruit end time")
     admin_user_id: UUID = Field(..., description="Admin User ID")
-    gym_info_id: UUID | None = Field(None, description="Gym Info ID")
 
 
 class WorkoutPromiseRead(WorkoutPromiseBase):
@@ -68,6 +66,7 @@ class WorkoutPromiseRead(WorkoutPromiseBase):
     updated_at: datetime
 
     gym_info: GymInfoRead | None
+    gym_info_id: UUID | None
     participants: list["WorkoutParticipantRead"]
 
     class Config:
@@ -84,7 +83,7 @@ class WorkoutPromiseUpdate(BaseModel):
     promise_time: datetime | None = Field(None, description="Promise datetime")
     recruit_end_time: datetime | None = Field(None, description="Recruit end datetime")
     admin_user_id: UUID | None = Field(None, description="New Admin User ID")
-    gym_info_id: UUID | None = Field(None, description="Gym Info ID")
+    gym_info: GymInfoBase | None = Field(None)
 
     def get_update_dict(self):
         return self.dict(
@@ -94,10 +93,8 @@ class WorkoutPromiseUpdate(BaseModel):
                 "created_at",
                 "updated_at",
                 "chat_room_id",
-                "participants",
-                "gym_info",
-                "chat_room",
-                "chat_room_id",
+                "admin_user_id",
+                "gym_info_id",
             },
         )
 
@@ -133,7 +130,9 @@ class WorkoutParticipantUpdate(BaseModel):
     status_message: str | None = Field(
         None, description="Status message of participant"
     )
+    is_admin: bool = Field(False, description="Is admin of Promise")
 
+    # TODO: make is_admin updateable only by workout_promise admin
     def get_update_dict(self):
         return self.dict(
             exclude_unset=True,
@@ -150,3 +149,11 @@ class WorkoutParticipantUpdate(BaseModel):
 
 
 WorkoutPromiseRead.update_forward_refs()
+
+
+class BaseListResponse(BaseModel):
+    total: int | None
+
+
+class WorkoutPromiseListResponse(BaseListResponse):
+    items: list[WorkoutPromiseRead]

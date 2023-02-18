@@ -1,37 +1,44 @@
 from uuid import UUID
-from fastapi import APIRouter, Body, Depends, HTTPException
-from sqlalchemy.orm import Session
+from fastapi import APIRouter, Body, Depends, Request
+from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.fastapi.dependencies.premission import (
     IsAuthenticated,
     PermissionDependency,
 )
-from app.models import WorkoutPromise
-from app.models.workout_promise import WorkoutParticipant
 from app.schemas.workout_promise import (
+    GymInfoBase,
     WorkoutParticipantBase,
+    WorkoutParticipantUpdate,
     WorkoutPromiseBase,
+    WorkoutPromiseListResponse,
     WorkoutPromiseRead,
     WorkoutPromiseUpdate,
 )
 from app.services.workout_promise_service import (
     create_workout_participant,
-    get_workout_promise_by_id,
+    create_workout_promise,
+    delete_workout_participant,
+    get_workout_promise_list,
+    update_workout_participant_,
+    update_workout_promise_by_id,
 )
 from app.session import get_db_transactional_session
-from sqlalchemy import select
 
 workout_promise_router = APIRouter()
 
 # 운동 약속 정보 조회 엔드포인트
 @workout_promise_router.get(
     "",
-    response_model=list[WorkoutPromiseRead],
+    response_model=WorkoutPromiseListResponse,
     dependencies=[Depends(PermissionDependency([IsAuthenticated]))],
 )
-async def get_workout_promise(session: Session = Depends(get_db_transactional_session)):
-    exercises = await session.execute(select(WorkoutPromise)).scalars().all()
-
-    return exercises
+async def get_workout_promise(
+    session: AsyncSession = Depends(get_db_transactional_session),
+    limit: int = 10,
+    offset: int = 0,
+):
+    wp = await get_workout_promise_list(session, limit, offset)
+    return wp
 
 
 # 운동 약속 정보 생성 엔드포인트
@@ -40,15 +47,13 @@ async def get_workout_promise(session: Session = Depends(get_db_transactional_se
     response_model=WorkoutPromiseRead,
     dependencies=[Depends(PermissionDependency([IsAuthenticated]))],
 )
-async def create_workout_promise(
-    workout_promise: WorkoutPromiseBase,
-    db: Session = Depends(get_db_transactional_session),
+async def make_new_workout_promise(
+    workout_promise: WorkoutPromiseBase = Body(...),
+    gym_info: GymInfoBase = Body(...),
+    db: AsyncSession = Depends(get_db_transactional_session),
 ):
-    db_exercise = WorkoutPromise(**workout_promise.dict())
-    db.add(db_exercise)
-    await db.commit()
-    await db.refresh(db_exercise)
-    return db_exercise
+    db_workout_promise = create_workout_promise(db, workout_promise, gym_info)
+    return db_workout_promise
 
 
 # 운동 약속에 참여하기
@@ -59,13 +64,10 @@ async def create_workout_promise(
 async def join_workout_promise(
     workout_promise_id: UUID,
     req_body: WorkoutParticipantBase = Body(...),
-    db: Session = Depends(get_db_transactional_session),
+    db: AsyncSession = Depends(get_db_transactional_session),
 ):
-
-    db_workout_participant = create_workout_participant(
-        workout_promise_id, req_body, db
-    )
-    return db_workout_participant
+    db_w_pp = await create_workout_participant(db, workout_promise_id, req_body)
+    return db_w_pp
 
 
 # 운동 약속에 참여 취소하기
@@ -73,17 +75,12 @@ async def join_workout_promise(
 async def leave_workout_promise(
     workout_promise_id: UUID,
     user_id: UUID,
-    db: Session = Depends(get_db_transactional_session),
+    db: AsyncSession = Depends(get_db_transactional_session),
 ):
-    db_workout_promise = await get_workout_promise_by_id(workout_promise_id, db)
 
-    db_workout_participant = await get_workout_participant_by_id(
-        db_workout_promise, user_id, db
-    )
+    msg = await delete_workout_participant(db, workout_promise_id, user_id)
 
-    db.delete(db_workout_participant)
-    await db.commit()
-    return {"message": "success"}
+    return msg
 
 
 # 운동 약속 정보 수정 엔드포인트
@@ -93,20 +90,16 @@ async def leave_workout_promise(
     dependencies=[Depends(PermissionDependency([IsAuthenticated]))],
 )
 async def update_workout_promise(
-    workout_promise_id: int,
-    workout_promise: WorkoutPromiseUpdate,
-    db: Session = Depends(get_db_transactional_session),
+    workout_promise_id: UUID,
+    workout_promise: WorkoutPromiseUpdate = Body(...),
+    gym_info: GymInfoBase = Body(...),
+    db: AsyncSession = Depends(get_db_transactional_session),
 ):
-    stmt = select(WorkoutPromise).where(WorkoutPromise.id == workout_promise_id)
-    exercise = db.execute(stmt).scalars().first()
-    if not exercise:
-        raise HTTPException(status_code=404, detail="Workout Promise is not found")
-    exercise.title = workout_promise.title
-    exercise.description = workout_promise.description
-    exercise.max_participants = workout_promise.max_participants
-    await db.commit()
-    await db.refresh(exercise)
-    return exercise
+
+    updated_w_p = await update_workout_promise_by_id(
+        db, workout_promise_id, workout_promise, gym_info
+    )
+    return updated_w_p
 
 
 # 방장이 참여자 상태 관리 (참여자 승인, 참여자 거절, 참여자 강퇴)
@@ -115,28 +108,15 @@ async def update_workout_promise(
     response_model=WorkoutParticipantBase,
     dependencies=[Depends(PermissionDependency([IsAuthenticated]))],
 )
-async def update_workout_promise_participant(
-    workout_promise_id: int,
-    user_id: int,
-    status: WorkoutParticipantBase,
-    db: Session = Depends(get_db_transactional_session),
+async def update_workout_participant(
+    req: Request,
+    workout_promise_id: UUID,
+    user_id: UUID,
+    update_req: WorkoutParticipantUpdate = Body(...),
+    db: AsyncSession = Depends(get_db_transactional_session),
 ):
 
-    stmt = select(WorkoutParticipant).where(
-        WorkoutParticipant.exercise_id == workout_promise_id,
-        WorkoutParticipant.user_id == user_id,
+    updated_w_pp = update_workout_participant_(
+        db, req.user.id, workout_promise_id, user_id, update_req
     )
-    participant = db.execute(stmt).scalars().first()
-    if not participant:
-        raise HTTPException(status_code=404, detail="Participant is not found")
-    if status == "accept":
-        participant.status = "accept"
-    elif status == "reject":
-        participant.status = "reject"
-    elif status == "kick":
-        participant.status = "kick"
-    else:
-        raise HTTPException(status_code=400, detail="Invalid status")
-    await db.commit()
-    await db.refresh(participant)
-    return participant
+    return updated_w_pp
