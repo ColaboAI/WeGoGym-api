@@ -5,6 +5,7 @@ Note, imported by alembic migrations logic, see `alembic/env.py`
 """
 
 
+from typing import TYPE_CHECKING
 from sqlalchemy import Boolean, Column, ForeignKey, Integer, String, text
 from sqlalchemy.sql import expression
 from sqlalchemy.orm import relationship
@@ -16,6 +17,9 @@ from app.models.guid import GUID
 import uuid
 
 from app.models.workout_promise import WorkoutParticipant
+
+if TYPE_CHECKING:
+    from app.models import GymInfo
 
 
 class User(TimestampMixin, Base):  # type: ignore
@@ -39,7 +43,7 @@ class User(TimestampMixin, Base):  # type: ignore
 
     # Child relationship with GymInfo ("many" to one)
     gym_info_id = Column(GUID, ForeignKey("gym_info.id", ondelete="SET NULL"))
-    gym_info = relationship("GymInfo", back_populates="users")
+    gym_info: "GymInfo" = relationship("GymInfo", back_populates="users")
 
     # Parent relationship with ChatRoomMember (Many to "One")
     chat_room_members: list[ChatRoom] = relationship(

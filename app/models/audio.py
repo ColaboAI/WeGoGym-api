@@ -13,6 +13,6 @@ class Audio(Base):
     artist_name = Column(String(100), nullable=False)
     audio_url = Column(String(256), nullable=False)
     cover_image_url = Column(String(256), nullable=False)
-    hashtag = relationship(
+    hashtag = relationship(  # type: ignore
         "Hashtag", secondary=audio_hashtag_association_table, back_populates="audio"
     )

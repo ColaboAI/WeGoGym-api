@@ -15,6 +15,6 @@ class Hashtag(Base):
     __tablename__ = "hashtag"
     id = Column(Integer, primary_key=True, index=True)
     name = Column(String(100), nullable=False, unique=True)
-    audio = relationship(
+    audio = relationship(  # type: ignore
         "Audio", secondary=audio_hashtag_association_table, back_populates="hashtag"
     )

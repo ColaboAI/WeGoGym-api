@@ -1,3 +1,4 @@
+from typing import TYPE_CHECKING
 import uuid
 from sqlalchemy import Column, String, DateTime, Integer, ForeignKey, Boolean, Table
 from sqlalchemy.orm import relationship
@@ -7,6 +8,11 @@ from app.models.guid import GUID
 from app.schemas import ParticipantStatus
 from app.utils.generics import utcnow
 
+if TYPE_CHECKING:
+    # if the target of the relationship is in another module
+    # that cannot normally be imported at runtime
+    from . import ChatRoom, User, ChatRoomMember
+
 
 class WorkoutPromise(TimestampMixin, Base):
     __tablename__ = "workout_promise"
@@ -14,7 +20,7 @@ class WorkoutPromise(TimestampMixin, Base):
     id = Column(GUID, primary_key=True, index=True, default=uuid.uuid4)
     title = Column(String, index=True, nullable=False)
     description = Column(String, index=True, nullable=False)
-    max_participants = Column(Integer, default=3)
+    max_participants = Column(Integer, default=3, nullable=False)
     is_private = Column(Boolean, default=False)
 
     recruit_end_time = Column(DateTime, index=True)
@@ -29,12 +35,12 @@ class WorkoutPromise(TimestampMixin, Base):
 
     # 1:1 relationship
     chat_room_id = Column(GUID, ForeignKey("chat_room.id", ondelete="SET NULL"))
-    chat_room = relationship("ChatRoom", back_populates="workout_promise")
+    chat_room: "ChatRoom" = relationship("ChatRoom", back_populates="workout_promise")
 
     gym_info_id = Column(GUID, ForeignKey("gym_info.id", ondelete="SET NULL"))
-    gym_info = relationship("GymInfo", back_populates="workout_promises")
+    gym_info: "GymInfo" = relationship("GymInfo", back_populates="workout_promises")
     # Parent relationship (Many to "One")
-    participants = relationship(
+    participants: list["WorkoutParticipant"] = relationship(
         "WorkoutParticipant",
         back_populates="workout_promise",
         cascade="save-update, merge, delete",
@@ -58,19 +64,21 @@ class WorkoutParticipant(TimestampMixin, Base):
 
     # ("Many" to one)
     user_id = Column(GUID, ForeignKey("user.id", ondelete="CASCADE"))
-    user = relationship("User", back_populates="workout_participants")
+    user: list["User"] = relationship("User", back_populates="workout_participants")
 
     # ("Many" to one)
     workout_promise_id = Column(
         GUID, ForeignKey("workout_promise.id", ondelete="SET NULL")
     )
-    workout_promise = relationship("WorkoutPromise", back_populates="participants")
+    workout_promise: WorkoutPromise = relationship(
+        "WorkoutPromise", back_populates="participants"
+    )
 
     # 1:1 relationship child
     chat_room_member_id = Column(
         GUID, ForeignKey("chat_room_member.id", ondelete="SET NULL")
     )
-    chat_room_member = relationship(
+    chat_room_member: "ChatRoomMember" = relationship(
         "ChatRoomMember", back_populates="workout_participant"
     )
 
@@ -111,7 +119,7 @@ class GymInfo(TimestampMixin, Base):  # type: ignore
     status = Column(String)
 
     # (Many to "one") with workout_promise
-    workout_promises = relationship(
+    workout_promises: list[WorkoutPromise] = relationship(
         "WorkoutPromise",
         back_populates="gym_info",
         cascade="save-update, merge, delete",
@@ -119,14 +127,14 @@ class GymInfo(TimestampMixin, Base):  # type: ignore
     )
 
     # Parent relationship (Many to "One")
-    users = relationship(
+    users: list["User"] = relationship(
         "User",
         back_populates="gym_info",
         cascade="save-update, merge, delete",
         passive_deletes=True,
     )
     # (Many to Many, 삭제시 cascade 안함.)
-    facilities = relationship(
+    facilities: list["GymFacility"] = relationship(
         "GymFacility",
         secondary=gym_info_facility_association,
         back_populates="gym_infos",
@@ -140,7 +148,7 @@ class GymFacility(Base):
     description = Column(String, index=True)
 
     # (Many to Many)
-    gym_infos = relationship(
+    gym_infos: list[GymInfo] = relationship(
         "GymInfo",
         secondary=gym_info_facility_association,
         back_populates="facilities",
