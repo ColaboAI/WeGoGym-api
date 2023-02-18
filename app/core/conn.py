@@ -3,20 +3,20 @@ from fastapi import WebSocket
 
 class ConnectionManager:
     def __init__(self):
-        self.actice_connections: dict[str, WebSocket] = {}
+        self.active_connections: dict[str, WebSocket] = {}
 
-    async def connect(self, websocket: WebSocket):
+    async def connect(self, key: str, websocket: WebSocket):
         await websocket.accept()
-        self.actice_connections[websocket] = websocket
+        self.active_connections[key] = websocket
 
-    def disconnect(self, websocket: WebSocket):
-        del self.actice_connections[websocket]
+    def disconnect(self, key: str):
+        del self.active_connections[key]
 
     async def send_personal_message(self, message: str, websocket: WebSocket):
         await websocket.send_text(message)
 
     async def broadcast(self, message: str):
-        for connection in self.actice_connections.values():
+        for connection in self.active_connections.values():
             await connection.send_json(message, mode="text")
 
 

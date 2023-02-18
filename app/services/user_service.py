@@ -18,7 +18,7 @@ from sqlalchemy.orm import selectinload
 
 # User service: user adaptor for sqlalchemy
 class UserService:
-    session: AsyncSession | None = None
+    session: AsyncSession
 
     def __init__(self):
         self.session_maker = transactional_session_factory
@@ -27,20 +27,20 @@ class UserService:
         self,
         limit: int = 10,
         offset: int | None = None,
-    ) -> list[User]:
+    ) -> tuple[int | None, list[User]]:
         self.session: AsyncSession = self.session_maker()
         query = select(User).order_by(User.created_at.desc())
-        total = select(func.count("*")).select_from(User)
+        total = select(func.count()).select_from(User)
 
         if offset:
             query = query.offset(offset)
 
         if limit:
             query = query.limit(limit)
-        total = await self.session.execute(total)
+        total_res = await self.session.execute(total)
         result = await self.session.execute(query)
         await self.session.close()
-        return total.scalars().first(), result.scalars().all()
+        return total_res.scalars().first(), result.scalars().all()
 
     async def create_user(self, phone_number: str, username: str, **kwargs) -> None:
         try:
@@ -114,16 +114,15 @@ async def update_my_info_by_id(
         if v is not None:
             if k == "gym_info":
                 if user.gym_info is not None:
-                    gym_info = user.gym_info
-                    if v["address"] == gym_info.address:
+                    if v["address"] == user.gym_info.address:
                         continue
 
                 stmt = select(GymInfo).where(GymInfo.address == v["address"])
                 result = await session.execute(stmt)
-                gym_info = result.scalars().first()
-                if gym_info is None:
-                    gym_info = GymInfo(**v)
-                user.gym_info = gym_info
+                db_gym_info: GymInfo | None = result.scalars().first()
+                if db_gym_info is None:
+                    db_gym_info = GymInfo(**v)
+                user.gym_info = db_gym_info
             else:
                 setattr(user, k, v)
 
@@ -137,7 +136,7 @@ async def get_my_info_by_id(user_id: UUID, session: AsyncSession) -> User:
     result = await session.execute(
         select(User).options(selectinload(User.gym_info)).where(User.id == user_id)
     )
-    user = result.scalars().first()
+    user: User | None = result.scalars().first()
     if not user:
         raise UserNotFoundException
     return user

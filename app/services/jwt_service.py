@@ -12,18 +12,19 @@ class JwtService:
         token: str,
         refresh_token: str,
     ) -> RefreshTokenSchema:
+        dec_token = None
         try:
-            token = TokenHelper.decode(token=token)
+            dec_token = TokenHelper.decode(token=token)
         except ExpiredTokenException:
-            token = TokenHelper.decode_expired_token(token=token)
+            dec_token = TokenHelper.decode_expired_token(token=token)
 
-        refresh_token = TokenHelper.decode(token=refresh_token)
+        dec_refresh_token = TokenHelper.decode(token=refresh_token)
 
-        if refresh_token.get("sub") != "refresh":
+        if dec_refresh_token.get("sub") != "refresh":
             raise DecodeTokenException("Invalid refresh token")
 
         return RefreshTokenSchema(
-            token=TokenHelper.encode(payload={"user_id": token.get("user_id")}),
+            token=TokenHelper.encode(payload={"user_id": dec_token.get("user_id")}),
             refresh_token=TokenHelper.encode(
                 payload={"sub": "refresh"}, expire_period=60 * 60 * 24 * 30
             ),

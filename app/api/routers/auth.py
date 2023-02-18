@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, UploadFile, Form, HTTPException, Response
+from fastapi import APIRouter, Response
 
 from app.schemas.auth import (
     RefreshTokenRequest,

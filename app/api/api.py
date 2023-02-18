@@ -1,6 +1,6 @@
 from fastapi.responses import HTMLResponse
 
-from fastapi import APIRouter, Depends, WebSocket
+from fastapi import APIRouter
 
 from app.api.routers.audio import audio_router
 from app.api.routers.chat import chat_router

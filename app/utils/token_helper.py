@@ -25,7 +25,7 @@ class TokenHelper:
             return jwt.decode(
                 token,
                 config.JWT_SECRET_KEY,
-                config.JWT_ALGORITHM,
+                [config.JWT_ALGORITHM],
             )
         except jwt.exceptions.DecodeError:
             raise DecodeTokenException("Invalid token")
@@ -38,7 +38,7 @@ class TokenHelper:
             return jwt.decode(
                 token,
                 config.JWT_SECRET_KEY,
-                config.JWT_ALGORITHM,
+                [config.JWT_ALGORITHM],
                 options={"verify_exp": False},
             )
         except jwt.exceptions.DecodeError:

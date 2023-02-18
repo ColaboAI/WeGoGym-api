@@ -10,7 +10,6 @@
 # from app.utils.ecs_log import logger
 
 
-from datetime import datetime
 from fastapi import APIRouter, Depends, HTTPException, Query, Request
 from sqlalchemy import select
 from app.core.fastapi.dependencies.premission import (
@@ -27,7 +26,7 @@ from app.schemas.chat import (
     ChatRoomWithMembersRead,
     MessateListRead,
 )
-from app.models.chat import ChatRoom, ChatRoomMember, Message
+from app.models.chat import ChatRoom, ChatRoomMember
 from app.services.chat_service import (
     delete_chat_room_member_admin_by_id,
     delete_chat_room_member_by_id,
@@ -55,7 +54,7 @@ chat_router = APIRouter()
 async def get_public_chat_rooms(
     session: AsyncSession = Depends(get_db_transactional_session),
     limit: int = Query(10, description="Limit"),
-    offset: str = Query(None, description="offset"),
+    offset: int = Query(None, description="offset"),
 ):
     # TODO: count
     t, r = await get_public_chat_room_list(session, limit, offset)
@@ -74,7 +73,7 @@ async def get_my_chat_room_members(
     request: Request,
     session: AsyncSession = Depends(get_db_transactional_session),
     limit: int = Query(10, description="Limit"),
-    offset: str = Query(None, description="offset"),
+    offset: int = Query(None, description="offset"),
 ):
     t, m = await get_chat_room_mems_list_by_user_id(
         request.user.id, session, limit, offset
@@ -91,8 +90,8 @@ async def create_chat_room(
         chat_room_obj = ChatRoom(**chat_room.dict(exclude={"members_user_id"}))
 
         stmt = select(User).where(User.id == chat_room.created_by)
-        admin_user = await session.execute(stmt)
-        admin_user = admin_user.scalars().first()
+        res = await session.execute(stmt)
+        admin_user = res.scalars().first()
 
         if not admin_user:
             raise HTTPException(status_code=404, detail="Room Admin User is not found")
@@ -105,8 +104,8 @@ async def create_chat_room(
         chat_room_obj.members.append(admin_member_obj)
 
         for id in chat_room.members_user_id:
-            user = await session.execute(select(User).where(User.id == id))
-            user = user.scalars().first()
+            res = await session.execute(select(User).where(User.id == id))
+            user = res.scalars().first()
             if not user:
                 raise HTTPException(status_code=404, detail="User not found")
             chat_room_member_obj = ChatRoomMember(
@@ -166,7 +165,7 @@ async def get_chat_room_messages(
         raise HTTPException(status_code=403, detail="User is not in the room")
 
     t, res = await get_chat_messages(
-        chat_room_id, chat_room_member.last_read_at, session, limit, offset
+        session, chat_room_id, chat_room_member.last_read_at, limit, offset
     )
 
     return {"total": t, "messages": res}
@@ -182,9 +181,7 @@ async def update_chat_room_member_last_read_at(
     chat_room_member_id: str,
     session: AsyncSession = Depends(get_db_transactional_session),
 ):
-    return await update_last_read_at_by_mem_id(
-        session=session, mem_id=chat_room_member_id
-    )
+    return await update_last_read_at_by_mem_id(session, chat_room_member_id)
 
 
 @chat_router.delete(

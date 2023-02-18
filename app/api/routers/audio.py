@@ -33,7 +33,6 @@ async def create_audio(
 ):
     audio_url = None
     image_url = None
-    print(audio_file.content_type, image_file.content_type)
     if audio_file:
         try:
             audio_key = f"audio/{metadata.title}/{metadata.artist_name}"

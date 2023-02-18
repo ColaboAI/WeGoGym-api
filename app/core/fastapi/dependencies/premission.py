@@ -1,14 +1,11 @@
 from abc import ABC, abstractmethod
 from typing import Type
-from fastapi import Depends, Request
+from fastapi import Request
 from fastapi.openapi.models import APIKey, APIKeyIn
 from fastapi.security.base import SecurityBase
-from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.core.config import settings as config
 from app.services.user_service import UserService
 from app.core.exceptions import CustomException, UnauthorizedException
-from app.utils.token_helper import TokenHelper
 
 
 class BasePermission(ABC):
