@@ -49,7 +49,6 @@ async def create_gym_info(db: AsyncSession, gym_info: GymInfoBase) -> GymInfo:
     new_gym_info = GymInfo(**gym_info.dict())
     db.add(new_gym_info)
     await db.commit()
-    await db.refresh(new_gym_info)
     return new_gym_info
 
 
@@ -88,9 +87,12 @@ async def get_workout_promise_list(
     stmt = (
         select(WorkoutPromise)
         .order_by(WorkoutPromise.created_at.desc())
+        .options(selectinload(WorkoutPromise.chat_room))
+        .options(selectinload(WorkoutPromise.participants))
+        .options(selectinload(WorkoutPromise.gym_info))
+        .options(selectinload(WorkoutPromise.admin_user))
         .where(WorkoutPromise.is_private.is_(False))
     )
-    # TODO: watch this
     t_stmt = (
         select(func.count("*"))
         .where(WorkoutPromise.is_private.is_(False))
@@ -105,6 +107,7 @@ async def get_workout_promise_list(
 
     total = await db.execute(t_stmt)
     result = await db.execute(stmt)
+
     return total.scalars().first(), result.scalars().all()
 
 
@@ -138,6 +141,7 @@ async def get_workout_promise_by_id(
 
 async def create_workout_promise(
     db: AsyncSession,
+    admin_user_id: UUID,
     workout_promise: WorkoutPromiseBase,
     gym_info: GymInfoBase | None = None,
 ) -> WorkoutPromise:
@@ -146,6 +150,8 @@ async def create_workout_promise(
             exclude_unset=True,
         )
     )
+    new_workout_promise.admin_user_id = admin_user_id
+
     db_gym_info = None
     if gym_info:
         db_gym_info = await get_gym_info_or_create(db, gym_info)
@@ -153,15 +159,13 @@ async def create_workout_promise(
 
     # Make Admin Participant
     admin_participant = WorkoutParticipant(
-        user_id=new_workout_promise.admin_user_id,
-        workout_promise_id=new_workout_promise.id,
+        user_id=admin_user_id,
         is_admin=True,
     )
     new_workout_promise.participants.append(admin_participant)
 
     db.add(new_workout_promise)
     await db.commit()
-    await db.refresh(new_workout_promise)
     return new_workout_promise
 
 

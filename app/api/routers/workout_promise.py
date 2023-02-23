@@ -1,6 +1,7 @@
 from uuid import UUID
 from fastapi import APIRouter, Body, Depends, Request
 from sqlalchemy.ext.asyncio import AsyncSession
+from app.core.exceptions import UnauthorizedException
 from app.core.fastapi.dependencies.premission import (
     IsAuthenticated,
     PermissionDependency,
@@ -32,13 +33,14 @@ workout_promise_router = APIRouter()
     response_model=WorkoutPromiseListResponse,
     dependencies=[Depends(PermissionDependency([IsAuthenticated]))],
 )
-async def get_workout_promise(
+async def get_workout_promises(
     session: AsyncSession = Depends(get_db_transactional_session),
     limit: int = 10,
     offset: int = 0,
 ):
-    wp = await get_workout_promise_list(session, limit, offset)
-    return wp
+    total, wp_list = await get_workout_promise_list(session, limit, offset)
+    print(wp_list[0].__dict__)
+    return {"total": total, "items": wp_list}
 
 
 # 운동 약속 정보 생성 엔드포인트
@@ -48,11 +50,19 @@ async def get_workout_promise(
     dependencies=[Depends(PermissionDependency([IsAuthenticated]))],
 )
 async def make_new_workout_promise(
+    request: Request,
     workout_promise: WorkoutPromiseBase = Body(...),
-    gym_info: GymInfoBase = Body(...),
+    gym_info: GymInfoBase = Body(None),
     db: AsyncSession = Depends(get_db_transactional_session),
 ):
-    db_workout_promise = create_workout_promise(db, workout_promise, gym_info)
+
+    if request.user.id:
+        db_workout_promise = await create_workout_promise(
+            db, request.user.id, workout_promise, gym_info
+        )
+    else:
+        raise UnauthorizedException("You are not authenticated user")
+
     return db_workout_promise
 
 

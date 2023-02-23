@@ -1,5 +1,5 @@
 import asyncio
-from datetime import datetime
+from datetime import datetime, timezone
 
 from sqlalchemy import func, select, text
 from app.models.chat import ChatRoom, ChatRoomMember, Message
@@ -297,7 +297,7 @@ async def update_last_read_at_by_mem_id(
     if not chat_room_member_obj:
         raise HTTPException(status_code=404, detail="Chat room member not found")
 
-    chat_room_member_obj.last_read_at = datetime.now()
+    chat_room_member_obj.last_read_at = datetime.now(timezone.utc)
 
     await session.commit()
 
