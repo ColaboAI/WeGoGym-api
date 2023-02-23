@@ -54,7 +54,6 @@ class WorkoutPromiseBase(BaseModel):
     max_participants: int = Field(..., ge=1, le=10)
     promise_time: datetime = Field(...)
     recruit_end_time: datetime | None = Field(None, description="Recruit end time")
-    admin_user_id: UUID = Field(..., description="Admin User ID")
 
 
 class WorkoutPromiseRead(WorkoutPromiseBase):
@@ -148,12 +147,15 @@ class WorkoutParticipantUpdate(BaseModel):
         )
 
 
-WorkoutPromiseRead.update_forward_refs()
-
-
 class BaseListResponse(BaseModel):
     total: int | None
 
 
 class WorkoutPromiseListResponse(BaseListResponse):
     items: list[WorkoutPromiseRead]
+
+    class Config:
+        orm_mode = True
+
+
+WorkoutPromiseRead.update_forward_refs()
