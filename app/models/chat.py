@@ -24,10 +24,12 @@ class ChatRoomMember(TimestampMixin, Base):
         GUID, ForeignKey("chat_room.id", ondelete="CASCADE"), nullable=False
     )
 
-    left_at = Column(DateTime, server_default=utcnow(), nullable=True)
+    left_at = Column(DateTime(timezone=True), server_default=utcnow(), nullable=True)
     is_admin = Column(Boolean, default=False, nullable=False)
     last_read_message_id = Column(GUID, nullable=True)
-    last_read_at = Column(DateTime, server_default=utcnow(), nullable=False)
+    last_read_at = Column(
+        DateTime(timezone=True), server_default=utcnow(), nullable=False
+    )
 
     user: "User" = relationship("User", back_populates="chat_room_members")
     user_id = Column(GUID, ForeignKey("user.id", ondelete="CASCADE"), nullable=False)

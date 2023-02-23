@@ -4,7 +4,7 @@ from sqlalchemy.types import DateTime
 
 
 class utcnow(FunctionElement):
-    type = DateTime()  # type: ignore
+    type = DateTime(timezone=True)  # type: ignore
     inherit_cache = True
 
 
