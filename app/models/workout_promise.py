@@ -23,15 +23,16 @@ class WorkoutPromise(TimestampMixin, Base):
     max_participants = Column(Integer, default=3, nullable=False)
     is_private = Column(Boolean, default=False)
 
-    recruit_end_time = Column(DateTime, index=True)
+    recruit_end_time = Column(DateTime(timezone=True), index=True)
     # TODO: workout_id and related table should be added
-    promise_time = Column(DateTime, index=True, server_default=utcnow())
+    promise_time = Column(DateTime(timezone=True), index=True, server_default=utcnow())
 
-    # Child table (One to "Many"), no relationship, one direction
+    # Child table (One to "Many")
     admin_user_id = Column(
         GUID,
         ForeignKey("user.id", ondelete="SET NULL"),
     )
+    admin_user: "User" = relationship("User", back_populates="admin_workout_promises")
 
     # 1:1 relationship
     chat_room_id = Column(GUID, ForeignKey("chat_room.id", ondelete="SET NULL"))
