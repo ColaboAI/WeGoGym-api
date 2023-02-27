@@ -53,7 +53,6 @@ async def create_gym_info(db: AsyncSession, gym_info: GymInfoBase) -> GymInfo:
 
 
 async def get_gym_info_or_create(db: AsyncSession, gym_info: GymInfoBase) -> GymInfo:
-
     gym = await get_gym_info_by_name_and_addr(db, gym_info.name, gym_info.address)
     if gym:
         return gym
@@ -131,7 +130,16 @@ async def get_workout_promise_with_participants(
 async def get_workout_promise_by_id(
     db: AsyncSession, workout_promise_id: UUID
 ) -> WorkoutPromise:
-    stmt = select(WorkoutPromise).where(WorkoutPromise.id == workout_promise_id)
+    stmt = (
+        select(WorkoutPromise)
+        .options(
+            selectinload(WorkoutPromise.participants),
+            selectinload(WorkoutPromise.chat_room),
+            selectinload(WorkoutPromise.gym_info),
+            selectinload(WorkoutPromise.admin_user),
+        )
+        .where(WorkoutPromise.id == workout_promise_id)
+    )
     res = await db.execute(stmt)
     workout_promise = res.scalars().first()
     if not workout_promise:

@@ -19,6 +19,7 @@ from app.services.workout_promise_service import (
     create_workout_participant,
     create_workout_promise,
     delete_workout_participant,
+    get_workout_promise_by_id,
     get_workout_promise_list,
     update_workout_participant_,
     update_workout_promise_by_id,
@@ -39,9 +40,20 @@ async def get_workout_promises(
     offset: int = 0,
 ):
     total, wp_list = await get_workout_promise_list(session, limit, offset)
-    print(wp_list[0].__dict__)
     return {"total": total, "items": wp_list}
 
+@workout_promise_router.get(
+    "/{workout_promise_id}",
+    response_model=WorkoutPromiseRead,
+    dependencies=[Depends(PermissionDependency([IsAuthenticated]))],
+)
+async def get_workout_promise(
+    workout_promise_id: UUID,
+    session: AsyncSession = Depends(get_db_transactional_session),
+):
+    wp = await get_workout_promise_by_id(session, workout_promise_id)
+    return wp
+    
 
 # 운동 약속 정보 생성 엔드포인트
 @workout_promise_router.post(
