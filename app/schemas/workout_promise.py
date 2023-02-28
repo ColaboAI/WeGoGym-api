@@ -109,7 +109,6 @@ class WorkoutParticipantBase(BaseModel):
         None, description="Status message of participant"
     )
     is_admin: bool = Field(False, description="Is admin of Promise")
-    user_id: UUID = Field(..., description="User ID of participant")
 
 
 class WorkoutParticipantRead(WorkoutParticipantBase):
@@ -118,6 +117,7 @@ class WorkoutParticipantRead(WorkoutParticipantBase):
     workout_promise_id: UUID | None
     created_at: datetime
     updated_at: datetime
+    user_id: UUID
 
     class Config:
         orm_mode = True

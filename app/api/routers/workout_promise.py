@@ -9,6 +9,7 @@ from app.core.fastapi.dependencies.premission import (
 from app.schemas.workout_promise import (
     GymInfoBase,
     WorkoutParticipantBase,
+    WorkoutParticipantRead,
     WorkoutParticipantUpdate,
     WorkoutPromiseBase,
     WorkoutPromiseListResponse,
@@ -28,6 +29,7 @@ from app.session import get_db_transactional_session
 
 workout_promise_router = APIRouter()
 
+
 # 운동 약속 정보 조회 엔드포인트
 @workout_promise_router.get(
     "",
@@ -42,6 +44,7 @@ async def get_workout_promises(
     total, wp_list = await get_workout_promise_list(session, limit, offset)
     return {"total": total, "items": wp_list}
 
+
 @workout_promise_router.get(
     "/{workout_promise_id}",
     response_model=WorkoutPromiseRead,
@@ -53,7 +56,7 @@ async def get_workout_promise(
 ):
     wp = await get_workout_promise_by_id(session, workout_promise_id)
     return wp
-    
+
 
 # 운동 약속 정보 생성 엔드포인트
 @workout_promise_router.post(
@@ -67,7 +70,6 @@ async def make_new_workout_promise(
     gym_info: GymInfoBase = Body(None),
     db: AsyncSession = Depends(get_db_transactional_session),
 ):
-
     if request.user.id:
         db_workout_promise = await create_workout_promise(
             db, request.user.id, workout_promise, gym_info
@@ -81,14 +83,18 @@ async def make_new_workout_promise(
 # 운동 약속에 참여하기
 @workout_promise_router.post(
     "/{workout_promise_id}/participants",
-    response_model=WorkoutParticipantBase,
+    response_model=WorkoutParticipantRead,
+    dependencies=[Depends(PermissionDependency([IsAuthenticated]))],
 )
 async def join_workout_promise(
+    req: Request,
     workout_promise_id: UUID,
     req_body: WorkoutParticipantBase = Body(...),
     db: AsyncSession = Depends(get_db_transactional_session),
 ):
-    db_w_pp = await create_workout_participant(db, workout_promise_id, req_body)
+    db_w_pp = await create_workout_participant(
+        db, workout_promise_id, req_body, req.user.id
+    )
     return db_w_pp
 
 
@@ -99,7 +105,6 @@ async def leave_workout_promise(
     user_id: UUID,
     db: AsyncSession = Depends(get_db_transactional_session),
 ):
-
     msg = await delete_workout_participant(db, workout_promise_id, user_id)
 
     return msg
@@ -117,7 +122,6 @@ async def update_workout_promise(
     gym_info: GymInfoBase = Body(...),
     db: AsyncSession = Depends(get_db_transactional_session),
 ):
-
     updated_w_p = await update_workout_promise_by_id(
         db, workout_promise_id, workout_promise, gym_info
     )
@@ -137,7 +141,6 @@ async def update_workout_participant(
     update_req: WorkoutParticipantUpdate = Body(...),
     db: AsyncSession = Depends(get_db_transactional_session),
 ):
-
     updated_w_pp = update_workout_participant_(
         db, req.user.id, workout_promise_id, user_id, update_req
     )
