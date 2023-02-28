@@ -14,7 +14,7 @@ from app.schemas.user import UserUpdate
 from app.utils.token_helper import TokenHelper
 from app.session import transactional_session_factory
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.orm import selectinload
+from sqlalchemy.orm import selectinload, raiseload
 
 # User service: user adaptor for sqlalchemy
 class UserService:
@@ -135,6 +135,34 @@ async def update_my_info_by_id(
 async def get_my_info_by_id(user_id: UUID, session: AsyncSession) -> User:
     result = await session.execute(
         select(User).options(selectinload(User.gym_info)).where(User.id == user_id)
+    )
+    user: User | None = result.scalars().first()
+    if not user:
+        raise UserNotFoundException
+    return user
+
+
+async def get_random_user_with_limit(db: AsyncSession, user_id: UUID, limit: int = 3):
+
+    result = await db.execute(
+        select(User.id, User.profile_pic, User.username)
+        .order_by(func.random())
+        .limit(limit)
+        .where(User.id != user_id)
+    )
+
+    out = []
+
+    for row in result.all():
+        out.append(row._mapping)
+    return out
+
+
+async def get_others_info_by_id(user_id: UUID, session: AsyncSession) -> User:
+    result = await session.execute(
+        select(User)
+        .options(selectinload(User.gym_info), raiseload("*"))
+        .where(User.id == user_id)
     )
     user: User | None = result.scalars().first()
     if not user:
