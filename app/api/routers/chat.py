@@ -65,7 +65,7 @@ async def get_public_chat_rooms(
 @chat_router.get(
     "/rooms/me",
     response_model=ChatRoomMemberList,
-    summary="My chat rooms",
+    summary="My chat rooms member list with limits",
     description="Get My chat rooms from latest to oldest",
     dependencies=[Depends(PermissionDependency([IsAuthenticated]))],
 )
