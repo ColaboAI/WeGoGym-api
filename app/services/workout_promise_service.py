@@ -223,13 +223,18 @@ async def create_workout_participant(
     db: AsyncSession,
     workout_promise_id: UUID,
     workout_participant: WorkoutParticipantBase,
+    user_id: UUID,
 ) -> WorkoutParticipant:
     db_workout_promise = await get_workout_promise_by_id(db, workout_promise_id)
-    db_w_pp = await get_workout_participant_by_ids(
-        db, workout_participant.user_id, workout_promise_id
-    )
+    db_w_pp = None
+    try:
+        db_w_pp = await get_workout_participant_by_ids(db, user_id, workout_promise_id)
+    except WorkoutParticipantNotFoundException:
+        pass
+
     if db_w_pp:
         raise AlreadyJoinedWorkoutPromiseException
+
     # TODO: Fix this logic
     max_p = db_workout_promise.max_participants
     if max_p is not None and max_p > 0:
@@ -238,7 +243,9 @@ async def create_workout_participant(
     else:
         raise WorkoutPromiseIsWrongException
 
-    new_db_workout_participant = WorkoutParticipant(**workout_participant.dict())
+    new_db_workout_participant = WorkoutParticipant(
+        **workout_participant.dict(), user_id=user_id
+    )
     db_workout_promise.participants.append(new_db_workout_participant)
     db.add(db_workout_promise)
     await db.commit()
