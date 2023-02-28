@@ -110,6 +110,15 @@ class LoginResponse(BaseModel):
     refresh_token: str = Field(..., description="Refresh token")
 
 
+class RecommendedUser(BaseModel):
+    id: uuid.UUID
+    profile_pic: str | None
+    username: str
+    # similarity: float
+    class Config:
+        orm_mode = True
+
+
 # if TYPE_CHECKING:
 from app.schemas.workout_promise import GymInfoBase, GymInfoRead
 

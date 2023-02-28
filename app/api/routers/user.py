@@ -1,3 +1,4 @@
+from uuid import UUID
 from fastapi import APIRouter, Body, Depends, File, Query, Request, UploadFile
 from app.core.fastapi.dependencies.premission import (
     AllowAll,
@@ -9,6 +10,7 @@ from app.schemas import ExceptionResponseSchema
 from app.schemas.user import (
     LoginResponse,
     MyInfoRead,
+    RecommendedUser,
     UserListRead,
     UserCreate,
     UserUpdate,
@@ -20,6 +22,7 @@ from app.services.user_service import (
     UserService,
     delete_user_by_id,
     get_my_info_by_id,
+    get_random_user_with_limit,
     update_my_info_by_id,
 )
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -129,4 +132,37 @@ async def patch_my_info(
     else:
         del data.profile_pic
     user = await update_my_info_by_id(req.user.id, data, session)
+    return user
+
+
+@user_router.get(
+    "/recommended-mates",
+    response_model=list[RecommendedUser],
+    summary="Get Recommended Users",
+    description="Get recommended users with token",
+    dependencies=[Depends(PermissionDependency([IsAuthenticated]))],
+)
+async def get_recommended_users(
+    req: Request,
+    session: AsyncSession = Depends(get_db_transactional_session),
+    limit: int = Query(3, description="Limit"),
+):
+    users = await get_random_user_with_limit(session, req.user.id, limit)
+
+    return users
+
+
+@user_router.get(
+    "/{user_id}",
+    response_model=MyInfoRead,
+    summary="Get User Info",
+    description="Get user info with token",
+    dependencies=[Depends(PermissionDependency([IsAuthenticated]))],
+)
+async def get_user_info(
+    user_id: UUID,
+    session: AsyncSession = Depends(get_db_transactional_session),
+):
+    user = await get_my_info_by_id(user_id, session)
+
     return user
