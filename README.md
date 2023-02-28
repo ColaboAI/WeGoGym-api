@@ -93,6 +93,7 @@ source venv/bin/activate
 자세한 옵션은 [링크](https://docs.docker.com/engine/reference/commandline/compose_down/) 참조.
 
 ## Local Development
+도커 db, redis 컨테이너를 실행한 상태에서 아래의 명령어를 실행하여 개발을 진행함.
 ### Install Dependencies
 ```bash
 pip install -r requirements.txt -r requirements-dev.txt
