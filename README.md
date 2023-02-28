@@ -92,6 +92,28 @@ source venv/bin/activate
 
 자세한 옵션은 [링크](https://docs.docker.com/engine/reference/commandline/compose_down/) 참조.
 
+## Local Development
+### Install Dependencies
+```bash
+pip install -r requirements.txt -r requirements-dev.txt
+```
+### Run
+```bash
+uvicorn main:app --reload
+```
+### Test
+```bash
+pytest
+```
+### Lint
+```bash
+flake8 app
+mypy app
+```
+### Format
+```bash
+black app
+```
 
 
 ## Migration (Alembic)
