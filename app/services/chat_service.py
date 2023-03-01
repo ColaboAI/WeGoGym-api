@@ -1,5 +1,6 @@
 import asyncio
 from datetime import datetime, timezone
+from uuid import UUID
 
 from sqlalchemy import func, select, text
 from app.models.chat import ChatRoom, ChatRoomMember, Message
@@ -11,7 +12,7 @@ from aioredis.client import Redis, PubSub
 from app.core.helpers.redis import get_redis_conn
 from dataclasses import asdict, dataclass
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.orm import selectinload
+from sqlalchemy.orm import selectinload, aliased
 from starlette.websockets import WebSocketState
 
 
@@ -151,14 +152,20 @@ async def get_chat_room_by_id(chat_room_id: int, session: AsyncSession):
 
 
 async def get_chat_room_mems_list_by_user_id(
-    user_id: int, session: AsyncSession, limit: int, offset: int | None = None
-):
+    session: AsyncSession, user_id: int, limit: int, offset: int | None = None
+) -> tuple[int | None, list[ChatRoomMember]]:
     """return all chat room that user is in"""
     stmt = (
-        select(ChatRoomMember)
+        select(
+            ChatRoomMember,
+        )
+        .options(
+            selectinload(ChatRoomMember.chat_room),
+        )
         .order_by(ChatRoomMember.created_at.desc())
         .where(ChatRoomMember.user_id == user_id)
     )
+
     total_stmt = (
         select(func.count(ChatRoomMember.id))
         .select_from(ChatRoomMember)
@@ -326,3 +333,26 @@ async def delete_chat_room_member_admin_by_id(
     stmt = text("DELETE FROM chat_room_members WHERE id = :chat_room_member_id")
     await session.execute(stmt, {"chat_room_member_id": chat_room_member_id})
     await session.commit()
+
+
+async def get_chat_message_by_id(session: AsyncSession, message_id: UUID) -> Message:
+    stmt = select(Message).where(Message.id == message_id)
+    result = await session.execute(stmt)
+    msg = result.scalars().first()
+    if not msg:
+        raise HTTPException(status_code=404, detail="Message not found")
+    return msg
+
+
+async def get_last_message_by_room_id(
+    session: AsyncSession, room_id: UUID
+) -> Message | None:
+    stmt = (
+        select(Message)
+        .where(Message.chat_room_id == room_id)
+        .order_by(Message.created_at.desc())
+        .limit(1)
+    )
+    result = await session.execute(stmt)
+    msg = result.scalars().first()
+    return msg

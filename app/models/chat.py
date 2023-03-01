@@ -67,6 +67,7 @@ class ChatRoom(TimestampMixin, Base):
         back_populates="chat_room",
         cascade="save-update, merge, delete",
         passive_deletes=True,
+        order_by="Message.created_at.desc()",
     )
 
     # 1:1 relationship with workout_promise (deactivate collection)
