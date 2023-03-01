@@ -151,20 +151,46 @@ async def get_chat_room_by_id(chat_room_id: int, session: AsyncSession):
     return chat_room
 
 
-async def get_chat_room_mems_list_by_user_id(
+# TODO
+async def get_chat_room_list_by_user_id(
     session: AsyncSession, user_id: int, limit: int, offset: int | None = None
-) -> tuple[int | None, list[ChatRoomMember]]:
+) -> tuple[int | None, list[ChatRoom]]:
     """return all chat room that user is in"""
-    stmt = (
-        select(
-            ChatRoomMember,
-        )
-        .options(
-            selectinload(ChatRoomMember.chat_room),
-        )
+
+    chat_rooms = (
+        select(ChatRoomMember.chat_room_id)
         .order_by(ChatRoomMember.created_at.desc())
         .where(ChatRoomMember.user_id == user_id)
+        .cte("chat_rooms")
     )
+
+    stmt = (
+        select(ChatRoom)
+        .options(
+            selectinload(ChatRoom.members).options(
+                selectinload(ChatRoomMember.user).load_only(
+                    User.id, User.username, User.profile_pic
+                ),
+            )
+        )
+        .where(ChatRoom.id == chat_rooms.c.chat_room_id)
+    )
+
+    last_msg = (
+        select(
+            Message.chat_room_id,
+            Message.text.label("last_message_text"),
+            Message.created_at.label("last_message_created_at"),
+        )
+        .where(Message.chat_room_id == chat_rooms.c.chat_room_id)
+        .order_by(Message.created_at.desc())
+        .limit(1)
+        .cte("last_msg")
+    )
+
+    stmt = stmt.add_columns(
+        last_msg.c.last_message_text, last_msg.c.last_message_created_at
+    ).join(last_msg, ChatRoom.id == last_msg.c.chat_room_id, isouter=True)
 
     total_stmt = (
         select(func.count(ChatRoomMember.id))
@@ -175,9 +201,17 @@ async def get_chat_room_mems_list_by_user_id(
         stmt = stmt.offset(offset)
     if limit:
         stmt = stmt.limit(limit)
+
     total = await session.execute(total_stmt)
     result = await session.execute(stmt)
-    return total.scalars().first(), result.scalars().all()
+
+    out = []
+    for row in result:
+        row.ChatRoom.last_message_text = row.last_message_text
+        row.ChatRoom.last_message_created_at = row.last_message_created_at
+        out.append(row.ChatRoom)
+
+    return total.scalars().first(), out
 
 
 # public
@@ -344,15 +378,16 @@ async def get_chat_message_by_id(session: AsyncSession, message_id: UUID) -> Mes
     return msg
 
 
-async def get_last_message_by_room_id(
+async def get_last_message_and_members_by_room_id(
     session: AsyncSession, room_id: UUID
 ) -> Message | None:
     stmt = (
         select(Message)
         .where(Message.chat_room_id == room_id)
-        .order_by(Message.created_at.desc())
+        .order_by(Message.created_at.desc(), Message.id.desc())
         .limit(1)
     )
+
     result = await session.execute(stmt)
     msg = result.scalars().first()
     return msg

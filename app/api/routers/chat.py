@@ -12,7 +12,8 @@ from app.schemas.chat import (
     ChatRoomCreate,
     ChatRoomMemberRead,
     ChatRoomWithMembersRead,
-    MessateListRead,
+    MessageListRead,
+    MyChatRoomList,
 )
 from app.models.chat import ChatRoom, ChatRoomMember
 from app.services.chat_service import (
@@ -20,8 +21,7 @@ from app.services.chat_service import (
     delete_chat_room_member_by_id,
     get_chat_messages,
     get_chat_room_and_members_by_id,
-    get_chat_room_mems_list_by_user_id,
-    get_last_message_by_room_id,
+    get_chat_room_list_by_user_id,
     get_public_chat_room_list,
     get_user_mem_with_ids,
     update_last_read_at_by_mem_id,
@@ -47,13 +47,13 @@ async def get_public_chat_rooms(
 ):
     # TODO: count
     t, r = await get_public_chat_room_list(session, limit, offset)
-    return {"total": t, "rooms": r}
+    return {"total": t, "items": r}
 
 
 # Private chat rooms (user's chat rooms)
 @chat_router.get(
     "/rooms/me",
-    response_model=ChatRoomMemberList,
+    response_model=MyChatRoomList,
     summary="My chat rooms member list with limits",
     description="Get My chat rooms from latest to oldest",
     dependencies=[Depends(PermissionDependency([IsAuthenticated]))],
@@ -64,18 +64,9 @@ async def get_my_chat_room_members(
     limit: int = Query(10, description="Limit"),
     offset: int = Query(None, description="offset"),
 ):
-    t, m = await get_chat_room_mems_list_by_user_id(
-        session, request.user.id, limit, offset
-    )
-    msg = None
-    for mem in m:
-        if mem.chat_room_id:
-            msg = await get_last_message_by_room_id(session, mem.chat_room_id)
-        if msg:
-            setattr(mem, "last_message_text", msg.text if msg else None)
-            setattr(mem, "last_message_created_at", msg.created_at if msg else None)
+    t, c = await get_chat_room_list_by_user_id(session, request.user.id, limit, offset)
 
-    return {"total": t, "members": m}
+    return {"total": t, "items": c}
 
 
 @chat_router.post("/rooms", response_model=ChatRoomRead, status_code=201)
@@ -145,7 +136,7 @@ async def get_chat_room_members(
 
 @chat_router.get(
     "/rooms/{chat_room_id}/messages",
-    response_model=MessateListRead,
+    response_model=MessageListRead,
     summary="Get chat room messages",
     description="Get chat room messages from latest to oldest by chat room id and last read time",
     dependencies=[Depends(PermissionDependency([IsAuthenticated]))],
@@ -165,7 +156,7 @@ async def get_chat_room_messages(
         session, chat_room_id, chat_room_member.last_read_at, limit, offset
     )
 
-    return {"total": t, "messages": res}
+    return {"total": t, "items": res}
 
 
 @chat_router.put(
