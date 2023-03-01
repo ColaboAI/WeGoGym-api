@@ -1,20 +1,21 @@
 from datetime import datetime
 from pydantic import BaseModel
 from uuid import UUID
+from app.schemas.user import UserRead
 
 
 class ChatRoomMemberRead(BaseModel):
     id: UUID
-    user_id: UUID
-    chat_room_id: UUID
     is_admin: bool
     created_at: datetime
     last_read_at: datetime
-    last_message_text: str | None
-    last_message_created_at: datetime | None
 
     class Config:
         orm_mode = True
+
+
+class ChatRoomMemberReadWithUser(ChatRoomMemberRead):
+    user: UserRead
 
 
 class ChatRoomMemberCreate(BaseModel):
@@ -40,16 +41,34 @@ class ChatRoomRead(BaseModel):
         orm_mode = True
 
 
+class ChatRoomReadWithLastMessageAndMembers(ChatRoomRead):
+    last_message_text: str | None
+    last_message_created_at: datetime | None
+    members: list[ChatRoomMemberReadWithUser]
+
+
 class ChatRoomList(BaseModel):
     total: int
-    rooms: list[ChatRoomRead]
+    items: list[ChatRoomRead]
+
+    class Config:
+        orm_mode = True
+
+
+class MyChatRoomList(BaseModel):
+    total: int
+    items: list[ChatRoomReadWithLastMessageAndMembers]
+
+    class Config:
+        orm_mode = True
 
 
 class ChatRoomMemberList(BaseModel):
     total: int
-    members: list[ChatRoomMemberRead]
+    items: list[ChatRoomMemberRead]
 
 
+# TODO: ChatRoomWithMembersRead vs ChatRoomReadWithLastMessageAndMembers
 class ChatRoomWithMembersRead(BaseModel):
     id: UUID
     name: str
@@ -89,9 +108,9 @@ class MessageRead(BaseModel):
         orm_mode = True
 
 
-class MessateListRead(BaseModel):
+class MessageListRead(BaseModel):
     total: int
-    messages: list[MessageRead]
+    items: list[MessageRead]
 
 
 class MessageCreate(BaseModel):
