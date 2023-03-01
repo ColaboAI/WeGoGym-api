@@ -10,6 +10,8 @@ class ChatRoomMemberRead(BaseModel):
     is_admin: bool
     created_at: datetime
     last_read_at: datetime
+    last_message_text: str | None
+    last_message_created_at: datetime | None
 
     class Config:
         orm_mode = True

@@ -1,15 +1,3 @@
-# create chat room
-# create chat room member
-# create chat message는 필요할까
-
-# Path: app/api/routers/chat.py
-# Compare this snippet from app/api/router/audio.py:
-# from fastapi import APIRouter, Depends, UploadFile, Form, HTTPException
-# from botocore.exceptions import ClientError
-# from sqlalchemy.ext.asyncio import AsyncSession
-# from app.utils.ecs_log import logger
-
-
 from fastapi import APIRouter, Depends, HTTPException, Query, Request
 from sqlalchemy import select
 from app.core.fastapi.dependencies.premission import (
@@ -33,6 +21,7 @@ from app.services.chat_service import (
     get_chat_messages,
     get_chat_room_and_members_by_id,
     get_chat_room_mems_list_by_user_id,
+    get_last_message_by_room_id,
     get_public_chat_room_list,
     get_user_mem_with_ids,
     update_last_read_at_by_mem_id,
@@ -76,8 +65,16 @@ async def get_my_chat_room_members(
     offset: int = Query(None, description="offset"),
 ):
     t, m = await get_chat_room_mems_list_by_user_id(
-        request.user.id, session, limit, offset
+        session, request.user.id, limit, offset
     )
+    msg = None
+    for mem in m:
+        if mem.chat_room_id:
+            msg = await get_last_message_by_room_id(session, mem.chat_room_id)
+        if msg:
+            setattr(mem, "last_message_text", msg.text if msg else None)
+            setattr(mem, "last_message_created_at", msg.created_at if msg else None)
+
     return {"total": t, "members": m}
 
 
