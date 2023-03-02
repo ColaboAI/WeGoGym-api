@@ -20,6 +20,7 @@ from app.services.workout_promise_service import (
     create_workout_participant,
     create_workout_promise,
     delete_workout_participant,
+    delete_workout_promise_by_id,
     get_workout_promise_by_id,
     get_workout_promise_list,
     update_workout_participant_,
@@ -96,6 +97,20 @@ async def join_workout_promise(
         db, workout_promise_id, req_body, req.user.id
     )
     return db_w_pp
+
+
+# 운동 약속에 삭제하기
+@workout_promise_router.delete(
+    "/{workout_promise_id}",
+    dependencies=[Depends(PermissionDependency([IsAuthenticated]))],
+)
+async def delete_workout_promise(
+    workout_promise_id: UUID,
+    db: AsyncSession = Depends(get_db_transactional_session),
+):
+    msg = await delete_workout_promise_by_id(db, workout_promise_id)
+
+    return msg
 
 
 # 운동 약속에 참여 취소하기
