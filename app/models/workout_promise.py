@@ -6,6 +6,7 @@ from app.core.db.mixins.timestamp_mixin import TimestampMixin
 from app.models.base import Base
 from app.models.guid import GUID
 from app.schemas import ParticipantStatus
+from app.schemas.workout_promise import WorkoutPromiseStatus
 from app.utils.generics import utcnow
 
 if TYPE_CHECKING:
@@ -22,7 +23,13 @@ class WorkoutPromise(TimestampMixin, Base):
     description = Column(String, index=True, nullable=False)
     max_participants = Column(Integer, default=3, nullable=False)
     is_private = Column(Boolean, default=False)
-
+    status = Column(
+        String,
+        default=WorkoutPromiseStatus.RECRUITING,
+        server_default=WorkoutPromiseStatus.RECRUITING,
+        index=True,
+        nullable=False,
+    )
     recruit_end_time = Column(DateTime(timezone=True), index=True)
     # TODO: workout_id and related table should be added
     promise_time = Column(DateTime(timezone=True), index=True, server_default=utcnow())

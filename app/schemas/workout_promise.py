@@ -8,6 +8,13 @@ from app.schemas.user import UserRead
 # from app.schemas.user import UserRead
 
 
+class WorkoutPromiseStatus(str, Enum):
+    RECRUITING = "RECRUITING"
+    RECRUIT_ENDED = "RECRUIT_ENDED"
+    CANCELLED = "CANCELLED"
+    FINISHED = "FINISHED"
+
+
 class ParticipantStatus(str, Enum):
     PENDING = "PENDING"
     ACCEPTED = "ACCEPTED"
@@ -71,6 +78,7 @@ class WorkoutPromiseRead(WorkoutPromiseBase):
     gym_info_id: UUID | None
     admin_user_id: UUID
     participants: list["WorkoutParticipantRead"]
+    status: WorkoutPromiseStatus
 
     class Config:
         orm_mode = True
@@ -87,6 +95,7 @@ class WorkoutPromiseUpdate(BaseModel):
     recruit_end_time: datetime | None = Field(None, description="Recruit end datetime")
     admin_user_id: UUID | None = Field(None, description="New Admin User ID")
     gym_info: GymInfoBase | None = Field(None)
+    status: WorkoutPromiseStatus | None = Field(None)
 
     def get_update_dict(self):
         return self.dict(
