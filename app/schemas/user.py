@@ -108,6 +108,7 @@ class LoginRequest(BaseModel):
 class LoginResponse(BaseModel):
     token: str = Field(..., description="Token")
     refresh_token: str = Field(..., description="Refresh token")
+    user_id: uuid.UUID = Field(..., description="User ID")
 
 
 class RecommendedUser(BaseModel):
