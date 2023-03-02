@@ -93,8 +93,8 @@ async def delete_user(
     responses={"404": {"model": ExceptionResponseSchema}},
 )
 async def login(req: LoginRequest):
-    token = await UserService().login(phone_number=req.phone_number)
-    return {"token": token.token, "refresh_token": token.refresh_token}
+    res = await UserService().login(phone_number=req.phone_number)
+    return res
 
 
 @user_router.get(

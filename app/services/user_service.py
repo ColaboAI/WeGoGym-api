@@ -92,6 +92,7 @@ class UserService:
             refresh_token=TokenHelper.encode(
                 payload={"sub": "refresh"}, expire_period=60 * 60 * 24 * 30
             ),
+            user_id=user.id,
         )
         await self.session.close()
         return response
