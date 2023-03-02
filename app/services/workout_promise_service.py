@@ -25,6 +25,8 @@ from app.core.exceptions import (
 
 from sqlalchemy.orm import selectinload
 
+from app.services.user_service import get_my_info_by_id
+
 
 async def get_gym_info_by_id(db: AsyncSession, gym_info_id: UUID) -> GymInfo:
     stmt = select(GymInfo).where(GymInfo.id == gym_info_id)
@@ -170,10 +172,12 @@ async def create_workout_promise(
 
     # Make Admin Participant
     admin_participant = WorkoutParticipant(
+        user=await get_my_info_by_id(admin_user_id, db),
         user_id=admin_user_id,
         is_admin=True,
         status=ParticipantStatus.ACCEPTED,
     )
+
     new_workout_promise.participants.append(admin_participant)
 
     db.add(new_workout_promise)
