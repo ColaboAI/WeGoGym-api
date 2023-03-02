@@ -8,6 +8,7 @@ from app.models.workout_promise import GymInfo, WorkoutParticipant, WorkoutPromi
 from app.schemas.workout_promise import (
     GymInfoBase,
     GymInfoUpdate,
+    ParticipantStatus,
     WorkoutParticipantBase,
     WorkoutParticipantUpdate,
     WorkoutPromiseBase,
@@ -133,7 +134,9 @@ async def get_workout_promise_by_id(
     stmt = (
         select(WorkoutPromise)
         .options(
-            selectinload(WorkoutPromise.participants),
+            selectinload(WorkoutPromise.participants).options(
+                selectinload(WorkoutParticipant.user)
+            ),
             selectinload(WorkoutPromise.chat_room),
             selectinload(WorkoutPromise.gym_info),
             selectinload(WorkoutPromise.admin_user),
@@ -169,6 +172,7 @@ async def create_workout_promise(
     admin_participant = WorkoutParticipant(
         user_id=admin_user_id,
         is_admin=True,
+        status=ParticipantStatus.ACCEPTED,
     )
     new_workout_promise.participants.append(admin_participant)
 
