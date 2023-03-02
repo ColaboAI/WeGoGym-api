@@ -39,20 +39,27 @@ class WorkoutPromise(TimestampMixin, Base):
         GUID,
         ForeignKey("user.id", ondelete="SET NULL"),
     )
-    admin_user: "User" = relationship("User", back_populates="admin_workout_promises")
+    admin_user: "User" = relationship(
+        "User", back_populates="admin_workout_promises", lazy="select"
+    )
 
     # 1:1 relationship
     chat_room_id = Column(GUID, ForeignKey("chat_room.id", ondelete="SET NULL"))
-    chat_room: "ChatRoom" = relationship("ChatRoom", back_populates="workout_promise")
+    chat_room: "ChatRoom" = relationship(
+        "ChatRoom", back_populates="workout_promise", lazy="select"
+    )
 
     gym_info_id = Column(GUID, ForeignKey("gym_info.id", ondelete="SET NULL"))
-    gym_info: "GymInfo" = relationship("GymInfo", back_populates="workout_promises")
+    gym_info: "GymInfo" = relationship(
+        "GymInfo", back_populates="workout_promises", lazy="select"
+    )
     # Parent relationship (Many to "One")
     participants: list["WorkoutParticipant"] = relationship(
         "WorkoutParticipant",
         back_populates="workout_promise",
         cascade="save-update, merge, delete",
         passive_deletes=True,
+        lazy="select",
     )
 
 
@@ -72,7 +79,7 @@ class WorkoutParticipant(TimestampMixin, Base):
 
     # ("Many" to one)
     user_id = Column(GUID, ForeignKey("user.id", ondelete="CASCADE"))
-    user: list["User"] = relationship("User", back_populates="workout_participants")
+    user: "User" = relationship("User", back_populates="workout_participants")
 
     # ("Many" to one)
     workout_promise_id = Column(
