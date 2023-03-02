@@ -58,14 +58,15 @@ async def get_public_chat_rooms(
     description="Get My chat rooms from latest to oldest",
     dependencies=[Depends(PermissionDependency([IsAuthenticated]))],
 )
-async def get_my_chat_room_members(
+async def get_my_chat_rooms(
     request: Request,
     session: AsyncSession = Depends(get_db_transactional_session),
     limit: int = Query(10, description="Limit"),
     offset: int = Query(None, description="offset"),
 ):
     t, c = await get_chat_room_list_by_user_id(session, request.user.id, limit, offset)
-
+    for room in c:
+        print("room", room.__dict__)
     return {"total": t, "items": c}
 
 

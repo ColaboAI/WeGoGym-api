@@ -1,5 +1,5 @@
 from datetime import datetime
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from uuid import UUID
 from app.schemas.user import UserRead
 
@@ -31,11 +31,12 @@ class ChatRoomMemberUpdate(BaseModel):
 
 class ChatRoomRead(BaseModel):
     id: UUID
-    name: str
-    description: str
+    name: str | None
+    description: str | None
     created_at: datetime
     updated_at: datetime
     is_private: bool
+    unread_count: int | None
 
     class Config:
         orm_mode = True
@@ -83,11 +84,30 @@ class ChatRoomWithMembersRead(BaseModel):
 
 
 class ChatRoomCreate(BaseModel):
-    name: str
-    description: str
-    created_by: UUID
-    members_user_id: list[UUID]
-    is_private: bool
+    name: str | None = Field(
+        None,
+        max_length=100,
+        description="Name of chat room",
+    )
+    description: str | None = Field(
+        None,
+        max_length=100,
+        description="Description of chat room",
+    )
+
+    created_by: UUID = Field(
+        ...,
+        description="User ID of user who created chat room",
+    )
+    members_user_id: list[UUID] = Field(
+        [],
+        description="List of user IDs of members of chat room",
+    )
+
+    is_private: bool = Field(
+        False,
+        description="Is chat room private",
+    )
 
 
 class ChatRoomUpdate(BaseModel):

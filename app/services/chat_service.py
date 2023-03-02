@@ -158,7 +158,7 @@ async def get_chat_room_list_by_user_id(
     """return all chat room that user is in"""
 
     chat_rooms = (
-        select(ChatRoomMember.chat_room_id)
+        select(ChatRoomMember.chat_room_id, ChatRoomMember.last_read_at)
         .order_by(ChatRoomMember.created_at.desc())
         .where(ChatRoomMember.user_id == user_id)
         .cte("chat_rooms")
@@ -188,9 +188,26 @@ async def get_chat_room_list_by_user_id(
         .cte("last_msg")
     )
 
+    unread_count = (
+        select(
+            Message.chat_room_id,
+            func.count("*").label("unread_count"),
+        )
+        .where(
+            Message.chat_room_id == chat_rooms.c.chat_room_id,
+            Message.created_at > chat_rooms.c.last_read_at,
+        )
+        .group_by(Message.chat_room_id)
+        .cte("unread_count")
+    )
+
     stmt = stmt.add_columns(
         last_msg.c.last_message_text, last_msg.c.last_message_created_at
     ).join(last_msg, ChatRoom.id == last_msg.c.chat_room_id, isouter=True)
+
+    stmt = stmt.add_columns(unread_count.c.unread_count).join(
+        unread_count, ChatRoom.id == unread_count.c.chat_room_id, isouter=True
+    )
 
     total_stmt = (
         select(func.count(ChatRoomMember.id))
@@ -209,6 +226,7 @@ async def get_chat_room_list_by_user_id(
     for row in result:
         row.ChatRoom.last_message_text = row.last_message_text
         row.ChatRoom.last_message_created_at = row.last_message_created_at
+        row.ChatRoom.unread_count = row.unread_count
         out.append(row.ChatRoom)
 
     return total.scalars().first(), out
