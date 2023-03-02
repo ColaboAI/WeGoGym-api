@@ -3,6 +3,9 @@ from enum import Enum
 from uuid import UUID
 from pydantic import BaseModel, Field
 from app.schemas.chat import ChatRoomRead
+from app.schemas.user import UserRead
+
+# from app.schemas.user import UserRead
 
 
 class ParticipantStatus(str, Enum):
@@ -66,6 +69,7 @@ class WorkoutPromiseRead(WorkoutPromiseBase):
 
     gym_info: GymInfoRead | None
     gym_info_id: UUID | None
+    admin_user_id: UUID
     participants: list["WorkoutParticipantRead"]
 
     class Config:
@@ -118,6 +122,7 @@ class WorkoutParticipantRead(WorkoutParticipantBase):
     created_at: datetime
     updated_at: datetime
     user_id: UUID
+    user: UserRead | None
 
     class Config:
         orm_mode = True
