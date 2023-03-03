@@ -252,12 +252,13 @@ async def create_workout_participant(
         raise WorkoutPromiseIsWrongException
 
     new_db_workout_participant = WorkoutParticipant(
-        **workout_participant.dict(), user_id=user_id
+        **workout_participant.dict(),
+        user_id=user_id,
+        user=await get_my_info_by_id(user_id, db)
     )
     db_workout_promise.participants.append(new_db_workout_participant)
     db.add(db_workout_promise)
     await db.commit()
-    await db.refresh(new_db_workout_participant)
     return new_db_workout_participant
 
 
