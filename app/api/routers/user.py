@@ -65,7 +65,7 @@ async def create_user(
     await usr_svc.create_user(**create_req.dict())
     token = await usr_svc.login(phone_number=create_req.phone_number)
 
-    return {"token": token.token, "refresh_token": token.refresh_token}
+    return token
 
 
 @user_router.delete(
