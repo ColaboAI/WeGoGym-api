@@ -134,7 +134,7 @@ async def leave_workout_promise(
 async def update_workout_promise(
     workout_promise_id: UUID,
     workout_promise: WorkoutPromiseUpdate = Body(...),
-    gym_info: GymInfoBase = Body(...),
+    gym_info: GymInfoBase = Body(None),
     db: AsyncSession = Depends(get_db_transactional_session),
 ):
     updated_w_p = await update_workout_promise_by_id(
