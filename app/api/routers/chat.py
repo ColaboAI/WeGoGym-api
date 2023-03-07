@@ -1,4 +1,5 @@
-from fastapi import APIRouter, Depends, HTTPException, Query, Request
+from uuid import UUID
+from fastapi import APIRouter, Body, Depends, HTTPException, Query, Request
 from sqlalchemy import select
 from app.core.fastapi.dependencies.premission import (
     IsAuthenticated,
@@ -7,7 +8,6 @@ from app.core.fastapi.dependencies.premission import (
 from app.models.user import User
 from app.schemas.chat import (
     ChatRoomList,
-    ChatRoomMemberList,
     ChatRoomRead,
     ChatRoomCreate,
     ChatRoomMemberRead,
@@ -19,6 +19,7 @@ from app.models.chat import ChatRoom, ChatRoomMember
 from app.services.chat_service import (
     delete_chat_room_member_admin_by_id,
     delete_chat_room_member_by_id,
+    find_direct_chat_room_by_user_ids,
     get_chat_messages,
     get_chat_room_and_members_by_id,
     get_chat_room_list_by_user_id,
@@ -200,3 +201,20 @@ async def delete_chat_room_member_admin(
     await delete_chat_room_member_admin_by_id(
         session, chat_room_member_id, request.user.id, chat_room_id
     )
+
+
+@chat_router.get(
+    "/room/find/direct",
+    response_model=ChatRoomWithMembersRead,
+    dependencies=[Depends(PermissionDependency([IsAuthenticated]))],
+)
+async def get_chat_room_by_user_ids(
+    req: Request,
+    user_ids: list[UUID] = Query(..., description="User ids"),
+    session: AsyncSession = Depends(get_db_transactional_session),
+):
+    user_ids.append(req.user.id)
+    chat_room = await find_direct_chat_room_by_user_ids(session, user_ids)
+    if chat_room is None:
+        raise HTTPException(status_code=404, detail="Chat room not found")
+    return chat_room
