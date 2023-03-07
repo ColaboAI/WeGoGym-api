@@ -49,11 +49,12 @@ class ChatRoom(TimestampMixin, Base):
     __mapper_args__ = {"eager_defaults": True}
 
     id = Column(GUID, primary_key=True, index=True, default=uuid.uuid4)
-    name = Column(String(100), nullable=True)
+    name = Column(String(100), index=True, nullable=True)
     description = Column(String(200), nullable=True)
     created_by = Column(GUID, nullable=False, default=uuid.uuid4)
-    is_private = Column(Boolean, default=True, nullable=False, server_default=true())
+    is_private = Column(Boolean, index=True, nullable=False, server_default=true())
     admin_user_id = Column(GUID, ForeignKey("user.id", ondelete="SET NULL"))
+    is_group_chat = Column(Boolean, index=True, nullable=False, server_default=true())
 
     members: list[ChatRoomMember] = relationship(
         "ChatRoomMember",

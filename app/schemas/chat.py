@@ -77,6 +77,7 @@ class ChatRoomWithMembersRead(BaseModel):
     created_at: datetime
     updated_at: datetime
     is_private: bool
+    is_group_chat: bool
     members: list[ChatRoomMemberRead]
 
     class Config:
