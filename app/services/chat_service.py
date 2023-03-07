@@ -409,3 +409,21 @@ async def get_last_message_and_members_by_room_id(
     result = await session.execute(stmt)
     msg = result.scalars().first()
     return msg
+
+
+async def find_direct_chat_room_by_user_ids(
+    session: AsyncSession, user_ids: list[UUID]
+):
+    stmt = (
+        select(ChatRoom.id, func.count(ChatRoomMember.id).label("member_count"))
+        .join(ChatRoomMember, ChatRoom.id == ChatRoomMember.chat_room_id)
+        .group_by(ChatRoom.id)
+        .where(ChatRoom.is_group_chat == False)
+    )
+
+    res = await session.execute(stmt)
+    rows = res.fetchall()
+    room_ids = [r[0] for r in rows if r[1] == len(user_ids)]
+
+    chat_room = await get_chat_room_and_members_by_id(room_ids[0], session)
+    return chat_room
