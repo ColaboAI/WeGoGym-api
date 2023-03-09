@@ -9,7 +9,6 @@ from app.models.user import User
 from app.schemas.chat import (
     ChatRoomCreateResponse,
     ChatRoomList,
-    ChatRoomRead,
     ChatRoomCreate,
     ChatRoomMemberRead,
     ChatRoomWithMembersRead,
