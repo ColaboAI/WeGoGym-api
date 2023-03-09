@@ -57,7 +57,8 @@ class ChatRoomList(BaseModel):
 
 
 class MyChatRoomList(BaseModel):
-    total: int
+    total: int | None
+    next_cursor: int | None
     items: list[ChatRoomReadWithLastMessageAndMembers]
 
     class Config:
@@ -72,8 +73,8 @@ class ChatRoomMemberList(BaseModel):
 # TODO: ChatRoomWithMembersRead vs ChatRoomReadWithLastMessageAndMembers
 class ChatRoomWithMembersRead(BaseModel):
     id: UUID
-    name: str
-    description: str
+    name: str | None
+    description: str | None
     created_at: datetime
     updated_at: datetime
     is_private: bool
@@ -100,14 +101,18 @@ class ChatRoomCreate(BaseModel):
         ...,
         description="User ID of user who created chat room",
     )
-    members_user_id: list[UUID] = Field(
-        [],
+    members_user_ids: list[UUID] = Field(
+        ...,
         description="List of user IDs of members of chat room",
     )
 
     is_private: bool = Field(
         False,
         description="Is chat room private",
+    )
+    is_group_chat: bool = Field(
+        ...,
+        description="Is chat room group chat",
     )
 
 
@@ -131,6 +136,7 @@ class MessageRead(BaseModel):
 
 class MessageListRead(BaseModel):
     total: int
+    next_cursor: int | None
     items: list[MessageRead]
 
 
@@ -141,9 +147,8 @@ class MessageCreate(BaseModel):
     media_url: str | None
 
 
-class ChatRoomCreateResponse(BaseModel):
-    name: str
-    description: str
+class ChatRoomCreateResponse(ChatRoomRead):
+    members: list[ChatRoomMemberReadWithUser]
 
     class Config:
         orm_mode = True

@@ -1,8 +1,9 @@
 import asyncio
 from datetime import datetime, timezone
 from uuid import UUID
+from pydantic import UUID4
 
-from sqlalchemy import func, select, text
+from sqlalchemy import distinct, false, func, select, text
 from app.models.chat import ChatRoom, ChatRoomMember, Message
 from app.models.user import User
 from app.utils.ecs_log import logger
@@ -159,7 +160,6 @@ async def get_chat_room_list_by_user_id(
 
     chat_rooms = (
         select(ChatRoomMember.chat_room_id, ChatRoomMember.last_read_at)
-        .order_by(ChatRoomMember.created_at.desc())
         .where(ChatRoomMember.user_id == user_id)
         .cte("chat_rooms")
     )
@@ -173,6 +173,7 @@ async def get_chat_room_list_by_user_id(
                 ),
             )
         )
+        .order_by(ChatRoom.created_at.desc())
         .where(ChatRoom.id == chat_rooms.c.chat_room_id)
     )
 
@@ -323,7 +324,7 @@ async def get_chat_messages(
     room_id: str,
     last_read_at: datetime | None = None,
     limit: int = 10,
-    offset: int | None = None,
+    offset: int = 0,
 ):
     # last_read_at = None인 경우는 처음 메시지를 읽는 경우
     stmt = (
@@ -412,18 +413,23 @@ async def get_last_message_and_members_by_room_id(
 
 
 async def find_direct_chat_room_by_user_ids(
-    session: AsyncSession, user_ids: list[UUID]
+    session: AsyncSession, user_ids: list[UUID4]
 ):
     stmt = (
-        select(ChatRoom.id, func.count(ChatRoomMember.id).label("member_count"))
+        select(
+            ChatRoom.id,
+        )
         .join(ChatRoomMember, ChatRoom.id == ChatRoomMember.chat_room_id)
+        .where(
+            (ChatRoom.is_group_chat.is_(False)) & (ChatRoomMember.user_id.in_(user_ids))
+        )
         .group_by(ChatRoom.id)
-        .where(ChatRoom.is_group_chat == False)
+        .having(func.count(distinct(ChatRoomMember.user_id)) == len(user_ids))
     )
-
     res = await session.execute(stmt)
-    rows = res.fetchall()
-    room_ids = [r[0] for r in rows if r[1] == len(user_ids)]
+    rows = res.fetchone()
+    if not rows:
+        return None
 
-    chat_room = await get_chat_room_and_members_by_id(room_ids[0], session)
+    chat_room = await get_chat_room_and_members_by_id(rows[0], session)
     return chat_room
