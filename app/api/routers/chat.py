@@ -7,6 +7,7 @@ from app.core.fastapi.dependencies.premission import (
 )
 from app.models.user import User
 from app.schemas.chat import (
+    ChatRoomCreateResponse,
     ChatRoomList,
     ChatRoomRead,
     ChatRoomCreate,
@@ -66,19 +67,27 @@ async def get_my_chat_rooms(
     offset: int = Query(None, description="offset"),
 ):
     t, c = await get_chat_room_list_by_user_id(session, request.user.id, limit, offset)
-    for room in c:
-        print("room", room.__dict__)
-    return {"total": t, "items": c}
+
+    return {
+        "total": t,
+        "items": c,
+        "next_cursor": offset + len(c) if t and t > offset + len(c) else None,
+    }
 
 
-@chat_router.post("/rooms", response_model=ChatRoomRead, status_code=201)
+@chat_router.post("/rooms", response_model=ChatRoomCreateResponse, status_code=201)
 async def create_chat_room(
     chat_room: ChatRoomCreate,
     session: AsyncSession = Depends(get_db_transactional_session),
 ):
+    db_chat_room = await find_direct_chat_room_by_user_ids(
+        session, [chat_room.created_by, *chat_room.members_user_ids]
+    )
+    if db_chat_room:
+        raise HTTPException(status_code=409, detail="Chat room already exists")
     try:
-        chat_room_obj = ChatRoom(**chat_room.dict(exclude={"members_user_id"}))
 
+        chat_room_obj = ChatRoom(**chat_room.dict(exclude={"members_user_ids"}))
         stmt = select(User).where(User.id == chat_room.created_by)
         res = await session.execute(stmt)
         admin_user = res.scalars().first()
@@ -93,19 +102,43 @@ async def create_chat_room(
         )
         chat_room_obj.members.append(admin_member_obj)
 
-        for id in chat_room.members_user_id:
-            res = await session.execute(select(User).where(User.id == id))
+        if chat_room.is_group_chat == True:
+            for id in chat_room.members_user_ids:
+                res = await session.execute(select(User).where(User.id == id))
+                user = res.scalars().first()
+                if not user:
+                    raise HTTPException(status_code=404, detail="User not found")
+                chat_room_member_obj = ChatRoomMember(
+                    user=user,
+                    chat_room=chat_room_obj,
+                    is_admin=False,
+                )
+                # TODO: Watchout for this, it might be a bug.
+                # duplicated members are added to the chat room.(only response)
+                chat_room_obj.members.append(chat_room_member_obj)
+
+        else:
+            if len(chat_room.members_user_ids) != 1:
+                raise HTTPException(
+                    status_code=400, detail="Invalid Request For Direct Chat Room"
+                )
+            res = await session.execute(
+                select(User).where(User.id == chat_room.members_user_ids[0])
+            )
             user = res.scalars().first()
             if not user:
                 raise HTTPException(status_code=404, detail="User not found")
             chat_room_member_obj = ChatRoomMember(
-                user=user,
-                chat_room=chat_room_obj,
+                user=user, chat_room=chat_room_obj, is_admin=True
             )
-            chat_room_obj.members.append(chat_room_member_obj)
+
         session.add(chat_room_obj)
 
         await session.commit()
+        print("direct: request", chat_room.__dict__)
+        print("direct: response", chat_room_obj.__dict__)
+        for member in chat_room_obj.members:
+            print("direct: member", member.__dict__)
 
         return chat_room_obj
     except Exception as e:
@@ -147,7 +180,7 @@ async def get_chat_room_messages(
     req: Request,
     chat_room_id: str,
     limit: int = Query(10, description="Limit"),
-    offset: int | None = Query(None, description="Offset"),
+    offset: int = Query(0, description="Offset"),
     session: AsyncSession = Depends(get_db_transactional_session),
 ):
     chat_room_member = await get_user_mem_with_ids(req.user.id, chat_room_id, session)
@@ -158,7 +191,11 @@ async def get_chat_room_messages(
         session, chat_room_id, chat_room_member.last_read_at, limit, offset
     )
 
-    return {"total": t, "items": res}
+    return {
+        "total": t,
+        "items": res,
+        "next_cursor": offset + len(res) if t and t > offset + len(res) else None,
+    }
 
 
 @chat_router.put(
@@ -204,7 +241,7 @@ async def delete_chat_room_member_admin(
 
 
 @chat_router.get(
-    "/room/find/direct",
+    "/room/direct",
     response_model=ChatRoomWithMembersRead,
     dependencies=[Depends(PermissionDependency([IsAuthenticated]))],
 )
