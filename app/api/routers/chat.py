@@ -135,10 +135,6 @@ async def create_chat_room(
         session.add(chat_room_obj)
 
         await session.commit()
-        print("direct: request", chat_room.__dict__)
-        print("direct: response", chat_room_obj.__dict__)
-        for member in chat_room_obj.members:
-            print("direct: member", member.__dict__)
 
         return chat_room_obj
     except Exception as e:
