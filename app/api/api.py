@@ -84,7 +84,9 @@ html = """
             }
             function sendMessage(event) {
                 var input = document.getElementById("messageText")
-                ws.send(input.value)
+                ws.send(JSON.stringify({
+                text: input.value,
+                })) 
                 input.value = ''
                 event.preventDefault()
                 document.getElementById("messageText").focus()
