@@ -1,5 +1,6 @@
 import asyncio
 from datetime import datetime, timezone
+from operator import and_
 from uuid import UUID
 
 from sqlalchemy import distinct, func, select, text
@@ -14,6 +15,7 @@ from dataclasses import asdict, dataclass
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 from starlette.websockets import WebSocketState
+from sqlalchemy.orm import aliased
 
 
 class ChatService:
@@ -164,6 +166,28 @@ async def get_chat_room_list_by_user_id(
         .cte("chat_rooms")
     )
 
+    last_msg_created_time = (
+        select(
+            Message.chat_room_id,
+            func.max(Message.created_at).label("last_message_created_at"),
+        )
+        .where(Message.chat_room_id == chat_rooms.c.chat_room_id)
+        .group_by(Message.chat_room_id)
+        .subquery()
+    )
+    last_msg = (
+        select(
+            Message.text.label("last_message_text"),
+            Message.created_at.label("last_message_created_at"),
+            Message.chat_room_id,
+        )
+        .where(
+            Message.chat_room_id == last_msg_created_time.c.chat_room_id,
+            Message.created_at == last_msg_created_time.c.last_message_created_at,
+        )
+        .subquery()
+    )
+
     stmt = (
         select(ChatRoom)
         .options(
@@ -173,20 +197,14 @@ async def get_chat_room_list_by_user_id(
                 ),
             )
         )
+        .join(
+            last_msg,
+            ChatRoom.id == last_msg.c.chat_room_id,
+            isouter=True,
+        )
+        .add_columns(last_msg.c.last_message_text, last_msg.c.last_message_created_at)
         .order_by(ChatRoom.created_at.desc())
         .where(ChatRoom.id == chat_rooms.c.chat_room_id)
-    )
-
-    last_msg = (
-        select(
-            Message.chat_room_id,
-            Message.text.label("last_message_text"),
-            Message.created_at.label("last_message_created_at"),
-        )
-        .where(Message.chat_room_id == chat_rooms.c.chat_room_id)
-        .order_by(Message.created_at.desc())
-        .limit(1)
-        .cte("last_msg")
     )
 
     unread_count = (
@@ -201,10 +219,6 @@ async def get_chat_room_list_by_user_id(
         .group_by(Message.chat_room_id)
         .cte("unread_count")
     )
-
-    stmt = stmt.add_columns(
-        last_msg.c.last_message_text, last_msg.c.last_message_created_at
-    ).join(last_msg, ChatRoom.id == last_msg.c.chat_room_id, isouter=True)
 
     stmt = stmt.add_columns(unread_count.c.unread_count).join(
         unread_count, ChatRoom.id == unread_count.c.chat_room_id, isouter=True
@@ -225,6 +239,7 @@ async def get_chat_room_list_by_user_id(
 
     out = []
     for row in result:
+        print(row)
         row.ChatRoom.last_message_text = row.last_message_text
         row.ChatRoom.last_message_created_at = row.last_message_created_at
         row.ChatRoom.unread_count = row.unread_count
