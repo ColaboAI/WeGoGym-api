@@ -1,6 +1,5 @@
 import asyncio
 from datetime import datetime, timezone
-from operator import and_
 from uuid import UUID
 
 from sqlalchemy import distinct, func, select, text

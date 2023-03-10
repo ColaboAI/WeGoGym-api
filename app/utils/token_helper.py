@@ -1,4 +1,4 @@
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 
 import jwt
 
@@ -12,7 +12,7 @@ class TokenHelper:
         token = jwt.encode(
             payload={
                 **payload,
-                "exp": datetime.utcnow() + timedelta(seconds=expire_period),
+                "exp": datetime.now(timezone.utc) + timedelta(seconds=expire_period),
             },
             key=config.JWT_SECRET_KEY,
             algorithm=config.JWT_ALGORITHM,
