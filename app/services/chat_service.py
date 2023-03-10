@@ -1,19 +1,18 @@
 import asyncio
 from datetime import datetime, timezone
 from uuid import UUID
-from pydantic import UUID4
 
-from sqlalchemy import distinct, false, func, select, text
+from sqlalchemy import distinct, func, select, text
 from app.models.chat import ChatRoom, ChatRoomMember, Message
 from app.models.user import User
 from app.utils.ecs_log import logger
 import json
-from fastapi import HTTPException, WebSocket
+from fastapi import HTTPException, WebSocket, WebSocketDisconnect
 from aioredis.client import Redis, PubSub
 from app.core.helpers.redis import get_redis_conn
 from dataclasses import asdict, dataclass
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.orm import selectinload, aliased
+from sqlalchemy.orm import selectinload
 from starlette.websockets import WebSocketState
 
 
@@ -21,8 +20,8 @@ class ChatService:
     def __init__(
         self,
         websocket: WebSocket,
-        chat_room_id: str,
-        user_id: str,
+        chat_room_id: UUID,
+        user_id: UUID,
         session: AsyncSession,
     ):
         super().__init__()
@@ -37,57 +36,58 @@ class ChatService:
         try:
             while True:
                 if self.ws.application_state == WebSocketState.CONNECTED:
-
-                    message = await self.ws.receive_text()
+                    message = await self.ws.receive_json()
                     if message:
+                        text = message.get("text")
                         msg = await post_chat_message(
                             self.user_id,
                             self.chat_room_id,
-                            message,
+                            text,
                             self.session,
                         )
-                        chat_message = ChatMessage(
-                            chat_room_id=self.chat_room_id,
-                            user_id=self.user_id,
-                            text=message,
-                            created_at=msg.created_at.strftime("%Y-%m-%d %H:%M:%S"),
+                        chat_message = ChatMessageDataClass(
+                            chat_room_id=self.chat_room_id.__str__(),
+                            user_id=self.user_id.__str__(),
+                            text=text,
+                            created_at=msg.created_at.isoformat(),
                         )
 
                         await conn.publish(
-                            self.chat_room_id, json.dumps(asdict(chat_message))
+                            self.chat_room_id.__str__(),
+                            json.dumps(asdict(chat_message)),
                         )
                 else:
                     logger.warning(
                         f"Websocket state: {self.ws.application_state}, reconnecting..."  # noqa: E501
                     )
-                    await self.ws.accept()
+                    break
 
         except Exception as e:
             logger.debug(e)
+            if conn:
+                await conn.close()
+                del conn
 
     async def subscribe_handler(self, pubsub: PubSub):
-        await pubsub.subscribe(self.chat_room_id)
+        await pubsub.subscribe(self.chat_room_id.__str__())
         try:
             while True:
                 if self.ws.application_state == WebSocketState.CONNECTED:
-
                     message = await pubsub.get_message(ignore_subscribe_messages=True)
                     if message:
                         data = json.loads(message.get("data"))
-                        chat_message = ChatMessage(**data)
-                        await self.ws.send_text(
-                            f"[{chat_message.created_at}] {chat_message.text} ({chat_message.user_id})"
-                        )
+                        chat_message = ChatMessageDataClass(**data)
+                        await self.ws.send_json(asdict(chat_message), mode="text")
                 else:
                     logger.warning(
                         f"Websocket state: {self.ws.application_state}, reconnecting..."  # noqa: E501
                     )
-                    await self.ws.accept()
+                    break
         except Exception as e:
             logger.debug(e)
-            await self.ws.close()
-            if self.conn:
-                await self.conn.close()
+            if pubsub:
+                await pubsub.close()
+                del self.conn
 
     async def run(self):
         conn: Redis = await self.get_redis_conn()
@@ -108,7 +108,7 @@ class ChatService:
 
 
 @dataclass(slots=True)
-class ChatMessage:
+class ChatMessageDataClass:
     chat_room_id: str
     user_id: str
     created_at: str
@@ -116,8 +116,8 @@ class ChatMessage:
 
 
 async def get_user_mem_with_ids(
-    user_id: str,
-    room_id: str,
+    user_id: UUID,
+    room_id: UUID,
     session: AsyncSession,
 ) -> ChatRoomMember:
     """return chat room member if user is in room"""
@@ -132,7 +132,7 @@ async def get_user_mem_with_ids(
     return data
 
 
-async def get_chat_room_and_members_by_id(chat_room_id: str, session: AsyncSession):
+async def get_chat_room_and_members_by_id(chat_room_id: UUID, session: AsyncSession):
     """return chat room and members by room_id"""
     stmt = (
         select(ChatRoom)
@@ -144,7 +144,7 @@ async def get_chat_room_and_members_by_id(chat_room_id: str, session: AsyncSessi
     return chat_room
 
 
-async def get_chat_room_by_id(chat_room_id: int, session: AsyncSession):
+async def get_chat_room_by_id(chat_room_id: UUID, session: AsyncSession):
     """return chat room by room_id"""
     stmt = select(ChatRoom).where(ChatRoom.id == chat_room_id)
     result = await session.execute(stmt)
@@ -154,7 +154,7 @@ async def get_chat_room_by_id(chat_room_id: int, session: AsyncSession):
 
 # TODO
 async def get_chat_room_list_by_user_id(
-    session: AsyncSession, user_id: int, limit: int, offset: int | None = None
+    session: AsyncSession, user_id: UUID, limit: int, offset: int | None = None
 ) -> tuple[int | None, list[ChatRoom]]:
     """return all chat room that user is in"""
 
@@ -306,7 +306,7 @@ async def get_user_by_id(user_id: str, session: AsyncSession) -> User:
 
 
 async def post_chat_message(
-    user_id: str, room_id: str, message: str, session: AsyncSession
+    user_id: UUID, room_id: UUID, message: str, session: AsyncSession
 ):
     # get user from db
     # user = await get_user_by_id(user_id, session)
@@ -321,7 +321,7 @@ async def post_chat_message(
 
 async def get_chat_messages(
     session: AsyncSession,
-    room_id: str,
+    room_id: UUID,
     last_read_at: datetime | None = None,
     limit: int = 10,
     offset: int = 0,
@@ -376,7 +376,7 @@ async def delete_chat_room_member_by_id(
 
 
 async def delete_chat_room_member_admin_by_id(
-    session: AsyncSession, chat_room_member_id: str, admin_id: str, chat_room_id: str
+    session: AsyncSession, chat_room_member_id: UUID, admin_id: UUID, chat_room_id: UUID
 ):
 
     admin_mem = await get_user_mem_with_ids(admin_id, chat_room_id, session)
@@ -413,7 +413,7 @@ async def get_last_message_and_members_by_room_id(
 
 
 async def find_direct_chat_room_by_user_ids(
-    session: AsyncSession, user_ids: list[UUID4]
+    session: AsyncSession, user_ids: list[UUID]
 ):
     stmt = (
         select(
