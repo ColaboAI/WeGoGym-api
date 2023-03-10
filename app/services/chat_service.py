@@ -336,7 +336,7 @@ async def post_chat_message(
 async def get_chat_messages(
     session: AsyncSession,
     room_id: UUID,
-    last_read_at: datetime | None = None,
+    created_at: datetime | None = None,
     limit: int = 10,
     offset: int = 0,
 ):
@@ -345,12 +345,12 @@ async def get_chat_messages(
         select(Message)
         .where(
             Message.chat_room_id == room_id,
-            Message.created_at > last_read_at,
+            Message.created_at > created_at,
         )
         .order_by(Message.created_at.desc(), Message.id.desc())
     )
     total_stmt = select(func.count(Message.id)).where(
-        Message.chat_room_id == room_id, Message.created_at > last_read_at
+        Message.chat_room_id == room_id, Message.created_at > created_at
     )
     total = await session.execute(total_stmt)
     if offset:
