@@ -1,3 +1,5 @@
+from datetime import datetime, timezone
+
 from uuid import UUID
 from fastapi import APIRouter, Depends, HTTPException, Query, Request
 from sqlalchemy import select
@@ -29,6 +31,8 @@ from app.services.chat_service import (
 )
 from app.session import get_db_transactional_session
 from sqlalchemy.ext.asyncio import AsyncSession
+
+from app.utils.generics import utcnow
 
 
 chat_router = APIRouter()
@@ -183,9 +187,11 @@ async def get_chat_room_messages(
         raise HTTPException(status_code=403, detail="User is not in the room")
 
     t, res = await get_chat_messages(
-        session, chat_room_id, chat_room_member.last_read_at, limit, offset
+        session, chat_room_id, chat_room_member.created_at, limit, offset
     )
 
+    chat_room_member.last_read_at = datetime.now(timezone.utc)
+    await session.commit()
     return {
         "total": t,
         "items": res,
