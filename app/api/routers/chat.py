@@ -1,5 +1,5 @@
 from uuid import UUID
-from fastapi import APIRouter, Body, Depends, HTTPException, Query, Request
+from fastapi import APIRouter, Depends, HTTPException, Query, Request
 from sqlalchemy import select
 from app.core.fastapi.dependencies.premission import (
     IsAuthenticated,
@@ -143,7 +143,7 @@ async def create_chat_room(
 
 @chat_router.get("/rooms/{chat_room_id}", response_model=ChatRoomWithMembersRead)
 async def get_chat_room(
-    chat_room_id: str,
+    chat_room_id: UUID,
     session: AsyncSession = Depends(get_db_transactional_session),
 ):
     chat_room = await get_chat_room_and_members_by_id(chat_room_id, session)
@@ -156,7 +156,7 @@ async def get_chat_room(
     "/rooms/{chat_room_id}/members", response_model=list[ChatRoomMemberRead]
 )
 async def get_chat_room_members(
-    chat_room_id: str,
+    chat_room_id: UUID,
     session: AsyncSession = Depends(get_db_transactional_session),
 ):
     stmt = select(ChatRoomMember).where(ChatRoomMember.chat_room_id == chat_room_id)
@@ -173,7 +173,7 @@ async def get_chat_room_members(
 )
 async def get_chat_room_messages(
     req: Request,
-    chat_room_id: str,
+    chat_room_id: UUID,
     limit: int = Query(10, description="Limit"),
     offset: int = Query(0, description="Offset"),
     session: AsyncSession = Depends(get_db_transactional_session),
@@ -226,8 +226,8 @@ async def delete_chat_room_member(
 )
 async def delete_chat_room_member_admin(
     request: Request,
-    chat_room_id: str,
-    chat_room_member_id: str,
+    chat_room_id: UUID,
+    chat_room_member_id: UUID,
     session: AsyncSession = Depends(get_db_transactional_session),
 ):
     await delete_chat_room_member_admin_by_id(
