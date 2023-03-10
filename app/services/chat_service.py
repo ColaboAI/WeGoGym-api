@@ -239,7 +239,6 @@ async def get_chat_room_list_by_user_id(
 
     out = []
     for row in result:
-        print(row)
         row.ChatRoom.last_message_text = row.last_message_text
         row.ChatRoom.last_message_created_at = row.last_message_created_at
         row.ChatRoom.unread_count = row.unread_count
