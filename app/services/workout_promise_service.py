@@ -168,7 +168,7 @@ async def get_workout_promise_list_joined_by_me(
         .where(WorkoutPromise.is_private.is_(False))
         .where(
             WorkoutPromise.participants.any(WorkoutParticipant.user_id == user_id)
-            .where(WorkoutParticipant.status == ParticipantStatus.PENDING)
+            .where(WorkoutParticipant.status == ParticipantStatus.ACCEPTED)
             .where(WorkoutParticipant.is_admin.is_(False)),
         )
     )
@@ -177,7 +177,7 @@ async def get_workout_promise_list_joined_by_me(
         .where(WorkoutPromise.is_private.is_(False))
         .where(
             WorkoutPromise.participants.any(WorkoutParticipant.user_id == user_id)
-            .where(WorkoutParticipant.status == ParticipantStatus.PENDING)
+            .where(WorkoutParticipant.status == ParticipantStatus.ACCEPTED)
             .where(WorkoutParticipant.is_admin.is_(False)),
         )
         .select_from(WorkoutPromise)
