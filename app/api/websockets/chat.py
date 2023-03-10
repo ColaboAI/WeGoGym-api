@@ -1,4 +1,5 @@
-from fastapi import APIRouter, Depends, HTTPException, WebSocket
+from uuid import UUID
+from fastapi import APIRouter, Depends, HTTPException, Query, WebSocket
 
 
 from app.session import get_db_transactional_session
@@ -11,19 +12,31 @@ chat_ws_router = APIRouter(
 )
 
 
-@chat_ws_router.websocket("/{chat_room_id}/{user_id}")
+@chat_ws_router.websocket(
+    "/{chat_room_id}/{user_id}",
+)
 async def chat_websocket_endpoint(
     websocket: WebSocket,
-    chat_room_id: str,
-    user_id: str,
+    chat_room_id: UUID,
+    user_id: UUID,
+    # token: str = Query(..., description="JWT token"),
     session: AsyncSession = Depends(get_db_transactional_session),
 ):
-    chat_room_member = await get_user_mem_with_ids(user_id, chat_room_id, session)
+    # Check user auth with jwt token
+    # if not await conn_manager.validate_user(user_id, token):
+    #     raise HTTPException(status_code=403, detail="Not authenticated")
+    try:
+        chat_room_member = await get_user_mem_with_ids(user_id, chat_room_id, session)
 
-    if not chat_room_member:
-        raise HTTPException(status_code=403, detail="User is not in the room")
+        if not chat_room_member:
+            raise HTTPException(status_code=403, detail="User is not in the room")
+        str_chat_room_id = chat_room_id.__str__()
+        str_user_id = user_id.__str__()
 
-    await conn_manager.connect(chat_room_id + user_id, websocket)
-    chat_service = ChatService(websocket, chat_room_id, user_id, session=session)
-    await chat_service.run()
-    conn_manager.disconnect(chat_room_id + user_id)
+        await conn_manager.connect(str_chat_room_id + str_user_id, websocket)
+        chat_service = ChatService(websocket, chat_room_id, user_id, session=session)
+        await chat_service.run()
+        conn_manager.disconnect(str_chat_room_id + str_user_id)
+    except Exception as e:
+        conn_manager.disconnect(str_chat_room_id + str_user_id)
+        raise e
