@@ -113,7 +113,7 @@ async def get_workout_promise_list(
     return total.scalars().first(), result.scalars().all()
 
 
-async def get_workout_promise_list_by_user_id(
+async def get_workout_promise_list_written_by_me(
     db: AsyncSession,
     user_id: UUID,
     limit: int = 10,
@@ -133,6 +133,53 @@ async def get_workout_promise_list_by_user_id(
         select(func.count("*"))
         .where(WorkoutPromise.is_private.is_(False))
         .where(WorkoutPromise.admin_user_id == user_id)
+        .select_from(WorkoutPromise)
+    )
+
+    if offset:
+        stmt = stmt.offset(offset)
+
+    if limit:
+        stmt = stmt.limit(limit)
+
+    total = await db.execute(t_stmt)
+    result = await db.execute(stmt)
+
+    return total.scalars().first(), result.scalars().all()
+
+
+async def get_workout_promise_list_joined_by_me(
+    db: AsyncSession,
+    user_id: UUID,
+    limit: int = 10,
+    offset: int | None = None,
+) -> tuple[int | None, list[WorkoutPromise]]:
+    stmt = (
+        select(WorkoutPromise)
+        .order_by(WorkoutPromise.created_at.desc())
+        .options(selectinload(WorkoutPromise.chat_room))
+        .options(
+            selectinload(WorkoutPromise.participants).options(
+                selectinload(WorkoutParticipant.user)
+            ),
+        )
+        .options(selectinload(WorkoutPromise.gym_info))
+        .options(selectinload(WorkoutPromise.admin_user))
+        .where(WorkoutPromise.is_private.is_(False))
+        .where(
+            WorkoutPromise.participants.any(WorkoutParticipant.user_id == user_id)
+            .where(WorkoutParticipant.status == ParticipantStatus.PENDING)
+            .where(WorkoutParticipant.is_admin.is_(False)),
+        )
+    )
+    t_stmt = (
+        select(func.count("*"))
+        .where(WorkoutPromise.is_private.is_(False))
+        .where(
+            WorkoutPromise.participants.any(WorkoutParticipant.user_id == user_id)
+            .where(WorkoutParticipant.status == ParticipantStatus.PENDING)
+            .where(WorkoutParticipant.is_admin.is_(False)),
+        )
         .select_from(WorkoutPromise)
     )
 

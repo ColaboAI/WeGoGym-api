@@ -23,7 +23,8 @@ from app.services.workout_promise_service import (
     delete_workout_promise_by_id,
     get_workout_promise_by_id,
     get_workout_promise_list,
-    get_workout_promise_list_by_user_id,
+    get_workout_promise_list_joined_by_me,
+    get_workout_promise_list_written_by_me,
     update_workout_participant_,
     update_workout_promise_by_id,
 )
@@ -48,6 +49,48 @@ async def get_workout_promises(
 
 
 @workout_promise_router.get(
+    "/me",
+    response_model=WorkoutPromiseListResponse,
+    dependencies=[Depends(PermissionDependency([IsAuthenticated]))],
+)
+async def get_workout_promises_written_by_me(
+    req: Request,
+    session: AsyncSession = Depends(get_db_transactional_session),
+    limit: int = 10,
+    offset: int = 0,
+):
+    total, wp_list = await get_workout_promise_list_written_by_me(
+        session,
+        req.user.id,
+        limit,
+        offset,
+    )
+
+    return {"total": total, "items": wp_list}
+
+
+@workout_promise_router.get(
+    "/participant/me",
+    response_model=WorkoutPromiseListResponse,
+    dependencies=[Depends(PermissionDependency([IsAuthenticated]))],
+)
+async def get_workout_promises_joined_by_me(
+    req: Request,
+    session: AsyncSession = Depends(get_db_transactional_session),
+    limit: int = 10,
+    offset: int = 0,
+):
+    total, wp_list = await get_workout_promise_list_joined_by_me(
+        session,
+        req.user.id,
+        limit,
+        offset,
+    )
+
+    return {"total": total, "items": wp_list}
+
+
+@workout_promise_router.get(
     "/{workout_promise_id}",
     response_model=WorkoutPromiseRead,
     dependencies=[Depends(PermissionDependency([IsAuthenticated]))],
@@ -58,27 +101,6 @@ async def get_workout_promise(
 ):
     wp = await get_workout_promise_by_id(session, workout_promise_id)
     return wp
-
-
-@workout_promise_router.get(
-    "/user/me",
-    response_model=WorkoutPromiseListResponse,
-    dependencies=[Depends(PermissionDependency([IsAuthenticated]))],
-)
-async def get_workout_promise_written_by_me(
-    req: Request,
-    session: AsyncSession = Depends(get_db_transactional_session),
-    limit: int = 10,
-    offset: int = 0,
-):
-    total, wp_list = await get_workout_promise_list_by_user_id(
-        session,
-        req.user.id,
-        limit,
-        offset,
-    )
-
-    return {"total": total, "items": wp_list}
 
 
 # 운동 약속 정보 생성 엔드포인트
