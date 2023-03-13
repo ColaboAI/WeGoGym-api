@@ -77,6 +77,7 @@ class WorkoutPromiseRead(WorkoutPromiseBase):
     gym_info: GymInfoRead | None
     gym_info_id: UUID | None
     admin_user_id: UUID
+    admin_user: UserRead
     participants: list["WorkoutParticipantRead"]
     status: WorkoutPromiseStatus
 

@@ -8,6 +8,7 @@ from app.core.fastapi.dependencies.premission import (
 )
 from app.schemas.workout_promise import (
     GymInfoBase,
+    ParticipantStatus,
     WorkoutParticipantBase,
     WorkoutParticipantRead,
     WorkoutParticipantUpdate,
@@ -46,6 +47,11 @@ async def get_workout_promises(
     offset: int = 0,
 ):
     total, wp_list = await get_workout_promise_list(session, limit, offset)
+    for wp in wp_list:
+        print("admin", wp.admin_user.__dict__)
+
+        for wp_participant in wp.participants:
+            print("info: ", wp_participant.user.__dict__)
     return {"total": total, "items": wp_list}
 
 

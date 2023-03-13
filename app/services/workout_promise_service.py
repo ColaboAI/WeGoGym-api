@@ -90,10 +90,18 @@ async def get_workout_promise_list(
     stmt = (
         select(WorkoutPromise)
         .order_by(WorkoutPromise.created_at.desc())
-        .options(selectinload(WorkoutPromise.chat_room))
-        .options(selectinload(WorkoutPromise.participants))
-        .options(selectinload(WorkoutPromise.gym_info))
-        .options(selectinload(WorkoutPromise.admin_user))
+        .options(
+            selectinload(WorkoutPromise.chat_room),
+            selectinload(WorkoutPromise.participants).options(
+                selectinload(WorkoutParticipant.user).load_only(
+                    "id", "username", "profile_pic"
+                )
+            ),
+            selectinload(WorkoutPromise.gym_info),
+            selectinload(WorkoutPromise.admin_user).load_only(
+                "id", "username", "profile_pic"
+            ),
+        )
         .where(WorkoutPromise.is_private.is_(False))
     )
     t_stmt = (
@@ -122,10 +130,18 @@ async def get_recruiting_workout_promise_list(
     stmt = (
         select(WorkoutPromise)
         .order_by(WorkoutPromise.created_at.desc())
-        .options(selectinload(WorkoutPromise.chat_room))
-        .options(selectinload(WorkoutPromise.participants))
-        .options(selectinload(WorkoutPromise.gym_info))
-        .options(selectinload(WorkoutPromise.admin_user))
+        .options(
+            selectinload(WorkoutPromise.chat_room),
+            selectinload(WorkoutPromise.participants).options(
+                selectinload(WorkoutParticipant.user).load_only(
+                    "id", "username", "profile_pic"
+                )
+            ),
+            selectinload(WorkoutPromise.gym_info),
+            selectinload(WorkoutPromise.admin_user).load_only(
+                "id", "username", "profile_pic"
+            ),
+        )
         .where(WorkoutPromise.is_private.is_(False))
         .where(WorkoutPromise.status == WorkoutPromiseStatus.RECRUITING)
     )
@@ -157,10 +173,18 @@ async def get_workout_promise_list_written_by_me(
     stmt = (
         select(WorkoutPromise)
         .order_by(WorkoutPromise.created_at.desc())
-        .options(selectinload(WorkoutPromise.chat_room))
-        .options(selectinload(WorkoutPromise.participants))
-        .options(selectinload(WorkoutPromise.gym_info))
-        .options(selectinload(WorkoutPromise.admin_user))
+        .options(
+            selectinload(WorkoutPromise.chat_room),
+            selectinload(WorkoutPromise.participants).options(
+                selectinload(WorkoutParticipant.user).load_only(
+                    "id", "username", "profile_pic"
+                )
+            ),
+            selectinload(WorkoutPromise.gym_info),
+            selectinload(WorkoutPromise.admin_user).load_only(
+                "id", "username", "profile_pic"
+            ),
+        )
         .where(WorkoutPromise.is_private.is_(False))
         .where(WorkoutPromise.admin_user_id == user_id)
     )
