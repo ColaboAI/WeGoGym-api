@@ -4,6 +4,7 @@ import jwt
 from app.core.exceptions.token import DecodeTokenException, ExpiredTokenException
 
 from app.utils.token_helper import TokenHelper
+from starlette.websockets import WebSocketState
 
 # Add connection manager method to validate user auth
 class ConnectionManager:
@@ -35,8 +36,11 @@ class ConnectionManager:
         await websocket.accept()
         self.active_connections[key] = websocket
 
-    def disconnect(self, key: str):
-        del self.active_connections[key]
+    async def disconnect(self, key: str):
+        if key in self.active_connections:
+            if self.active_connections[key].client_state == WebSocketState.CONNECTED:
+                await self.active_connections[key].close()
+            del self.active_connections[key]
 
 
 conn_manager = ConnectionManager()

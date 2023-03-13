@@ -1,3 +1,4 @@
+from datetime import datetime, timezone
 from uuid import UUID
 from fastapi import APIRouter, Depends, HTTPException, Query, WebSocket
 
@@ -36,7 +37,8 @@ async def chat_websocket_endpoint(
         await conn_manager.connect(str_chat_room_id + str_user_id, websocket)
         chat_service = ChatService(websocket, chat_room_id, user_id, session=session)
         await chat_service.run()
-        conn_manager.disconnect(str_chat_room_id + str_user_id)
     except Exception as e:
-        conn_manager.disconnect(str_chat_room_id + str_user_id)
         raise e
+    finally:
+        await conn_manager.disconnect(str_chat_room_id + "," + str_user_id)
+        chat_room_member.last_read_at = datetime.now(timezone.utc)
