@@ -42,5 +42,11 @@ class ConnectionManager:
                 await self.active_connections[key].close()
             del self.active_connections[key]
 
+    async def close_all(self):
+        for key in self.active_connections:
+            if self.active_connections[key].client_state == WebSocketState.CONNECTED:
+                await self.active_connections[key].close()
+        self.active_connections = {}
+
 
 conn_manager = ConnectionManager()
