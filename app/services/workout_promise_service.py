@@ -12,6 +12,7 @@ from app.schemas.workout_promise import (
     WorkoutParticipantBase,
     WorkoutParticipantUpdate,
     WorkoutPromiseBase,
+    WorkoutPromiseStatus,
     WorkoutPromiseUpdate,
 )
 from app.core.exceptions import (
@@ -98,6 +99,40 @@ async def get_workout_promise_list(
     t_stmt = (
         select(func.count("*"))
         .where(WorkoutPromise.is_private.is_(False))
+        .select_from(WorkoutPromise)
+    )
+
+    if offset:
+        stmt = stmt.offset(offset)
+
+    if limit:
+        stmt = stmt.limit(limit)
+
+    total = await db.execute(t_stmt)
+    result = await db.execute(stmt)
+
+    return total.scalars().first(), result.scalars().all()
+
+
+async def get_recruiting_workout_promise_list(
+    db: AsyncSession,
+    limit: int = 10,
+    offset: int | None = None,
+) -> tuple[int | None, list[WorkoutPromise]]:
+    stmt = (
+        select(WorkoutPromise)
+        .order_by(WorkoutPromise.created_at.desc())
+        .options(selectinload(WorkoutPromise.chat_room))
+        .options(selectinload(WorkoutPromise.participants))
+        .options(selectinload(WorkoutPromise.gym_info))
+        .options(selectinload(WorkoutPromise.admin_user))
+        .where(WorkoutPromise.is_private.is_(False))
+        .where(WorkoutPromise.status == WorkoutPromiseStatus.RECRUITING)
+    )
+    t_stmt = (
+        select(func.count("*"))
+        .where(WorkoutPromise.is_private.is_(False))
+        .where(WorkoutPromise.status == WorkoutPromiseStatus.RECRUITING)
         .select_from(WorkoutPromise)
     )
 

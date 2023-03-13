@@ -21,6 +21,7 @@ from app.services.workout_promise_service import (
     create_workout_promise,
     delete_workout_participant,
     delete_workout_promise_by_id,
+    get_recruiting_workout_promise_list,
     get_workout_promise_by_id,
     get_workout_promise_list,
     get_workout_promise_list_joined_by_me,
@@ -45,6 +46,21 @@ async def get_workout_promises(
     offset: int = 0,
 ):
     total, wp_list = await get_workout_promise_list(session, limit, offset)
+    return {"total": total, "items": wp_list}
+
+
+# 모집 중인 운동 약속 정보 조회 엔드포인트
+@workout_promise_router.get(
+    "/recruiting",
+    response_model=WorkoutPromiseListResponse,
+    dependencies=[Depends(PermissionDependency([IsAuthenticated]))],
+)
+async def get_recruiting_workout_promises(
+    session: AsyncSession = Depends(get_db_transactional_session),
+    limit: int = 10,
+    offset: int = 0,
+):
+    total, wp_list = await get_recruiting_workout_promise_list(session, limit, offset)
     return {"total": total, "items": wp_list}
 
 
