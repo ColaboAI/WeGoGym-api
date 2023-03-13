@@ -16,7 +16,7 @@ from sqlalchemy.orm import selectinload
 from starlette.websockets import WebSocketState
 from sqlalchemy.orm import aliased
 
-
+# TODO: When Keyboard interrupt, close the connection. and task must be cancelled
 class ChatService:
     def __init__(
         self,
@@ -37,9 +37,14 @@ class ChatService:
         try:
             while True:
                 if self.ws.application_state == WebSocketState.CONNECTED:
-                    message = await self.ws.receive_json()
+                    m = await self.ws.receive_text()
+                    message: dict = json.loads(m)
+                    print(
+                        "message",
+                        message,
+                    )
                     if message:
-                        text = message.get("text")
+                        text = message["text"]
                         msg = await post_chat_message(
                             self.user_id,
                             self.chat_room_id,
@@ -57,6 +62,7 @@ class ChatService:
                             self.chat_room_id.__str__(),
                             json.dumps(asdict(chat_message)),
                         )
+
                 else:
                     logger.warning(
                         f"Websocket state: {self.ws.application_state}, reconnecting..."  # noqa: E501
@@ -64,10 +70,8 @@ class ChatService:
                     break
 
         except Exception as e:
-            logger.debug(e)
-            if conn:
-                await conn.close()
-                del conn
+            logger.debug(f"pub handler {e}")
+            raise e
 
     async def subscribe_handler(self, pubsub: PubSub):
         await pubsub.subscribe(self.chat_room_id.__str__())
@@ -85,10 +89,8 @@ class ChatService:
                     )
                     break
         except Exception as e:
-            logger.debug(e)
-            if pubsub:
-                await pubsub.close()
-                del self.conn
+            logger.debug(f"sub handler: {e}")
+            raise e
 
     async def run(self):
         conn: Redis = await self.get_redis_conn()
@@ -96,16 +98,28 @@ class ChatService:
         pubsub: PubSub = conn.pubsub()
 
         tasks = [self.publish_handler(conn), self.subscribe_handler(pubsub)]
-        done, pending = await asyncio.wait(
-            tasks,
-            return_when=asyncio.FIRST_COMPLETED,
-        )
-        logger.info(f"Done task: {done}")
-        for task in pending:
-            logger.debug(f"Canceling task: {task}")
-            task.cancel()
-        for task in done:
-            task.result()
+        try:
+            done, pending = await asyncio.wait(
+                tasks,
+                return_when=asyncio.FIRST_COMPLETED,
+            )
+            logger.debug(f"Done: {done}, Pending: {pending}")
+
+            for task in done:
+                if task.exception():
+                    logger.debug(f"Task exception: {task}")
+
+            for task in pending:
+                task.cancel()
+                await pubsub.close()
+
+        except Exception as e:
+            logger.debug(f"Run exception: {e}")
+
+        finally:
+            if pubsub:
+                await pubsub.close()
+                del pubsub
 
 
 @dataclass(slots=True)

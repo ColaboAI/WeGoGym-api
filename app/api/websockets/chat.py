@@ -1,7 +1,15 @@
+import asyncio
+from asyncio.log import logger
 from datetime import datetime, timezone
 from uuid import UUID
-from fastapi import APIRouter, Depends, HTTPException, Query, WebSocket
-
+from fastapi import (
+    APIRouter,
+    Depends,
+    HTTPException,
+    WebSocket,
+    WebSocketDisconnect,
+)
+from app.utils.ecs_log import logger
 
 from app.session import get_db_transactional_session
 from app.services.chat_service import ChatService, get_user_mem_with_ids
@@ -28,7 +36,6 @@ async def chat_websocket_endpoint(
     #     raise HTTPException(status_code=403, detail="Not authenticated")
     try:
         chat_room_member = await get_user_mem_with_ids(user_id, chat_room_id, session)
-
         if not chat_room_member:
             raise HTTPException(status_code=403, detail="User is not in the room")
         str_chat_room_id = chat_room_id.__str__()
@@ -37,8 +44,11 @@ async def chat_websocket_endpoint(
         await conn_manager.connect(str_chat_room_id + str_user_id, websocket)
         chat_service = ChatService(websocket, chat_room_id, user_id, session=session)
         await chat_service.run()
+    except WebSocketDisconnect:
+        await conn_manager.disconnect(str_chat_room_id + "," + str_user_id)
     except Exception as e:
-        raise e
+        logger.debug(e)
     finally:
         await conn_manager.disconnect(str_chat_room_id + "," + str_user_id)
         chat_room_member.last_read_at = datetime.now(timezone.utc)
+        del chat_service
