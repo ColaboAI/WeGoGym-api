@@ -70,7 +70,7 @@ html = """
                 document.querySelector("#client-id").textContent = clientID.value;
                 document.querySelector("#room-id").textContent = channelId.value;
                 if (ws) ws.close()
-                ws = new WebSocket(`ws://localhost:8000/ws/chat/${channelId.value}/${clientID.value}`);
+                ws = new WebSocket(`ws://localhost:8000/api/v1/ws/chat/${channelId.value}/${clientID.value}`);
                 
                 ws.onmessage = function(event) {
                     var messages = document.getElementById('messages')

@@ -17,7 +17,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.conn import conn_manager
 
 chat_ws_router = APIRouter(
-    prefix="/ws/chat",
+    prefix="/api/v1/ws/chat",
 )
 
 
