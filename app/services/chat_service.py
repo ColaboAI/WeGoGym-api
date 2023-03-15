@@ -3,18 +3,19 @@ from datetime import datetime, timezone
 from uuid import UUID
 
 from sqlalchemy import distinct, func, select, text
+from app.core.exceptions.chat import UserNotInChatRoom
 from app.models.chat import ChatRoom, ChatRoomMember, Message
 from app.models.user import User
 from app.utils.ecs_log import logger
 import json
-from fastapi import HTTPException, WebSocket, WebSocketDisconnect
+from fastapi import HTTPException, WebSocket
 from aioredis.client import Redis, PubSub
 from app.core.helpers.redis import get_redis_conn
 from dataclasses import asdict, dataclass
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 from starlette.websockets import WebSocketState
-from sqlalchemy.orm import aliased
+
 
 # TODO: When Keyboard interrupt, close the connection. and task must be cancelled
 class ChatService:
@@ -139,7 +140,7 @@ async def get_user_mem_with_ids(
     result = await session.execute(stmt)
     data = result.scalars().first()
     if data is None:
-        raise HTTPException(status_code=404, detail="User not in room")
+        raise UserNotInChatRoom
     return data
 
 
@@ -306,7 +307,6 @@ async def delete_chat_room(room_id: str, session: AsyncSession):
 
 
 async def get_chat_room_members(room_id: str, session: AsyncSession):
-
     stmt = text("SELECT user_id FROM chat_room_members WHERE chat_room_id = :room_id")
 
     result = await session.execute(stmt, {"room_id": room_id})
@@ -314,7 +314,6 @@ async def get_chat_room_members(room_id: str, session: AsyncSession):
 
 
 async def get_chat_room_members_count(room_id: str, session: AsyncSession):
-
     stmt = text("SELECT COUNT(*) FROM chat_room_members WHERE chat_room_id = :room_id")
 
     result = await session.execute(stmt, {"room_id": room_id})
@@ -390,7 +389,6 @@ async def update_last_read_at_by_mem_id(
 async def delete_chat_room_member_by_id(
     session: AsyncSession, chat_room_member_id: str, user_id: str
 ):
-
     stmt = text(
         "DELETE FROM chat_room_members WHERE id = :chat_room_member_id AND user_id = :user_id"
     )
@@ -403,7 +401,6 @@ async def delete_chat_room_member_by_id(
 async def delete_chat_room_member_admin_by_id(
     session: AsyncSession, chat_room_member_id: UUID, admin_id: UUID, chat_room_id: UUID
 ):
-
     admin_mem = await get_user_mem_with_ids(admin_id, chat_room_id, session)
     if not admin_mem.is_admin:
         raise HTTPException(status_code=403, detail="Forbidden")
