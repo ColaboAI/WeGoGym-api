@@ -32,17 +32,15 @@ class ChatService:
         self.get_redis_conn = get_redis_conn
         self.session = session
         self.conn = None
+        self.pubsub = None
 
     async def publish_handler(self, conn: Redis):
         while True:
             try:
-                if self.ws.application_state == WebSocketState.CONNECTED:
+                if self.ws.client_state == WebSocketState.CONNECTED:
                     m = await self.ws.receive_text()
                     message: dict = json.loads(m)
-                    print(
-                        "message",
-                        message,
-                    )
+
                     if message:
                         text = message["text"]
                         msg = await post_chat_message(
@@ -79,13 +77,15 @@ class ChatService:
         await pubsub.subscribe(self.chat_room_id.__str__())
         while True:
             try:
-                if self.ws.application_state == WebSocketState.CONNECTED:
+                # TODO: check if connection is closed
+                # websocket has client_state and application_state
+                if self.ws.client_state == WebSocketState.CONNECTED:
                     message = await pubsub.get_message(ignore_subscribe_messages=True)
                     if message:
-                        print("sub message", message)
                         data = json.loads(message.get("data"))
                         chat_message = ChatMessageDataClass(**data)
                         await self.ws.send_json(asdict(chat_message), mode="text")
+
                 else:
                     logger.warning(
                         f"Websocket state: {self.ws.application_state}, reconnecting..."  # noqa: E501
@@ -96,13 +96,11 @@ class ChatService:
                 raise e
 
     async def run(self):
-        conn: Redis = await self.get_redis_conn()
-        self.conn = conn
-        pubsub: PubSub = conn.pubsub()
+        self.conn: Redis = await self.get_redis_conn()
+        self.pubsub: PubSub = self.conn.pubsub()
 
-        tasks = [self.publish_handler(conn), self.subscribe_handler(pubsub)]
+        tasks = [self.publish_handler(self.conn), self.subscribe_handler(self.pubsub)]
         try:
-
             res = await asyncio.gather(*tasks, return_exceptions=True)
             logger.info(f"Result: {res}")
 
@@ -110,9 +108,12 @@ class ChatService:
             logger.debug(f"Run exception: {e}")
 
         finally:
-            if pubsub:
-                await pubsub.close()
-                del pubsub
+            if self.pubsub:
+                await self.pubsub.close()
+                del self.pubsub
+            if self.conn:
+                await self.conn.close()
+                del self.conn
 
 
 @dataclass(slots=True)
@@ -179,7 +180,9 @@ async def get_chat_room_list_by_user_id(
             Message.chat_room_id,
             func.max(Message.created_at).label("last_message_created_at"),
         )
-        .where(Message.chat_room_id == chat_rooms.c.chat_room_id)
+        .where(
+            Message.chat_room_id == chat_rooms.c.chat_room_id,
+        )
         .group_by(Message.chat_room_id)
         .subquery()
     )
