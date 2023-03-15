@@ -12,7 +12,7 @@ def get_redis_url():
 redis = aioredis.from_url(url=get_redis_url(), decode_responses=True)
 
 
-async def get_redis_conn() -> str:
+async def get_redis_conn() -> aioredis.Redis:
     """
     Assemble database URL from self.
     :return: database URL.
