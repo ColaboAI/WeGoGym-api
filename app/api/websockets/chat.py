@@ -1,14 +1,13 @@
-import asyncio
-from asyncio.log import logger
 from datetime import datetime, timezone
 from uuid import UUID
 from fastapi import (
     APIRouter,
     Depends,
-    HTTPException,
     WebSocket,
     WebSocketDisconnect,
 )
+from app.core.exceptions.chat import UserNotInChatRoom
+from app.core.exceptions.websocket import WSUserNotInChatRoom
 from app.utils.ecs_log import logger
 
 from app.session import get_db_transactional_session
@@ -21,6 +20,10 @@ chat_ws_router = APIRouter(
 )
 
 
+# TODO: Do we need to add a dependency to check if user is in chat room?
+# TODO: How to check user auth in websocket?
+# 일단은 헤더에 정보를 담을 수 없고, 쿼리 파라미터에 정보를 담을 수 없음.. FastAPI 자체 오류로 추정. 2023.03.15 해결 실패
+# 1. JWT token for websocket(small size)
 @chat_ws_router.websocket(
     "/{chat_room_id}/{user_id}",
 )
@@ -28,22 +31,19 @@ async def chat_websocket_endpoint(
     websocket: WebSocket,
     chat_room_id: UUID,
     user_id: UUID,
-    # token: str = Query(..., description="JWT token"),
     session: AsyncSession = Depends(get_db_transactional_session),
 ):
-    # Check user auth with jwt token
-    # if not await conn_manager.validate_user(user_id, token):
-    #     raise HTTPException(status_code=403, detail="Not authenticated")
     try:
         chat_room_member = await get_user_mem_with_ids(user_id, chat_room_id, session)
-        if not chat_room_member:
-            raise HTTPException(status_code=403, detail="User is not in the room")
         str_chat_room_id = chat_room_id.__str__()
         str_user_id = user_id.__str__()
 
         await conn_manager.connect(str_chat_room_id + str_user_id, websocket)
         chat_service = ChatService(websocket, chat_room_id, user_id, session=session)
         await chat_service.run()
+    except UserNotInChatRoom as e:
+        logger.debug(e)
+        raise WSUserNotInChatRoom
     except WebSocketDisconnect:
         await conn_manager.disconnect(str_chat_room_id + "," + str_user_id)
     except Exception as e:

@@ -2,6 +2,7 @@ from uuid import UUID
 from fastapi import WebSocket
 import jwt
 from app.core.exceptions.token import DecodeTokenException, ExpiredTokenException
+from app.core.exceptions.websocket import WSInvalidToken, WSTokenExpired
 
 from app.utils.token_helper import TokenHelper
 from starlette.websockets import WebSocketState
@@ -21,11 +22,11 @@ class ConnectionManager:
             )
             user_id_from_token: UUID | None = payload.get("user_id")
         except jwt.exceptions.PyJWTError:
-            return False
+            raise WSInvalidToken
         except ExpiredTokenException:
-            return False
+            raise WSTokenExpired
         except DecodeTokenException:
-            return False
+            raise WSInvalidToken
         if not user_id:
             return False
         if user_id != user_id_from_token:
