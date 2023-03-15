@@ -34,8 +34,8 @@ class ChatService:
         self.conn = None
 
     async def publish_handler(self, conn: Redis):
-        try:
-            while True:
+        while True:
+            try:
                 if self.ws.application_state == WebSocketState.CONNECTED:
                     m = await self.ws.receive_text()
                     message: dict = json.loads(m)
@@ -51,16 +51,19 @@ class ChatService:
                             text,
                             self.session,
                         )
-                        chat_message = ChatMessageDataClass(
-                            chat_room_id=self.chat_room_id.__str__(),
-                            user_id=self.user_id.__str__(),
-                            text=text,
-                            created_at=msg.created_at.isoformat(),
+
+                        msg_data = ChatMessageDataClass(
+                            id=msg.id.__str__(),
+                            text=msg.text.__str__(),
+                            created_at=msg.created_at.__str__(),
+                            user_id=msg.user_id.__str__(),
+                            chat_room_id=msg.chat_room_id.__str__(),
+                            type="text",
                         )
 
                         await conn.publish(
                             self.chat_room_id.__str__(),
-                            json.dumps(asdict(chat_message)),
+                            json.dumps(asdict(msg_data)),
                         )
 
                 else:
@@ -68,18 +71,18 @@ class ChatService:
                         f"Websocket state: {self.ws.application_state}, reconnecting..."  # noqa: E501
                     )
                     break
-
-        except Exception as e:
-            logger.debug(f"pub handler {e}")
-            raise e
+            except Exception as e:
+                logger.debug(f"pub handler {e}")
+                raise e
 
     async def subscribe_handler(self, pubsub: PubSub):
         await pubsub.subscribe(self.chat_room_id.__str__())
-        try:
-            while True:
+        while True:
+            try:
                 if self.ws.application_state == WebSocketState.CONNECTED:
                     message = await pubsub.get_message(ignore_subscribe_messages=True)
                     if message:
+                        print("sub message", message)
                         data = json.loads(message.get("data"))
                         chat_message = ChatMessageDataClass(**data)
                         await self.ws.send_json(asdict(chat_message), mode="text")
@@ -88,9 +91,9 @@ class ChatService:
                         f"Websocket state: {self.ws.application_state}, reconnecting..."  # noqa: E501
                     )
                     break
-        except Exception as e:
-            logger.debug(f"sub handler: {e}")
-            raise e
+            except Exception as e:
+                logger.debug(f"sub handler: {e}")
+                raise e
 
     async def run(self):
         conn: Redis = await self.get_redis_conn()
@@ -99,19 +102,9 @@ class ChatService:
 
         tasks = [self.publish_handler(conn), self.subscribe_handler(pubsub)]
         try:
-            done, pending = await asyncio.wait(
-                tasks,
-                return_when=asyncio.FIRST_COMPLETED,
-            )
-            logger.debug(f"Done: {done}, Pending: {pending}")
 
-            for task in done:
-                if task.exception():
-                    logger.debug(f"Task exception: {task}")
-
-            for task in pending:
-                task.cancel()
-                await pubsub.close()
+            res = await asyncio.gather(*tasks, return_exceptions=True)
+            logger.info(f"Result: {res}")
 
         except Exception as e:
             logger.debug(f"Run exception: {e}")
@@ -124,10 +117,12 @@ class ChatService:
 
 @dataclass(slots=True)
 class ChatMessageDataClass:
+    id: str
+    type: str
     chat_room_id: str
     user_id: str
     created_at: str
-    text: str
+    text: str = "text"
 
 
 async def get_user_mem_with_ids(
