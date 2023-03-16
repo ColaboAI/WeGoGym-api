@@ -3,6 +3,7 @@ from datetime import datetime, timezone
 from uuid import UUID
 from fastapi import APIRouter, Depends, HTTPException, Query, Request, Response
 from sqlalchemy import select
+from app.core.exceptions.chat import ChatRoomNotFound
 from app.core.fastapi.dependencies.premission import (
     IsAuthenticated,
     PermissionDependency,
@@ -256,4 +257,6 @@ async def get_direct_chat_room_by_user_ids(
 ):
     user_ids.append(req.user.id)
     chat_room = await find_chat_room_by_user_ids(session, user_ids, is_group_chat=False)
+    if chat_room is None:
+        raise ChatRoomNotFound
     return chat_room
