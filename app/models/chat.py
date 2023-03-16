@@ -46,6 +46,7 @@ class ChatRoomMember(TimestampMixin, Base):
     )
 
 
+# TODO: delete Created by ?
 class ChatRoom(TimestampMixin, Base):
     __tablename__ = "chat_room"
     __mapper_args__ = {"eager_defaults": True}
