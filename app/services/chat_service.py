@@ -2,8 +2,12 @@ import asyncio
 from datetime import datetime, timezone
 from uuid import UUID
 
-from sqlalchemy import distinct, func, select, text
-from app.core.exceptions.chat import UserNotInChatRoom
+from sqlalchemy import delete, distinct, func, select, text
+from app.core.exceptions.chat import (
+    ChatMemberNotFound,
+    ChatRoomNotFound,
+    UserNotInChatRoom,
+)
 from app.models.chat import ChatRoom, ChatRoomMember, Message
 from app.models.user import User
 from app.utils.ecs_log import logger
@@ -14,6 +18,7 @@ from app.core.helpers.redis import get_redis_conn
 from dataclasses import asdict, dataclass
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
+from sqlalchemy.orm.exc import NoResultFound
 from starlette.websockets import WebSocketState
 
 
@@ -144,16 +149,30 @@ async def get_user_mem_with_ids(
     return data
 
 
-async def get_chat_room_and_members_by_id(chat_room_id: UUID, session: AsyncSession):
+async def get_chat_room_and_members_by_id(
+    chat_room_id: UUID, session: AsyncSession
+) -> ChatRoom:
     """return chat room and members by room_id"""
     stmt = (
         select(ChatRoom)
-        .options(selectinload(ChatRoom.members))
+        .options(
+            selectinload(ChatRoom.members).options(
+                selectinload(ChatRoomMember.user).load_only(
+                    "id", "username", "profile_pic"
+                )
+            )
+        )
         .where(ChatRoom.id == chat_room_id)
     )
-    result = await session.execute(stmt)
-    chat_room = result.scalars().first()
-    return chat_room
+
+    try:
+        result = await session.execute(stmt)
+        chat_room = result.scalars().first()
+        if chat_room is None:
+            raise ChatRoomNotFound
+        return chat_room
+    except NoResultFound:
+        raise ChatRoomNotFound
 
 
 async def get_chat_room_by_id(chat_room_id: UUID, session: AsyncSession):
@@ -291,15 +310,23 @@ async def make_chat_room_member(user_id: str, room_id: str, session: AsyncSessio
     return chat_room_member
 
 
-async def delete_chat_room_member(user_id: str, room_id: str, session: AsyncSession):
+async def delete_chat_room_member_by_user_and_room_id(
+    session: AsyncSession,
+    user_id: UUID,
+    room_id: UUID,
+):
     stmt = text(
-        "DELETE FROM chat_room_members WHERE user_id = :user_id AND chat_room_id = :room_id"
+        "DELETE FROM chat_room_member WHERE user_id = :user_id AND chat_room_id = :room_id"
     )
-    await session.execute(stmt, {"user_id": user_id, "room_id": room_id})
-    await session.commit()
+    try:
+        await session.execute(stmt, {"user_id": user_id, "room_id": room_id})
+        await session.commit()
+    except Exception as e:
+        logger.debug(f"Chat mem delete failed: {e}")
+        raise ChatMemberNotFound
 
 
-async def delete_chat_room(room_id: str, session: AsyncSession):
+async def delete_chat_room_by_id(room_id: str, session: AsyncSession):
     stmt = text("DELETE FROM chat_rooms WHERE id = :room_id")
 
     await session.execute(stmt, {"room_id": room_id})
@@ -389,13 +416,21 @@ async def update_last_read_at_by_mem_id(
 async def delete_chat_room_member_by_id(
     session: AsyncSession, chat_room_member_id: str, user_id: str
 ):
-    stmt = text(
-        "DELETE FROM chat_room_members WHERE id = :chat_room_member_id AND user_id = :user_id"
+    # stmt = text(
+    #     "DELETE FROM chat_room_members WHERE id = :chat_room_member_id AND user_id = :user_id"
+    # )
+    # await session.execute(
+    #     stmt, {"chat_room_member_id": chat_room_member_id, "user_id": user_id}
+    # )
+    # await session.commit()
+    stmt = delete(ChatRoomMember).where(
+        ChatRoomMember.id == chat_room_member_id, ChatRoomMember.user_id == user_id
     )
-    await session.execute(
-        stmt, {"chat_room_member_id": chat_room_member_id, "user_id": user_id}
-    )
-    await session.commit()
+    try:
+        await session.execute(stmt)
+        await session.commit()
+    except NoResultFound:
+        raise ChatMemberNotFound
 
 
 async def delete_chat_room_member_admin_by_id(
@@ -434,8 +469,10 @@ async def get_last_message_and_members_by_room_id(
     return msg
 
 
-async def find_direct_chat_room_by_user_ids(
-    session: AsyncSession, user_ids: list[UUID]
+async def find_chat_room_by_user_ids(
+    session: AsyncSession,
+    user_ids: list[UUID],
+    is_group_chat: bool = False,
 ):
     stmt = (
         select(
@@ -443,15 +480,17 @@ async def find_direct_chat_room_by_user_ids(
         )
         .join(ChatRoomMember, ChatRoom.id == ChatRoomMember.chat_room_id)
         .where(
-            (ChatRoom.is_group_chat.is_(False)) & (ChatRoomMember.user_id.in_(user_ids))
+            (ChatRoom.is_group_chat.is_(is_group_chat))
+            & (ChatRoomMember.user_id.in_(user_ids))
         )
         .group_by(ChatRoom.id)
         .having(func.count(distinct(ChatRoomMember.user_id)) == len(user_ids))
     )
     res = await session.execute(stmt)
-    rows = res.fetchone()
-    if not rows:
+    row = res.fetchone()
+
+    if not row:
         return None
 
-    chat_room = await get_chat_room_and_members_by_id(rows[0], session)
+    chat_room = await get_chat_room_and_members_by_id(row[0], session)
     return chat_room
