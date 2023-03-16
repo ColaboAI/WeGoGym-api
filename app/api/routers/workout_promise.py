@@ -69,11 +69,17 @@ async def get_workout_promises(
 )
 async def get_recruiting_workout_promises(
     session: AsyncSession = Depends(get_db_transactional_session),
-    limit: int = 10,
-    offset: int = 0,
+    limit: int = Query(10, description="Limit"),
+    offset: int = Query(0, description="offset"),
 ):
     total, wp_list = await get_recruiting_workout_promise_list(session, limit, offset)
-    return {"total": total, "items": wp_list}
+    return {
+        "total": total,
+        "items": wp_list,
+        "next_cursor": offset + len(wp_list)
+        if total and total > offset + len(wp_list)
+        else None,
+    }
 
 
 @workout_promise_router.get(
@@ -84,8 +90,8 @@ async def get_recruiting_workout_promises(
 async def get_workout_promises_written_by_me(
     req: Request,
     session: AsyncSession = Depends(get_db_transactional_session),
-    limit: int = 10,
-    offset: int = 0,
+    limit: int = Query(10, description="Limit"),
+    offset: int = Query(0, description="offset"),
 ):
     total, wp_list = await get_workout_promise_list_written_by_me(
         session,
@@ -97,6 +103,9 @@ async def get_workout_promises_written_by_me(
     return {
         "total": total,
         "items": wp_list,
+        "next_cursor": offset + len(wp_list)
+        if total and total > offset + len(wp_list)
+        else None,
     }
 
 
@@ -108,8 +117,8 @@ async def get_workout_promises_written_by_me(
 async def get_workout_promises_joined_by_me(
     req: Request,
     session: AsyncSession = Depends(get_db_transactional_session),
-    limit: int = 10,
-    offset: int = 0,
+    limit: int = Query(10, description="Limit"),
+    offset: int = Query(0, description="offset"),
 ):
     total, wp_list = await get_workout_promise_list_joined_by_me(
         session,
@@ -118,7 +127,13 @@ async def get_workout_promises_joined_by_me(
         offset,
     )
 
-    return {"total": total, "items": wp_list}
+    return {
+        "total": total,
+        "items": wp_list,
+        "next_cursor": offset + len(wp_list)
+        if total and total > offset + len(wp_list)
+        else None,
+    }
 
 
 @workout_promise_router.get(
