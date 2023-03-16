@@ -168,6 +168,7 @@ class BaseListResponse(BaseModel):
 
 class WorkoutPromiseListResponse(BaseListResponse):
     items: list[WorkoutPromiseRead]
+    next_cursor: int | None
 
     class Config:
         orm_mode = True

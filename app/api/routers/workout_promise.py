@@ -1,5 +1,5 @@
 from uuid import UUID
-from fastapi import APIRouter, Body, Depends, Request
+from fastapi import APIRouter, Body, Depends, Request, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.exceptions import UnauthorizedException
 from app.core.fastapi.dependencies.premission import (
@@ -43,8 +43,8 @@ workout_promise_router = APIRouter()
 )
 async def get_workout_promises(
     session: AsyncSession = Depends(get_db_transactional_session),
-    limit: int = 10,
-    offset: int = 0,
+    limit: int = Query(10, description="Limit"),
+    offset: int = Query(0, description="offset"),
 ):
     total, wp_list = await get_workout_promise_list(session, limit, offset)
     for wp in wp_list:
@@ -52,7 +52,13 @@ async def get_workout_promises(
 
         for wp_participant in wp.participants:
             print("info: ", wp_participant.user.__dict__)
-    return {"total": total, "items": wp_list}
+    return {
+        "total": total,
+        "items": wp_list,
+        "next_cursor": offset + len(wp_list)
+        if total and total > offset + len(wp_list)
+        else None,
+    }
 
 
 # 모집 중인 운동 약속 정보 조회 엔드포인트
@@ -88,7 +94,10 @@ async def get_workout_promises_written_by_me(
         offset,
     )
 
-    return {"total": total, "items": wp_list}
+    return {
+        "total": total,
+        "items": wp_list,
+    }
 
 
 @workout_promise_router.get(
