@@ -1,7 +1,7 @@
 from datetime import datetime, timezone
 
 from uuid import UUID
-from fastapi import APIRouter, Depends, HTTPException, Query, Request
+from fastapi import APIRouter, Depends, HTTPException, Query, Request, Response
 from sqlalchemy import select
 from app.core.fastapi.dependencies.premission import (
     IsAuthenticated,
@@ -9,7 +9,6 @@ from app.core.fastapi.dependencies.premission import (
 )
 from app.models.user import User
 from app.schemas.chat import (
-    ChatRoomCreateResponse,
     ChatRoomList,
     ChatRoomCreate,
     ChatRoomMemberRead,
@@ -20,14 +19,13 @@ from app.schemas.chat import (
 from app.models.chat import ChatRoom, ChatRoomMember
 from app.services.chat_service import (
     delete_chat_room_member_admin_by_id,
-    delete_chat_room_member_by_id,
-    find_direct_chat_room_by_user_ids,
+    delete_chat_room_member_by_user_and_room_id,
+    find_chat_room_by_user_ids,
     get_chat_messages,
     get_chat_room_and_members_by_id,
     get_chat_room_list_by_user_id,
     get_public_chat_room_list,
     get_user_mem_with_ids,
-    update_last_read_at_by_mem_id,
 )
 from app.session import get_db_transactional_session
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -37,6 +35,8 @@ from app.utils.generics import utcnow
 
 chat_router = APIRouter()
 
+
+# TODO: handle error with custom exception
 # Public chat rooms
 @chat_router.get(
     "/rooms",
@@ -78,19 +78,30 @@ async def get_my_chat_rooms(
     }
 
 
-@chat_router.post("/rooms", response_model=ChatRoomCreateResponse, status_code=201)
+@chat_router.post("/rooms", response_model=ChatRoomWithMembersRead, status_code=201)
 async def create_chat_room(
     chat_room: ChatRoomCreate,
     session: AsyncSession = Depends(get_db_transactional_session),
 ):
-    db_chat_room = await find_direct_chat_room_by_user_ids(
-        session, [chat_room.created_by, *chat_room.members_user_ids]
+    db_chat_room = await find_chat_room_by_user_ids(
+        session,
+        [chat_room.created_by, *chat_room.members_user_ids],
+        chat_room.is_group_chat,
     )
     if db_chat_room:
-        raise HTTPException(status_code=409, detail="Chat room already exists")
-    try:
+        if chat_room.is_group_chat == False:
+            raise HTTPException(status_code=409, detail="Chat room already exists")
+        else:
+            if chat_room.retry == False:
+                raise HTTPException(
+                    status_code=409,
+                    detail="Chat room already exists with same members. If you want to create new chat room with same members please change the name of the chat room and try again",
+                )
 
-        chat_room_obj = ChatRoom(**chat_room.dict(exclude={"members_user_ids"}))
+    try:
+        chat_room_obj = ChatRoom(
+            **chat_room.dict(exclude={"members_user_ids", "retry"})
+        )
         stmt = select(User).where(User.id == chat_room.created_by)
         res = await session.execute(stmt)
         admin_user = res.scalars().first()
@@ -199,30 +210,22 @@ async def get_chat_room_messages(
     }
 
 
-@chat_router.put(
-    "/members/{chat_room_member_id}/last_read_at",
-    response_model=ChatRoomMemberRead,
-    status_code=200,
-    dependencies=[Depends(PermissionDependency([IsAuthenticated]))],
-)
-async def update_chat_room_member_last_read_at(
-    chat_room_member_id: str,
-    session: AsyncSession = Depends(get_db_transactional_session),
-):
-    return await update_last_read_at_by_mem_id(session, chat_room_member_id)
-
-
 @chat_router.delete(
-    "members/{chat_room_member_id}",
+    "/room/{chat_room_id}/user/{user_id}",
     status_code=204,
     dependencies=[Depends(PermissionDependency([IsAuthenticated]))],
 )
-async def delete_chat_room_member(
+async def delete_chat_room_member_by_uid(
     request: Request,
-    chat_room_member_id: str,
+    chat_room_id: UUID,
+    user_id: UUID,
     session: AsyncSession = Depends(get_db_transactional_session),
 ):
-    await delete_chat_room_member_by_id(session, chat_room_member_id, request.user.id)
+    if request.user.id != user_id:
+        raise HTTPException(status_code=403, detail="User is not allowed to do this")
+    await delete_chat_room_member_by_user_and_room_id(
+        session=session, user_id=user_id, room_id=chat_room_id
+    )
 
 
 @chat_router.delete(
@@ -246,13 +249,11 @@ async def delete_chat_room_member_admin(
     response_model=ChatRoomWithMembersRead,
     dependencies=[Depends(PermissionDependency([IsAuthenticated]))],
 )
-async def get_chat_room_by_user_ids(
+async def get_direct_chat_room_by_user_ids(
     req: Request,
     user_ids: list[UUID] = Query(..., description="User ids"),
     session: AsyncSession = Depends(get_db_transactional_session),
 ):
     user_ids.append(req.user.id)
-    chat_room = await find_direct_chat_room_by_user_ids(session, user_ids)
-    if chat_room is None:
-        raise HTTPException(status_code=404, detail="Chat room not found")
+    chat_room = await find_chat_room_by_user_ids(session, user_ids, is_group_chat=False)
     return chat_room

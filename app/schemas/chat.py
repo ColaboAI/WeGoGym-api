@@ -36,6 +36,7 @@ class ChatRoomRead(BaseModel):
     created_at: datetime
     updated_at: datetime
     is_private: bool
+    is_group_chat: bool
     unread_count: int | None
 
     class Config:
@@ -71,15 +72,8 @@ class ChatRoomMemberList(BaseModel):
 
 
 # TODO: ChatRoomWithMembersRead vs ChatRoomReadWithLastMessageAndMembers
-class ChatRoomWithMembersRead(BaseModel):
-    id: UUID
-    name: str | None
-    description: str | None
-    created_at: datetime
-    updated_at: datetime
-    is_private: bool
-    is_group_chat: bool
-    members: list[ChatRoomMemberRead]
+class ChatRoomWithMembersRead(ChatRoomRead):
+    members: list[ChatRoomMemberReadWithUser]
 
     class Config:
         orm_mode = True
@@ -115,6 +109,11 @@ class ChatRoomCreate(BaseModel):
         description="Is chat room group chat",
     )
 
+    retry: bool = Field(
+        False,
+        description="Retry creating chat room",
+    )
+
 
 class ChatRoomUpdate(BaseModel):
     name: str | None
@@ -145,10 +144,3 @@ class MessageCreate(BaseModel):
     user_id: UUID
     text: str | None
     media_url: str | None
-
-
-class ChatRoomCreateResponse(ChatRoomRead):
-    members: list[ChatRoomMemberReadWithUser]
-
-    class Config:
-        orm_mode = True
