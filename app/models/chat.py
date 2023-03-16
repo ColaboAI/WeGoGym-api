@@ -21,7 +21,7 @@ class ChatRoomMember(TimestampMixin, Base):
 
     chat_room: "ChatRoom" = relationship("ChatRoom", back_populates="members")
     chat_room_id = Column(
-        GUID, ForeignKey("chat_room.id", ondelete="CASCADE"), nullable=False
+        GUID, ForeignKey("chat_room.id", ondelete="CASCADE"), nullable=False, index=True
     )
 
     left_at = Column(DateTime(timezone=True), server_default=utcnow(), nullable=True)
@@ -32,7 +32,9 @@ class ChatRoomMember(TimestampMixin, Base):
     )
 
     user: "User" = relationship("User", back_populates="chat_room_members")
-    user_id = Column(GUID, ForeignKey("user.id", ondelete="CASCADE"), nullable=False)
+    user_id = Column(
+        GUID, ForeignKey("user.id", ondelete="CASCADE"), nullable=False, index=True
+    )
 
     # 1:1 relationship with workout_participant
     workout_participant: "WorkoutParticipant" = relationship(
