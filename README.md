@@ -105,7 +105,7 @@ ipconfig getifaddr en0
 ### Run
 실제 iOS 디바이스에서 테스트하기 위해서는 로컬 IP 주소를 알아야 함.
 ```bash
-uvicorn app.main:app --reload --host "<YOUR_LOCAL_IP_ADDR>" --port 8000
+uvicorn app.main:app --reload --host 0.0.0.0
 ```
 ### Test
 ```bash
