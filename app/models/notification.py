@@ -1,3 +1,4 @@
+from typing import TYPE_CHECKING
 from sqlalchemy import Column, DateTime, String, ForeignKey
 from sqlalchemy.orm import relationship
 from app.core.db.mixins.timestamp_mixin import TimestampMixin
@@ -7,6 +8,10 @@ import uuid
 from app.models.user import User
 from app.models.workout_promise import WorkoutPromise
 from app.schemas.notification import NotificationType
+
+
+if TYPE_CHECKING:
+    from . import User
 
 
 class Notification(TimestampMixin, Base):
