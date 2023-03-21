@@ -78,7 +78,6 @@ async def delete_user(
     req: Request,
     session: AsyncSession = Depends(get_db_transactional_session),
 ):
-    print("delete user", req.__dict__)
     await delete_user_by_id(req.user.id, session)
 
     return {"message": f"User {req.user.id} deleted successfully"}
@@ -133,6 +132,23 @@ async def patch_my_info(
         del data.profile_pic
     user = await update_my_info_by_id(req.user.id, data, session)
     return user
+
+
+@user_router.patch(
+    "/me/fcm-token",
+    status_code=204,
+    summary="Update My FCM Token",
+    description="Update my FCM Token with token",
+    dependencies=[Depends(PermissionDependency([IsAuthenticated]))],
+)
+async def patch_my_fcm_token(
+    req: Request,
+    fcm_token: str = Body(...),
+    session: AsyncSession = Depends(get_db_transactional_session),
+):
+    data = UserUpdate(fcm_token=fcm_token)
+    await update_my_info_by_id(req.user.id, data, session)
+    return
 
 
 @user_router.get(
