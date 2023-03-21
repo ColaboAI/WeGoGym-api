@@ -6,6 +6,7 @@ from .user import User
 from .chat import *
 from .guid import GUID
 from .workout_promise import *
+from .notification import *
 
 __all__ = [
     "Base",
@@ -17,4 +18,5 @@ __all__ = [
     "GUID",
     "WorkoutPromise",
     "WorkoutParticipant",
+    "Notification",
 ]
