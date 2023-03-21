@@ -47,11 +47,7 @@ async def get_workout_promises(
     offset: int = Query(0, description="offset"),
 ):
     total, wp_list = await get_workout_promise_list(session, limit, offset)
-    for wp in wp_list:
-        print("admin", wp.admin_user.__dict__)
 
-        for wp_participant in wp.participants:
-            print("info: ", wp_participant.user.__dict__)
     return {
         "total": total,
         "items": wp_list,
