@@ -75,20 +75,21 @@ class UserCreate(CreateUpdateDictModel):
 
 
 class UserUpdate(CreateUpdateDictModel):
-    profile_pic: str | None = Field(description="기존 프로필 사진")
-    username: str | None = Field(description="닉네임")
-    bio: str | None = Field(description="자기소개")
-    age: int | None = Field(description="나이")
-    weight: int | None = Field(description="몸무게")
-    height: int | None = Field(description="키")
-    workout_per_week: int | None = Field(description="일주일에 몇 번 운동하는지")
-    workout_goal: str | None = Field(description="운동 목표 ex) '다이어트,체중 유지,근육량 증가'")
-    workout_level: str | None = Field(description="초급, 중급, 고급")
-    workout_time_per_day: str | None = Field(description="하루에 몇 시간 운동하는지")
-    workout_time_period: str | None = Field(description="오전, 오후, 저녁 등의 시간")
-    gender: str | None = Field(description="성별")
-    address: str | None = Field(description="주소")
+    profile_pic: str | None = Field(None, description="기존 프로필 사진")
+    username: str | None = Field(None, description="닉네임")
+    bio: str | None = Field(None, description="자기소개")
+    age: int | None = Field(None, description="나이")
+    weight: int | None = Field(None, description="몸무게")
+    height: int | None = Field(None, description="키")
+    workout_per_week: int | None = Field(None, description="일주일에 몇 번 운동하는지")
+    workout_goal: str | None = Field(None, description="운동 목표 ex) '다이어트,체중 유지,근육량 증가'")
+    workout_level: str | None = Field(None, description="초급, 중급, 고급")
+    workout_time_per_day: str | None = Field(None, description="하루에 몇 시간 운동하는지")
+    workout_time_period: str | None = Field(None, description="오전, 오후, 저녁 등의 시간")
+    gender: str | None = Field(None, description="성별")
+    address: str | None = Field(None, description="주소")
     gym_info: "Optional[GymInfoBase]" = Field(None, description="헬스장 정보")
+    fcm_token: str | None = Field(None, description="FCM Token")
 
     @classmethod
     def __get_validators__(cls):
@@ -115,6 +116,7 @@ class RecommendedUser(BaseModel):
     id: uuid.UUID
     profile_pic: str | None
     username: str
+
     # similarity: float
     class Config:
         orm_mode = True

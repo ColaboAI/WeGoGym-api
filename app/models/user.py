@@ -40,6 +40,7 @@ class User(TimestampMixin, Base):  # type: ignore
     workout_time_per_day = Column(String(100), nullable=True)
     workout_time_period = Column(String(50), nullable=True)
     address = Column(String(255), nullable=True)
+    fcm_token = Column(String(255), nullable=True)
 
     # Child relationship with GymInfo ("many" to one)
     gym_info_id = Column(GUID, ForeignKey("gym_info.id", ondelete="SET NULL"))
