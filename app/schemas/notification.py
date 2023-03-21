@@ -3,6 +3,8 @@ from enum import Enum
 from uuid import UUID
 from pydantic import BaseModel, Field
 
+from app.schemas.user import UserRead
+
 
 class NotificationType(str, Enum):
     GENERAL = "GENERAL"
@@ -23,3 +25,47 @@ class NotificationType(str, Enum):
     FRIEND_ACCEPTANCE = "FRIEND_ACCEPTANCE"
     FOLLOW_REQUEST = "FOLLOW_REQUEST"
     FOLLOW_ACCEPTANCE = "FOLLOW_ACCEPTANCE"
+
+
+class NotificationBase(BaseModel):
+    message: str = Field(..., min_length=1, max_length=100)
+    notification_type: NotificationType = Field(...)
+    read_at: datetime | None = Field(None)
+
+
+class NotificationRead(NotificationBase):
+    id: UUID
+    created_at: datetime
+    updated_at: datetime
+    recipient_id: UUID
+    recipient: UserRead
+
+    class Config:
+        orm_mode = True
+
+
+class NotificationUpdate(BaseModel):
+    message: str | None = Field(None, min_length=1, max_length=100)
+    notification_type: NotificationType | None = Field(None)
+    read_at: datetime | None = Field(None)
+
+    def get_update_dict(self):
+        return self.dict(
+            exclude_unset=True,
+            exclude={"id", "created_at", "updated_at", "recipient_id"},
+        )
+
+
+class BaseListResponse(BaseModel):
+    total: int | None
+
+
+class NotificationListResponse(BaseListResponse):
+    items: list[NotificationRead]
+    next_cursor: int | None
+
+    class Config:
+        orm_mode = True
+
+
+NotificationRead.update_forward_refs()
