@@ -10,6 +10,7 @@ from app.core.exceptions.chat import (
 )
 from app.models.chat import ChatRoom, ChatRoomMember, Message
 from app.models.user import User
+from app.services.fcm_service import send_message_to_multiple_devices_by_fcm_token_list
 from app.utils.ecs_log import logger
 import json
 from fastapi import HTTPException, WebSocket
@@ -68,6 +69,24 @@ class ChatService:
                         await conn.publish(
                             self.chat_room_id.__str__(),
                             json.dumps(asdict(msg_data)),
+                        )
+
+                        db_chat_room = await get_chat_room_and_members_by_id(
+                            self.chat_room_id, self.session
+                        )
+
+                        fcm_tokens = [
+                            member.user.fcm_token
+                            for member in db_chat_room.members
+                            if member.user.fcm_token and member.user.id != self.user_id
+                        ]
+                        title = "New Message"
+                        body = f"{msg.user.username} sent you a message"
+
+                        await send_message_to_multiple_devices_by_fcm_token_list(
+                            fcm_tokens,
+                            title,
+                            body,
                         )
 
                 else:
@@ -158,7 +177,7 @@ async def get_chat_room_and_members_by_id(
         .options(
             selectinload(ChatRoom.members).options(
                 selectinload(ChatRoomMember.user).load_only(
-                    "id", "username", "profile_pic"
+                    "id", "username", "profile_pic", "fcm_token"
                 )
             )
         )
@@ -359,10 +378,6 @@ async def get_user_by_id(user_id: str, session: AsyncSession) -> User:
 async def post_chat_message(
     user_id: UUID, room_id: UUID, message: str, session: AsyncSession
 ):
-    # get user from db
-    # user = await get_user_by_id(user_id, session)
-    # chat_room = await get_chat_room_by_id(room_id, session)
-
     msg = Message(user_id=user_id, chat_room_id=room_id, text=message)
     session.add(msg)
 
