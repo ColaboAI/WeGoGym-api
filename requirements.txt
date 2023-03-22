@@ -10,3 +10,4 @@ PyJWT==2.6.0
 pydantic[email]==1.10.6
 greenlet==2.0.2
 python-multipart==0.0.6
+firebase-admin==6.1.0
