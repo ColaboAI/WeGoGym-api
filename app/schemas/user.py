@@ -90,6 +90,7 @@ class UserUpdate(CreateUpdateDictModel):
     address: str | None = Field(None, description="주소")
     gym_info: "Optional[GymInfoBase]" = Field(None, description="헬스장 정보")
     fcm_token: str | None = Field(None, description="FCM Token")
+    last_active_at: datetime | None = Field(None, description="마지막 활동 시간")
 
     @classmethod
     def __get_validators__(cls):

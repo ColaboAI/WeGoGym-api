@@ -1,3 +1,4 @@
+from datetime import datetime, timezone
 from uuid import UUID
 from fastapi import APIRouter, Body, Depends, File, Query, Request, UploadFile
 from app.core.fastapi.dependencies.premission import (
@@ -26,6 +27,7 @@ from app.services.user_service import (
     update_my_info_by_id,
 )
 from sqlalchemy.ext.asyncio import AsyncSession
+
 
 user_router = APIRouter()
 
@@ -97,6 +99,17 @@ async def login(req: LoginRequest):
 
 
 @user_router.get(
+    "logout",
+    summary="Logout",
+    description="Logout with token",
+    dependencies=[Depends(PermissionDependency([IsAuthenticated]))],
+)
+async def logout(req: Request):
+    await UserService().logout(req.user.id)
+    return {"message": "Logout Success"}
+
+
+@user_router.get(
     "/me",
     response_model=MyInfoRead,
     summary="Get My Info",
@@ -146,7 +159,7 @@ async def patch_my_fcm_token(
     fcm_token: str = Body(...),
     session: AsyncSession = Depends(get_db_transactional_session),
 ):
-    data = UserUpdate(fcm_token=fcm_token)
+    data = UserUpdate(fcm_token=fcm_token, last_active_at=datetime.now(timezone.utc))
     await update_my_info_by_id(req.user.id, data, session)
     return
 

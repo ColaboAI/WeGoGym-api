@@ -16,6 +16,7 @@ from app.session import transactional_session_factory
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload, raiseload
 
+
 # User service: user adaptor for sqlalchemy
 class UserService:
     session: AsyncSession
@@ -97,6 +98,16 @@ class UserService:
         await self.session.close()
         return response
 
+    async def logout(self, user_id: UUID) -> None:
+        self.session: AsyncSession = self.session_maker()
+        result = await self.session.execute(select(User).where(User.id == user_id))
+        user: User | None = result.scalars().first()
+        if not user:
+            raise UserNotFoundException("User not found")
+        user.fcm_token = None
+        await self.session.commit()
+        await self.session.close()
+
 
 async def delete_user_by_id(user_id: UUID, session: AsyncSession) -> User:
     user = await get_my_info_by_id(user_id, session)
@@ -111,6 +122,11 @@ async def update_my_info_by_id(
     user_id: UUID, update_req: UserUpdate, session: AsyncSession
 ) -> User:
     user = await get_my_info_by_id(user_id, session)
+    # unsubscribe old fcm token
+    if update_req.fcm_token is not None:
+        if user.fcm_token != update_req.fcm_token:
+            old_fcm_token = user.fcm_token
+
     for k, v in update_req.dict(exclude_unset=True).items():
         if v is not None:
             if k == "gym_info":
@@ -144,7 +160,6 @@ async def get_my_info_by_id(user_id: UUID, session: AsyncSession) -> User:
 
 
 async def get_random_user_with_limit(db: AsyncSession, user_id: UUID, limit: int = 3):
-
     result = await db.execute(
         select(User.id, User.profile_pic, User.username)
         .order_by(func.random())
