@@ -6,7 +6,7 @@ Note, imported by alembic migrations logic, see `alembic/env.py`
 
 
 from typing import TYPE_CHECKING
-from sqlalchemy import Boolean, Column, ForeignKey, Integer, String, text
+from sqlalchemy import Boolean, Column, DateTime, ForeignKey, Integer, String, text
 from sqlalchemy.sql import expression
 from sqlalchemy.orm import relationship
 from app.core.db.mixins.timestamp_mixin import TimestampMixin
@@ -41,6 +41,9 @@ class User(TimestampMixin, Base):  # type: ignore
     workout_time_period = Column(String(50), nullable=True)
     address = Column(String(255), nullable=True)
     fcm_token = Column(String(255), nullable=True)
+    # TODO: last_active_at should be updated when user is active (init app)
+    # remove fcm_token when user is inactive with 2 months
+    last_active_at = Column(DateTime(timezone=True), nullable=True)
 
     # Child relationship with GymInfo ("many" to one)
     gym_info_id = Column(GUID, ForeignKey("gym_info.id", ondelete="SET NULL"))
