@@ -7,6 +7,7 @@ from app.api.routers.chat import chat_router
 from app.api.routers.auth import auth_router
 from app.api.routers.user import user_router
 from app.api.routers.workout_promise import workout_promise_router
+from app.api.routers.notification import notification_router
 
 api_router = APIRouter(prefix="/api/v1")
 
@@ -39,10 +40,17 @@ api_router.include_router(
     prefix="/user",
     tags=["user"],
 )
+
 api_router.include_router(
     workout_promise_router,
     prefix="/workout-promise",
     tags=["workout-promise"],
+)
+
+api_router.include_router(
+    notification_router,
+    prefix="/notification",
+    tags=["notification"],
 )
 
 html = """
