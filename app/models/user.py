@@ -15,11 +15,10 @@ from app.models import Base
 from app.models.chat import ChatRoom, Message
 from app.models.guid import GUID
 import uuid
-
 from app.models.workout_promise import WorkoutParticipant
 
 if TYPE_CHECKING:
-    from app.models import GymInfo
+    from app.models import GymInfo, Notification
 
 
 class User(TimestampMixin, Base):  # type: ignore
@@ -77,6 +76,13 @@ class User(TimestampMixin, Base):  # type: ignore
     admin_workout_promises: list[WorkoutParticipant] = relationship(
         "WorkoutPromise",
         back_populates="admin_user",
+        cascade="save-update, merge, delete",
+        passive_deletes=True,
+    )
+
+    notifications: list["Notification"] = relationship(
+        "Notification",
+        back_populates="recipient",
         cascade="save-update, merge, delete",
         passive_deletes=True,
     )
