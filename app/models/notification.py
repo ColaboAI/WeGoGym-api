@@ -5,7 +5,7 @@ from sqlalchemy.orm import relationship
 from app.core.db.mixins.timestamp_mixin import TimestampMixin
 from app.models.base import Base
 from app.models.guid import GUID
-from app.schemas.notification import NotificationWorktoutType
+from app.schemas.notification import NotificationWorkoutType
 
 
 if TYPE_CHECKING:
@@ -27,7 +27,7 @@ class NotificationWorkout(Notification):
     # One to One relationship with Notification
     id = Column(GUID, ForeignKey("notification.id"), primary_key=True)
     notification_type = Column(
-        String, default=NotificationWorktoutType.NEW_WORKOUT_PROMISE, nullable=False
+        String, default=NotificationWorkoutType.NEW_WORKOUT_PROMISE, nullable=False
     )
 
     # 알림을 보내는 유저 Many to One

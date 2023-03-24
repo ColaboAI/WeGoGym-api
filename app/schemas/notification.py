@@ -17,7 +17,7 @@ class NotificationType(str, Enum):
 
 
 ## 운동 약속 알림 타입
-class NotificationWorktoutType(str, Enum):
+class NotificationWorkoutType(str, Enum):
     NEW_WORKOUT_PROMISE = "NEW_WORKOUT_PROMISE"
     # 운동 약속 참여 요청 (운동 약속 생성자에게 보내는 알림)
     WORKOUT_REQUEST = "WORKOUT_REQUEST"
@@ -37,7 +37,7 @@ class NotificationBase(BaseModel):
 
 
 class NotificationWorkoutBase(NotificationBase):
-    notification_type: NotificationWorktoutType = Field(..., description="운동 알림 타입")
+    notification_type: NotificationWorkoutType = Field(..., description="운동 알림 타입")
 
 
 class NotificationWorkoutRead(NotificationWorkoutBase):
