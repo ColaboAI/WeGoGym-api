@@ -12,7 +12,7 @@ from app.utils.generics import utcnow
 if TYPE_CHECKING:
     # if the target of the relationship is in another module
     # that cannot normally be imported at runtime
-    from . import ChatRoom, User, ChatRoomMember
+    from . import ChatRoom, User, ChatRoomMember, NotificationWorkout
 
 
 class WorkoutPromise(TimestampMixin, Base):
@@ -95,6 +95,13 @@ class WorkoutParticipant(TimestampMixin, Base):
     )
     chat_room_member: "ChatRoomMember" = relationship(
         "ChatRoomMember", back_populates="workout_participant"
+    )
+
+    notifications_workout: list["NotificationWorkout"] = relationship(
+        "NotificationWorkout",
+        back_populates="recipient",
+        cascade="save-update, merge, delete",
+        passive_deletes=True,
     )
 
 
