@@ -18,7 +18,7 @@ import uuid
 from app.models.workout_promise import WorkoutParticipant
 
 if TYPE_CHECKING:
-    from app.models import GymInfo, Notification
+    from app.models import GymInfo, NotificationWorkout
 
 
 class User(TimestampMixin, Base):  # type: ignore
@@ -80,9 +80,9 @@ class User(TimestampMixin, Base):  # type: ignore
         passive_deletes=True,
     )
 
-    notifications: list["Notification"] = relationship(
-        "Notification",
-        back_populates="recipient",
+    notifications_workout: list["NotificationWorkout"] = relationship(
+        "NotificationWorkout",
+        back_populates="sender",
         cascade="save-update, merge, delete",
         passive_deletes=True,
     )
