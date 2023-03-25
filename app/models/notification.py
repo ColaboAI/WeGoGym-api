@@ -31,14 +31,14 @@ class NotificationWorkout(Notification):
     )
 
     # 알림을 보내는 유저 Many to One
-    sender_id = Column(GUID, ForeignKey("user.id", ondelete="SET NULL"), nullable=False)
+    sender_id = Column(GUID, ForeignKey("user.id", ondelete="SET NULL"))
     sender: "User" = relationship(
         "User", back_populates="notifications_workout", lazy="select"
     )
 
     # 알림을 수신하는 유저들(WorkoutParticipants) Many to One
     recipient_id = Column(
-        GUID, ForeignKey("workout_participant.id", ondelete="SET NULL"), nullable=False
+        GUID, ForeignKey("workout_participant.id", ondelete="SET NULL")
     )
     recipient: "WorkoutParticipant" = relationship(
         "WorkoutParticipant", back_populates="notifications_workout", lazy="select"
