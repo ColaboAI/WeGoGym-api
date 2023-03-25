@@ -63,7 +63,7 @@ class ChatService:
                             created_at=msg.created_at.__str__(),
                             user_id=msg.user_id.__str__(),
                             chat_room_id=msg.chat_room_id.__str__(),
-                            type="text",
+                            type="text_message",
                         )
 
                         await conn.publish(
@@ -80,13 +80,11 @@ class ChatService:
                             for member in db_chat_room.members
                             if member.user.fcm_token and member.user.id != self.user_id
                         ]
-                        title = "New Message"
-                        body = f"{msg.user.username} sent you a message"
+                        title = msg.user.username
+                        body = msg.text
 
                         await send_message_to_multiple_devices_by_fcm_token_list(
-                            fcm_tokens,
-                            title,
-                            body,
+                            fcm_tokens, title, body, data=asdict(msg_data)
                         )
 
                 else:
