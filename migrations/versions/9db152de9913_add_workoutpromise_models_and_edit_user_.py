@@ -190,8 +190,6 @@ def upgrade() -> None:
         ["status"],
         unique=False,
     )
-    op.drop_constraint("hashtag_name_key", "hashtag", type_="unique")
-    op.create_unique_constraint(op.f("uq_hashtag_name"), "hashtag", ["name"])
     op.add_column(
         "user", sa.Column("gym_info_id", app.models.guid.GUID(), nullable=True)
     )
@@ -222,8 +220,6 @@ def downgrade() -> None:
     )
     op.drop_constraint(op.f("fk_user_gym_info_id_gym_info"), "user", type_="foreignkey")
     op.drop_column("user", "gym_info_id")
-    op.drop_constraint(op.f("uq_hashtag_name"), "hashtag", type_="unique")
-    op.create_unique_constraint("hashtag_name_key", "hashtag", ["name"])
     op.drop_index(
         op.f("ix_workout_participant_status"), table_name="workout_participant"
     )
