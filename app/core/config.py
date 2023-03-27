@@ -51,7 +51,7 @@ class Settings(BaseSettings):
     DEFAULT_DATABASE_PASSWORD: str
     DEFAULT_DATABASE_PORT: str
     DEFAULT_DATABASE_DB: str
-    LOCAL_DATABASE_HOSTNAME: str
+    # LOCAL_DATABASE_HOSTNAME: str
     DEFAULT_SQLALCHEMY_DATABASE_URI: str = ""
     LOCAL_SQLALCHEMY_DATABASE_URI: str = ""
 
@@ -89,7 +89,7 @@ class Settings(BaseSettings):
             scheme="postgresql+asyncpg",
             user=values["DEFAULT_DATABASE_USER"],
             password=values["DEFAULT_DATABASE_PASSWORD"],
-            host=values["LOCAL_DATABASE_HOSTNAME"],
+            host=values["DEFAULT_DATABASE_HOSTNAME"],
             port=values["DEFAULT_DATABASE_PORT"],
             path=f"/{values['DEFAULT_DATABASE_DB']}",
         )

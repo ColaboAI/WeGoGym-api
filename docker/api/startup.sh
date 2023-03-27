@@ -1,6 +1,6 @@
 #!/bin/bash
-echo "Dockerizing..."
-dockerize -wait tcp://db:5432 -timeout 20s
+# echo "Dockerizing..."
+# dockerize -wait tcp://db:5432 -timeout 20s
 
 echo "Run Alembic Migrations"
 echo "Create initial data in DB and Run FastAPI with gunicorn"
