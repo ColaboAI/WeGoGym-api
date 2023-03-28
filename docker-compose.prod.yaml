@@ -40,7 +40,7 @@ services:
       - backend
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.dashboard.rule=Host(`dashboard-wegogym-api-dev.colabo.ml`) && (PathPrefix(`/`)"
+      - "traefik.http.routers.dashboard.rule=Host(`dashboard-wegogym-api-dev.colabo.ml`) && (PathPrefix(`/`))"
       - "traefik.http.routers.dashboard.tls=true"
       - "traefik.http.routers.dashboard.tls.certresolver=myresolver"
       - "traefik.http.routers.dashboard.service=api@internal"
