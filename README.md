@@ -80,6 +80,14 @@ source venv/bin/activate
 실제 개발 환경 및 배포 환경은 도커라이징 되어 있음.
 따라서 도커를 설치하여 `docker compose` 명령어를 실행하여야 함.
 도커 compose v1의 경우 `docker-compose` 명령어를 사용함.
+### Production
+
+ec2 환경에서. docker-compose.prod.yaml 파일을 사용하여 빌드 및 실행함.
+
+```sh
+$ docker compose -f docker-compose.prod.yaml up -d --build
+```
+
 ### Build
 - `docker compose up --build`: 코드 변경이 있는 경우, 다시 빌드하고 컨테이너를 실행함.
 
@@ -135,3 +143,4 @@ alembic upgrade head
 ```bash
 alembic downgrade -1
 ```
+
