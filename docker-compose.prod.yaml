@@ -33,7 +33,7 @@ services:
       - "443:443"
     volumes:
       # Certificates will be stored in this volume
-      - "./letsencrypt:/letsencrypt"
+      - "./traefik-public-certificates:/letsencrypt"
       # So that Traefik can listen to the Docker events
       - "/var/run/docker.sock:/var/run/docker.sock"
     networks:
@@ -86,3 +86,6 @@ services:
 networks:
   backend:
     driver: 'bridge'
+
+volumes:
+  traefik-public-certificates:
