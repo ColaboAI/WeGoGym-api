@@ -13,7 +13,7 @@ services:
     # Enables the web UI and tells Traefik to listen to docker
     command: 
       - "--log.level=DEBUG"
-      - "--api.insecure=true"
+      - "--api.dashboard=true"
       - "--providers.docker=true"
       - "--providers.docker.exposedbydefault=false"
       - "--entrypoints.web.address=:80"
@@ -31,8 +31,6 @@ services:
       - "80:80"
       # The HTTPS port
       - "443:443"
-      # The Web UI (enabled by --api.insecure=true)
-      - "8080:8080"
     volumes:
       # Certificates will be stored in this volume
       - "./letsencrypt:/letsencrypt"
@@ -59,11 +57,10 @@ services:
     volumes:
       - ./:/home
     env_file:
-    
       - .env
     tty: true
     expose:
-      - "8000"
+      - 80
     networks:
       - backend
     labels:
