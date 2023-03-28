@@ -40,6 +40,7 @@ services:
       - backend
     labels:
       - "traefik.enable=true"
+      - "traefik.docker.network=backend"
       - "traefik.http.routers.dashboard.rule=Host(`dashboard-wegogym-api-dev.colabo.ml`) && (PathPrefix(`/`))"
       - "traefik.http.routers.dashboard.tls=true"
       - "traefik.http.routers.dashboard.tls.certresolver=myresolver"
@@ -65,6 +66,7 @@ services:
       - backend
     labels:
       - "traefik.enable=true"
+      - "traefik.docker.network=backend"
       - "traefik.http.routers.fastapi.rule=Host(`wegogym-api-dev.colabo.ml`)"
       - "traefik.http.routers.fastapi.tls=true"
       - "traefik.http.routers.fastapi.tls.certresolver=myresolver"
