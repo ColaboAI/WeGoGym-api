@@ -7,6 +7,54 @@ version: "3.7"
 #
 
 services:
+  reverse-proxy:
+    # The official v2 Traefik docker image
+    image: traefik:v2.9
+    # Enables the web UI and tells Traefik to listen to docker
+    command: 
+      # - "--log.level=DEBUG"
+      - "--api.insecure=true"
+      - "--providers.docker=true"
+      - "--providers.docker.exposedbydefault=false"
+      - "--entrypoints.web.address=:80"
+      - "--entrypoints.websecure.address=:443"
+      - "--certificatesresolvers.myresolver.acme.httpchallenge=true"
+      - "--certificatesresolvers.myresolver.acme.httpchallenge.entrypoint=web"
+      #- "--certificatesresolvers.myresolver.acme.caserver=https://acme-staging-v02.api.letsencrypt.org/directory"
+      - "--certificatesresolvers.myresolver.acme.email=colaboai@gmail.com"
+      - "--certificatesresolvers.myresolver.acme.storage=/letsencrypt/acme.json"
+
+    ports:
+      # The HTTP port
+      - "80:80"
+      # The HTTPS port
+      - "443:443"
+      # The Web UI (enabled by --api.insecure=true)
+      - "8080:8080"
+    volumes:
+      # Certificates will be stored in this volume
+      - "./letsencrypt:/letsencrypt"
+      # So that Traefik can listen to the Docker events
+      - "/var/run/docker.sock:/var/run/docker.sock"
+    networks:
+      - backend
+
+    labels:
+      - traefik.http.routers.reverse-proxy.rule=Host(`wegogym-api.colabo.ml`)
+    
+      
+  whoami:
+    # A container that exposes an API to show its IP address
+    image: traefik/whoami
+    networks:
+      - backend
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.whoami.rule=Host(`wegogym-api-dev.colabo.ml`)"
+      - "traefik.http.routers.whoami.entrypoints=websecure"
+      - "traefik.http.routers.whoami.tls.certresolver=myresolver"
+    
+      
   
   api:
     build:
@@ -29,6 +77,9 @@ services:
       - "8000:8000"
     networks:
       - backend
+    labels:
+      - traefik.http.services.api.loadbalancer.server.port=8000
+
 
   redis:
     build:
@@ -42,6 +93,8 @@ services:
       - '${REDIS_PORT}:6379'
     networks:
       - backend
+    labels:
+      - traefik.http.services.api.loadbalancer.server.port=6379
 
 networks:
   backend:
