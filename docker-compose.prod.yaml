@@ -50,7 +50,7 @@ services:
   fastapi:
     build:
       context: .
-      dockerfile: docker/api/Dockerfile
+      dockerfile: docker/api/Dockerfile.prod
       args:
         USER_ID: $USER_ID
         GROUP_ID: $GROUP_ID

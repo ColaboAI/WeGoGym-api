@@ -9,13 +9,11 @@ ENV WORK_DIR=/code
 ENV USER_NAME=${USER_NAME}
 ENV PYTHONPATH "${PYTHONPATH}:/"
 ENV ENV=prod
-ENV PORT=8000
+ENV PORT=80
 
 RUN bash -c 'if [ ${ostype} == Linux ]; then groupadd -r --gid ${GROUP_ID} ${USER_NAME}; fi && \
     useradd -r --create-home --shell /bin/bash --uid ${USER_ID} --gid ${GROUP_ID} ${USER_NAME}' && \
     mkdir -p ${WORK_DIR} && chown ${USER_NAME} ${WORK_DIR}
-
-
 
 COPY --chown=${USER_NAME}:${USER_NAME} . ${WORK_DIR}
 WORKDIR ${WORK_DIR}
