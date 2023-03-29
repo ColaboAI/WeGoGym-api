@@ -5,4 +5,4 @@ echo "Create initial data in DB and Run FastAPI with gunicorn"
 alembic --raiseerr upgrade head &&\
 
 # python -m app.initial_data && \
-gunicorn -b 0.0.0.0:8000 -w 4 -k uvicorn.workers.UvicornWorker app.main:app
+gunicorn -b 0.0.0.0:80 -w 4 -k uvicorn.workers.UvicornWorker app.main:app

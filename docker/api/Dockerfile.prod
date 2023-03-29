@@ -27,5 +27,5 @@ RUN wget https://github.com/jwilder/dockerize/releases/download/$DOCKERIZE_VERSI
     && rm dockerize-linux-amd64-$DOCKERIZE_VERSION.tar.gz
 USER ${USER_NAME}
 
-RUN chmod a+x ${WORK_DIR}/docker/api/startup.sh
-ENTRYPOINT ${WORK_DIR}/docker/api/startup.sh
+RUN chmod a+x ${WORK_DIR}/docker/api/startup.prod.sh
+ENTRYPOINT ${WORK_DIR}/docker/api/startup.prod.sh
