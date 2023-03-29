@@ -3,13 +3,12 @@ from sqlalchemy import select, func
 
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.models.notification import NotificationWorkout
-from app.models.workout_promise import WorkoutPromise
+from app.models.workout_promise import WorkoutParticipant, WorkoutPromise
 from app.schemas.notification import (
     NotificationWorkoutBase,
 )
 
 from sqlalchemy.orm import selectinload
-
 from app.services.user_service import get_my_info_by_id
 from app.services.workout_promise_service import get_workout_participant_by_ids
 
@@ -21,25 +20,29 @@ async def get_notification_workout_list(
     limit: int = 10,
     offset: int | None = 0,
 ) -> tuple[int | None, list[NotificationWorkout]]:
-    async with db.begin():
-        stmt = (
-            select(NotificationWorkout)
-            .order_by(NotificationWorkout.created_at.desc())
-            .options(selectinload(NotificationWorkout.recipient))
-            .where(NotificationWorkout.recipient.user_id == user_id)
-            .offset(offset)
-            .limit(limit)
+    stmt = (
+        select(NotificationWorkout)
+        .order_by(NotificationWorkout.created_at.desc())
+        .options(
+            selectinload(NotificationWorkout.sender),
+            selectinload(NotificationWorkout.recipient).options(
+                selectinload(WorkoutParticipant.user)
+            ),
         )
-        t_stmt = (
-            select(func.count("*"))
-            .where(NotificationWorkout.recipient.user_id == user_id)
-            .select_from(NotificationWorkout)
-        )
+        .join(NotificationWorkout.recipient)
+        .where(WorkoutParticipant.user_id == user_id)
+    )
+    t_stmt = (
+        select(func.count("*"))
+        .join(NotificationWorkout.recipient)
+        .where(WorkoutParticipant.user_id == user_id)
+        .select_from(NotificationWorkout)
+    )
 
-        total = await db.execute(t_stmt)
-        result = await db.execute(stmt)
+    total = await db.execute(t_stmt)
+    result = await db.execute(stmt)
 
-        return total.scalar(), result.scalars().all()
+    return total.scalar(), result.scalars().all()
 
 
 # 새로운 운동 약속 참가자 알림 생성
@@ -102,7 +105,7 @@ async def create_notification_workout_request(
             recipient=recipient,
         )
         db.add(new_notification)
-        await db.commit()
+        # await db.commit()
 
 
 # 운동 약속 참가 요청 수락 알림 생성
