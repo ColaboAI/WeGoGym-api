@@ -3,8 +3,9 @@ from sqlalchemy import select, func
 
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.exceptions.workout_promise import NotAdminOfWorkoutPromiseException
-
+from app.models.notification import NotificationWorkout
 from app.models.workout_promise import GymInfo, WorkoutParticipant, WorkoutPromise
+from app.schemas.notification import NotificationWorkoutType
 from app.schemas.workout_promise import (
     GymInfoBase,
     GymInfoUpdate,
@@ -25,7 +26,6 @@ from app.core.exceptions import (
 )
 
 from sqlalchemy.orm import selectinload
-
 from app.services.user_service import get_my_info_by_id
 
 
@@ -395,10 +395,26 @@ async def create_workout_participant(
     new_db_workout_participant = WorkoutParticipant(
         **workout_participant.dict(),
         user_id=user_id,
-        user=await get_my_info_by_id(user_id, db)
+        user=await get_my_info_by_id(user_id, db),
     )
     db_workout_promise.participants.append(new_db_workout_participant)
     db.add(db_workout_promise)
+
+    admin_participant = await get_workout_participant_by_ids(
+        db, db_workout_promise.admin_user.id, workout_promise_id
+    )
+
+    new_notification_workout = NotificationWorkout(
+        message=f"{new_db_workout_participant.status_message}",
+        notification_type=NotificationWorkoutType.WORKOUT_REQUEST,
+        sender_id=new_db_workout_participant.user_id,
+        sender=new_db_workout_participant.user,
+        recipient_id=admin_participant.id,
+        recipient=admin_participant,
+    )
+
+    db.add(new_notification_workout)
+
     await db.commit()
     return new_db_workout_participant
 

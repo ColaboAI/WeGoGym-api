@@ -105,7 +105,7 @@ async def create_notification_workout_request(
             recipient=recipient,
         )
         db.add(new_notification)
-        # await db.commit()
+        await db.commit()
 
 
 # 운동 약속 참가 요청 수락 알림 생성
