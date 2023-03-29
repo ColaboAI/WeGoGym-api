@@ -124,6 +124,9 @@ class WorkoutParticipantBase(BaseModel):
     )
     is_admin: bool = Field(False, description="Is admin of Promise")
 
+    class Config:
+        orm_mode = True
+
 
 class WorkoutParticipantRead(WorkoutParticipantBase):
     id: UUID
@@ -146,17 +149,16 @@ class WorkoutParticipantUpdate(BaseModel):
     )
     is_admin: bool = Field(False, description="Is admin of Promise")
 
-    # TODO: make is_admin updateable only by workout_promise admin
     def get_update_dict(self):
         return self.dict(
             exclude_unset=True,
             exclude={
                 "id",
+                "user_id",
+                "workout_promise_id",
+                "chat_room_member_id",
                 "created_at",
                 "updated_at",
-                "user_id",
-                "chat_room_member_id",
-                "status",
                 "is_admin",
             },
         )
