@@ -97,11 +97,20 @@ class WorkoutParticipant(TimestampMixin, Base):
         "ChatRoomMember", back_populates="workout_participant"
     )
 
-    notifications_workout: list["NotificationWorkout"] = relationship(
+    notifications_workout_sender: list["NotificationWorkout"] = relationship(
+        "NotificationWorkout",
+        back_populates="sender",
+        cascade="save-update, merge, delete",
+        passive_deletes=True,
+        foreign_keys="NotificationWorkout.sender_id",
+    )
+
+    notifications_workout_recipient: list["NotificationWorkout"] = relationship(
         "NotificationWorkout",
         back_populates="recipient",
         cascade="save-update, merge, delete",
         passive_deletes=True,
+        foreign_keys="NotificationWorkout.recipient_id",
     )
 
 
