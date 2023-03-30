@@ -368,6 +368,15 @@ async def get_workout_participant_by_ids(
     return workout_participant
 
 
+async def get_workout_participant_id_list_by_user_id(
+    db: AsyncSession, user_id: UUID
+) -> list[UUID]:
+    stmt = select(WorkoutParticipant.id).where(WorkoutParticipant.user_id == user_id)
+    res = await db.execute(stmt)
+    workout_participant_id_list = res.scalars().all()
+    return workout_participant_id_list
+
+
 async def create_workout_participant(
     db: AsyncSession,
     workout_promise_id: UUID,
@@ -407,8 +416,8 @@ async def create_workout_participant(
     new_notification_workout = NotificationWorkout(
         message=f"{new_db_workout_participant.status_message}",
         notification_type=NotificationWorkoutType.WORKOUT_REQUEST,
-        sender_id=new_db_workout_participant.user_id,
-        sender=new_db_workout_participant.user,
+        sender_id=new_db_workout_participant.id,
+        sender=new_db_workout_participant,
         recipient_id=admin_participant.id,
         recipient=admin_participant,
     )
