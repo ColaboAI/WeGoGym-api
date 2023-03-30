@@ -35,7 +35,7 @@ class Settings(BaseSettings):
     ENVIRONMENT: Literal["DEV", "PYTEST", "STAGE", "PRODUCTION"] = "DEV"
     ACCESS_TOKEN_EXPIRE_MINUTES: int
     BACKEND_CORS_ORIGINS: str | list[AnyHttpUrl]
-    REDIS_HOST: str = "redis"
+    REDIS_HOST: str = "0.0.0.0"
     REDIS_PORT: int = 6379
     REDIS_USERNAME: str = "wegogym-redis"
     REDIS_PASSWORD: str = "password"
