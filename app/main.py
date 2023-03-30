@@ -24,7 +24,7 @@ def init_router(app_: FastAPI) -> None:
 
 
 def init_cache() -> None:
-    Cache.init(backend=RedisBackend(), key_maker=CustomKeyMaker())  # type: ignore
+    Cache.init(backend=RedisBackend(), key_maker=CustomKeyMaker())
 
 
 HANDLED_SIGNALS = (signal.SIGINT, signal.SIGTERM)
