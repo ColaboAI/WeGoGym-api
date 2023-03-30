@@ -60,8 +60,8 @@ services:
     env_file:
       - .env
     tty: true
-    expose:
-      - 80
+    ports:
+      - '80:8000'
     networks:
       - backend
     labels:

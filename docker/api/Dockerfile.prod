@@ -1,4 +1,4 @@
-FROM tiangolo/uvicorn-gunicorn-fastapi:python3.10
+FROM python:3.10-slim
 
 ARG USER_NAME=default_user
 ARG ostype=Linux
@@ -10,6 +10,8 @@ ENV USER_NAME=${USER_NAME}
 ENV PYTHONPATH "${PYTHONPATH}:/"
 ENV ENV=prod
 ENV PORT=80
+
+RUN apt-get update && apt-get install -y wget
 
 RUN bash -c 'if [ ${ostype} == Linux ]; then groupadd -r --gid ${GROUP_ID} ${USER_NAME}; fi && \
     useradd -r --create-home --shell /bin/bash --uid ${USER_ID} --gid ${GROUP_ID} ${USER_NAME}' && \
