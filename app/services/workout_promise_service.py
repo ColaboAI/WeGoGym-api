@@ -446,7 +446,7 @@ async def delete_workout_participant(
     return {"message": "Successfully deleted"}
 
 
-async def update_workout_participant_(
+async def update_workout_participant_by_admin(
     db: AsyncSession,
     req_user_id: UUID,
     workout_promise_id: UUID,
@@ -456,6 +456,13 @@ async def update_workout_participant_(
     db_workout_participant = await get_workout_participant_by_ids(
         db, user_id, workout_promise_id
     )
+    print("req_user_id : ", req_user_id)
+    print("workout_promise_id", workout_promise_id)
+    print("user_id", user_id)
+    print("workout_participant", workout_participant)
+
+    print("저기보세요", workout_participant)
+
     for k, v in workout_participant.get_update_dict().items():
         setattr(db_workout_participant, k, v)
     if workout_participant.is_admin:

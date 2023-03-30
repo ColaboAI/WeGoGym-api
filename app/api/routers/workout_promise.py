@@ -27,7 +27,7 @@ from app.services.workout_promise_service import (
     get_workout_promise_list,
     get_workout_promise_list_joined_by_me,
     get_workout_promise_list_written_by_me,
-    update_workout_participant_,
+    update_workout_participant_by_admin,
     update_workout_promise_by_id,
 )
 from app.session import get_db_transactional_session
@@ -245,7 +245,7 @@ async def update_workout_participant(
     update_req: WorkoutParticipantUpdate = Body(...),
     db: AsyncSession = Depends(get_db_transactional_session),
 ):
-    updated_w_pp = update_workout_participant_(
+    updated_w_pp = await update_workout_participant_by_admin(
         db, req.user.id, workout_promise_id, user_id, update_req
     )
     return updated_w_pp
