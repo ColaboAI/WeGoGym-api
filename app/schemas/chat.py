@@ -1,11 +1,11 @@
 from datetime import datetime
-from pydantic import BaseModel, Field
-from uuid import UUID
+from pydantic import BaseModel, Field, UUID4
+
 from app.schemas.user import UserRead
 
 
 class ChatRoomMemberRead(BaseModel):
-    id: UUID
+    id: UUID4
     is_admin: bool
     created_at: datetime
     last_read_at: datetime
@@ -19,18 +19,18 @@ class ChatRoomMemberReadWithUser(ChatRoomMemberRead):
 
 
 class ChatRoomMemberCreate(BaseModel):
-    user_id: UUID
-    chat_room_id: UUID
+    user_id: UUID4
+    chat_room_id: UUID4
 
 
 class ChatRoomMemberUpdate(BaseModel):
-    user_id: UUID
-    chat_room_id: UUID
+    user_id: UUID4
+    chat_room_id: UUID4
     is_admin: bool
 
 
 class ChatRoomRead(BaseModel):
-    id: UUID
+    id: UUID4
     name: str | None
     description: str | None
     created_at: datetime
@@ -91,11 +91,11 @@ class ChatRoomCreate(BaseModel):
         description="Description of chat room",
     )
 
-    created_by: UUID = Field(
+    created_by: UUID4 = Field(
         ...,
         description="User ID of user who created chat room",
     )
-    members_user_ids: list[UUID] = Field(
+    members_user_ids: list[UUID4] = Field(
         ...,
         description="List of user IDs of members of chat room",
     )
@@ -118,13 +118,13 @@ class ChatRoomCreate(BaseModel):
 class ChatRoomUpdate(BaseModel):
     name: str | None
     description: str | None
-    chat_room_members: list[UUID]
+    chat_room_members: list[UUID4]
 
 
 class MessageRead(BaseModel):
-    id: UUID
-    chat_room_id: UUID
-    user_id: UUID
+    id: UUID4
+    chat_room_id: UUID4
+    user_id: UUID4
     text: str | None
     created_at: datetime
     media_url: str | None
@@ -140,7 +140,7 @@ class MessageListRead(BaseModel):
 
 
 class MessageCreate(BaseModel):
-    chat_room_id: UUID
-    user_id: UUID
+    chat_room_id: UUID4
+    user_id: UUID4
     text: str | None
     media_url: str | None

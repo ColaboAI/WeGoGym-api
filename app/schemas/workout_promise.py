@@ -1,7 +1,7 @@
 from datetime import datetime
 from enum import Enum
-from uuid import UUID
-from pydantic import BaseModel, Field
+
+from pydantic import BaseModel, Field, UUID4
 from app.schemas.chat import ChatRoomRead
 from app.schemas.user import UserRead
 
@@ -49,7 +49,7 @@ class GymInfoUpdate(BaseModel):
 
 
 class GymInfoRead(GymInfoBase):
-    id: UUID
+    id: UUID4
     created_at: datetime
     updated_at: datetime
 
@@ -67,16 +67,16 @@ class WorkoutPromiseBase(BaseModel):
 
 
 class WorkoutPromiseRead(WorkoutPromiseBase):
-    id: UUID
-    chat_room_id: UUID | None
+    id: UUID4
+    chat_room_id: UUID4 | None
     chat_room: ChatRoomRead | None
 
     created_at: datetime
     updated_at: datetime
 
     gym_info: GymInfoRead | None
-    gym_info_id: UUID | None
-    admin_user_id: UUID
+    gym_info_id: UUID4 | None
+    admin_user_id: UUID4
     admin_user: UserRead
     participants: list["WorkoutParticipantRead"]
     status: WorkoutPromiseStatus
@@ -94,7 +94,7 @@ class WorkoutPromiseUpdate(BaseModel):
     max_participants: int | None = Field(None, ge=1, le=10)
     promise_time: datetime | None = Field(None, description="Promise datetime")
     recruit_end_time: datetime | None = Field(None, description="Recruit end datetime")
-    admin_user_id: UUID | None = Field(None, description="New Admin User ID")
+    admin_user_id: UUID4 | None = Field(None, description="New Admin User ID")
     gym_info: GymInfoBase | None = Field(None)
     status: WorkoutPromiseStatus | None = Field(None)
 
@@ -129,12 +129,12 @@ class WorkoutParticipantBase(BaseModel):
 
 
 class WorkoutParticipantRead(WorkoutParticipantBase):
-    id: UUID
-    chat_room_member_id: UUID | None
-    workout_promise_id: UUID | None
+    id: UUID4
+    chat_room_member_id: UUID4 | None
+    workout_promise_id: UUID4 | None
     created_at: datetime
     updated_at: datetime
-    user_id: UUID
+    user_id: UUID4
     user: UserRead | None
 
     class Config:
