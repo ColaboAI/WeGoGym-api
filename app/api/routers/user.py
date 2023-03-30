@@ -7,6 +7,7 @@ from app.core.fastapi.dependencies.premission import (
     IsAuthenticated,
     PermissionDependency,
 )
+from app.core.helpers.cache import Cache
 from app.schemas import ExceptionResponseSchema
 from app.schemas.user import (
     LoginResponse,
@@ -188,6 +189,7 @@ async def get_recommended_users(
     description="Get user info with token",
     dependencies=[Depends(PermissionDependency([IsAuthenticated]))],
 )
+@Cache.cached(ttl=60 * 60)
 async def get_user_info(
     user_id: UUID,
     session: AsyncSession = Depends(get_db_transactional_session),

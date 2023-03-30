@@ -6,9 +6,9 @@ from app.core.fastapi.dependencies.premission import (
     IsAuthenticated,
     PermissionDependency,
 )
+from app.core.helpers.cache import Cache
 from app.schemas.workout_promise import (
     GymInfoBase,
-    ParticipantStatus,
     WorkoutParticipantBase,
     WorkoutParticipantRead,
     WorkoutParticipantUpdate,
@@ -41,6 +41,7 @@ workout_promise_router = APIRouter()
     response_model=WorkoutPromiseListResponse,
     dependencies=[Depends(PermissionDependency([IsAuthenticated]))],
 )
+@Cache.cached(ttl=60)
 async def get_workout_promises(
     session: AsyncSession = Depends(get_db_transactional_session),
     limit: int = Query(10, description="Limit"),
@@ -63,6 +64,7 @@ async def get_workout_promises(
     response_model=WorkoutPromiseListResponse,
     dependencies=[Depends(PermissionDependency([IsAuthenticated]))],
 )
+@Cache.cached(ttl=60)
 async def get_recruiting_workout_promises(
     session: AsyncSession = Depends(get_db_transactional_session),
     limit: int = Query(10, description="Limit"),
@@ -137,6 +139,7 @@ async def get_workout_promises_joined_by_me(
     response_model=WorkoutPromiseRead,
     dependencies=[Depends(PermissionDependency([IsAuthenticated]))],
 )
+@Cache.cached(ttl=60)
 async def get_workout_promise(
     workout_promise_id: UUID,
     session: AsyncSession = Depends(get_db_transactional_session),

@@ -31,8 +31,7 @@ from app.services.chat_service import (
 from app.session import get_db_transactional_session
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.utils.generics import utcnow
-
+from app.core.helpers.cache import Cache
 
 chat_router = APIRouter()
 
@@ -46,6 +45,7 @@ chat_router = APIRouter()
     description="Get chat rooms from latest to oldest",
     dependencies=[Depends(PermissionDependency([IsAuthenticated]))],
 )
+@Cache.cached(ttl=60)
 async def get_public_chat_rooms(
     session: AsyncSession = Depends(get_db_transactional_session),
     limit: int = Query(10, description="Limit"),
