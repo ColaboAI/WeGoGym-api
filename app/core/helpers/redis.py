@@ -5,11 +5,12 @@ from app.core.config import settings
 
 def get_redis_url():
     if settings.ENVIRONMENT == "DEV":
-        return f"redis://0.0.0.0:{settings.REDIS_PORT}/0"
-    return f"redis://{settings.REDIS_HOST}:{settings.REDIS_PORT}/0"
+        return f"redis://localhost:{settings.REDIS_PORT}"
+    return f"redis://{settings.REDIS_HOST}:{settings.REDIS_PORT}"
 
 
-redis = aioredis.from_url(url=get_redis_url(), decode_responses=True)
+# singleton redis connection pool
+redis = aioredis.from_url(url=get_redis_url())
 
 
 async def get_redis_conn() -> aioredis.Redis:
