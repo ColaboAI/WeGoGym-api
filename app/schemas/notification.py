@@ -3,7 +3,6 @@ from enum import Enum
 from uuid import UUID
 from pydantic import BaseModel, Field
 
-from app.schemas.user import UserRead
 from app.schemas.workout_promise import WorkoutParticipantRead
 
 
@@ -45,7 +44,7 @@ class NotificationWorkoutRead(NotificationWorkoutBase):
     created_at: datetime
     updated_at: datetime
     sender_id: UUID = Field(..., description="알림 보낸 사람")
-    sender: UserRead
+    sender: WorkoutParticipantRead
     recipient_id: UUID = Field(..., description="알림 받는 사람")
     recipient: WorkoutParticipantRead
 
