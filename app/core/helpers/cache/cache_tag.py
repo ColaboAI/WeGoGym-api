@@ -2,4 +2,4 @@ from enum import Enum
 
 
 class CacheTag(Enum):
-    GET_USER_LIST = "get_user_list"
+    GET_WORKOUT_PROMISES = "get_workout_promises"

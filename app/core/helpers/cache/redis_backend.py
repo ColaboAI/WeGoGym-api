@@ -1,5 +1,6 @@
 import pickle
 from typing import Any
+from fastapi.encoders import jsonable_encoder
 
 import ujson
 
@@ -12,18 +13,14 @@ class RedisBackend(BaseBackend):
         result = await redis.get(key)
         if not result:
             return
-
         try:
             return ujson.loads(result.decode("utf8"))
         except UnicodeDecodeError:
             return pickle.loads(result)
 
     async def set(self, response: Any, key: str, ttl: int = 60) -> None:
-        if isinstance(response, dict):
-            response = ujson.dumps(response)
-        elif isinstance(response, object):
-            response = pickle.dumps(response)
-
+        json_compatible_item_data = jsonable_encoder(response)
+        response = ujson.dumps(json_compatible_item_data)
         await redis.set(name=key, value=response, ex=ttl)
 
     async def delete_startswith(self, value: str) -> None:
