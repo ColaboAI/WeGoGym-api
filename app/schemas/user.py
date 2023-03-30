@@ -4,8 +4,7 @@ All fields in schemas are defaults from FastAPI Users, repeated below for easier
 from typing import Optional
 from datetime import datetime
 import json
-import uuid
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, UUID4
 
 
 class CreateUpdateDictModel(BaseModel):
@@ -27,7 +26,7 @@ class CreateUpdateDictModel(BaseModel):
 
 
 class UserRead(CreateUpdateDictModel):
-    id: uuid.UUID
+    id: UUID4
     username: str
     profile_pic: str | None
 
@@ -110,11 +109,11 @@ class LoginRequest(BaseModel):
 class LoginResponse(BaseModel):
     token: str = Field(..., description="Token")
     refresh_token: str = Field(..., description="Refresh token")
-    user_id: uuid.UUID = Field(..., description="User ID")
+    user_id: UUID4 = Field(..., description="User ID")
 
 
 class RecommendedUser(BaseModel):
-    id: uuid.UUID
+    id: UUID4
     profile_pic: str | None
     username: str
 
