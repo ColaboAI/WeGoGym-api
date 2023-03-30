@@ -9,7 +9,7 @@ from app.schemas.notification import NotificationWorkoutType
 
 
 if TYPE_CHECKING:
-    from . import User, WorkoutParticipant
+    from . import WorkoutParticipant
 
 
 class Notification(TimestampMixin, Base):
@@ -30,16 +30,22 @@ class NotificationWorkout(Notification):
         String, default=NotificationWorkoutType.NEW_WORKOUT_PROMISE, nullable=False
     )
 
-    # 알림을 보내는 유저 Many to One
-    sender_id = Column(GUID, ForeignKey("user.id", ondelete="SET NULL"))
-    sender: "User" = relationship(
-        "User", back_populates="notifications_workout", lazy="select"
+    # 알림을 보내는 유저(WorkoutParticipant) Many to One
+    sender_id = Column(GUID, ForeignKey("workout_participant.id", ondelete="CASCADE"))
+    sender: "WorkoutParticipant" = relationship(
+        "WorkoutParticipant",
+        back_populates="notifications_workout_sender",
+        foreign_keys=[sender_id],
+        lazy="select",
     )
 
     # 알림을 수신하는 유저들(WorkoutParticipants) Many to One
     recipient_id = Column(
-        GUID, ForeignKey("workout_participant.id", ondelete="SET NULL")
+        GUID, ForeignKey("workout_participant.id", ondelete="CASCADE")
     )
     recipient: "WorkoutParticipant" = relationship(
-        "WorkoutParticipant", back_populates="notifications_workout", lazy="select"
+        "WorkoutParticipant",
+        back_populates="notifications_workout_recipient",
+        foreign_keys=[recipient_id],
+        lazy="select",
     )
