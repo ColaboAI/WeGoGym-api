@@ -471,6 +471,30 @@ async def update_workout_participant_by_admin(
         else:
             db_workout_participant.is_admin = workout_participant.is_admin
 
+    db_admin_workout_participant = await get_workout_participant_by_ids(
+        db, req_user_id, workout_promise_id
+    )
+
+    if workout_participant.status == ParticipantStatus.ACCEPTED:
+        new_notification_workout = NotificationWorkout(
+            notification_type=NotificationWorkoutType.WORKOUT_ACCEPT,
+            sender_id=db_admin_workout_participant.id,
+            sender=db_admin_workout_participant,
+            recipient_id=db_workout_participant.id,
+            recipient=db_workout_participant,
+        )
+
+    elif workout_participant.status == ParticipantStatus.REJECTED:
+        new_notification_workout = NotificationWorkout(
+            notification_type=NotificationWorkoutType.WORKOUT_REJECT,
+            sender_id=db_admin_workout_participant.id,
+            sender=db_admin_workout_participant,
+            recipient_id=db_workout_participant.id,
+            recipient=db_workout_participant,
+        )
+
+    db.add(new_notification_workout)
+
     await db.commit()
     await db.refresh(db_workout_participant)
     return db_workout_participant
