@@ -34,9 +34,15 @@ class NotificationBase(BaseModel):
     message: str = Field(..., min_length=1, max_length=100)
     read_at: datetime | None = Field(None, description="읽은 시간")
 
+    class Config:
+        orm_mode = True
+
 
 class NotificationWorkoutBase(NotificationBase):
     notification_type: NotificationWorkoutType = Field(..., description="운동 알림 타입")
+
+    class Config:
+        orm_mode = True
 
 
 class NotificationWorkoutRead(NotificationWorkoutBase):
@@ -50,6 +56,21 @@ class NotificationWorkoutRead(NotificationWorkoutBase):
 
     class Config:
         orm_mode = True
+
+
+class NotificationWorkoutUpdate(BaseModel):
+    message: str | None = Field(None, min_length=1, max_length=100)
+    read_at: datetime | None = Field(None, description="읽은 시간")
+
+    def get_update_dict(self):
+        return self.dict(
+            exclude_unset=True,
+            exclude={
+                "id",
+                "created_at",
+                "updated_at",
+            },
+        )
 
 
 class BaseListResponse(BaseModel):
