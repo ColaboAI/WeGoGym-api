@@ -24,11 +24,13 @@ if TYPE_CHECKING:
 class User(TimestampMixin, Base):  # type: ignore
     __tablename__ = "user"
     id = Column(GUID, primary_key=True, default=uuid.uuid4)
+    # TODO: username check
     username = Column(String(100), nullable=False, unique=True, index=True)
     phone_number = Column(String(100), nullable=False)
     is_superuser = Column(Boolean, server_default=expression.false(), nullable=False)
     profile_pic = Column(String(255), nullable=True)
     bio = Column(String(100), nullable=True)
+    # TODO: age to be calculated from birthdate
     age = Column(Integer, server_default=text("0"), nullable=False)
     weight = Column(Integer, server_default=text("0"), nullable=False)
     height = Column(Integer, server_default=text("0"), nullable=False)
