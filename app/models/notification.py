@@ -17,7 +17,7 @@ class Notification(TimestampMixin, Base):
     __tablename__ = "notification"
     id = Column(GUID, primary_key=True, default=uuid.uuid4)
     # 메세지 내용이 담겨 있음
-    message = Column(String, nullable=False)
+    message = Column(String, nullable=True)
     # 메세지를 읽었는지 여부에 따라 프론트에서 알림 보여주는 방식을 달리하기 위함
     read_at = Column(DateTime(timezone=True), server_default=utcnow(), nullable=True)
 
