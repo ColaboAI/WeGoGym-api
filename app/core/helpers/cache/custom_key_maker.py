@@ -22,7 +22,7 @@ class CustomKeyMaker(BaseKeyMaker):
             ignore_arg_types = []
         ignore_arg_types.extend(ALWAYS_IGNORE_ARG_TYPES)
         ignore_arg_types = list(set(ignore_arg_types))
-        prefix = f"{prefix}:" if prefix else ""
+        prefix = f"{prefix}::" if prefix else ""
         path = f"{prefix}{function.__module__}.{function.__name__}"
 
         sig = inspect.signature(function)
