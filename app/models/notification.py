@@ -6,6 +6,7 @@ from app.core.db.mixins.timestamp_mixin import TimestampMixin
 from app.models.base import Base
 from app.models.guid import GUID
 from app.schemas.notification import NotificationWorkoutType
+from app.utils.generics import utcnow
 
 
 if TYPE_CHECKING:
@@ -18,7 +19,7 @@ class Notification(TimestampMixin, Base):
     # 메세지 내용이 담겨 있음
     message = Column(String, nullable=False)
     # 메세지를 읽었는지 여부에 따라 프론트에서 알림 보여주는 방식을 달리하기 위함
-    read_at = Column(DateTime, default=None, nullable=True)
+    read_at = Column(DateTime(timezone=True), server_default=utcnow(), nullable=True)
 
 
 # NotificationWorkout inherits from Notification
