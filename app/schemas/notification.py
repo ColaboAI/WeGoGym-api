@@ -31,7 +31,7 @@ class NotificationWorkoutType(str, Enum):
 
 
 class NotificationBase(BaseModel):
-    message: str = Field(..., min_length=1, max_length=100)
+    message: str | None = Field(None, min_length=1, max_length=100)
     read_at: datetime | None = Field(None, description="읽은 시간")
 
     class Config:
