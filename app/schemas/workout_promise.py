@@ -177,3 +177,4 @@ class WorkoutPromiseListResponse(BaseListResponse):
 
 
 WorkoutPromiseRead.update_forward_refs()
+WorkoutParticipantRead.update_forward_refs()
