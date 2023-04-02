@@ -28,6 +28,7 @@ from app.services.chat_service import (
     get_chat_room_list_by_user_id,
     get_chat_room_member_by_user_and_room_id,
     get_public_chat_room_list,
+    get_user_by_id,
     get_user_mem_with_ids,
     make_chat_room_member,
 )
@@ -93,6 +94,7 @@ async def create_chat_room(
         chat_room.members_user_ids,
         chat_room.is_group_chat,
     )
+    print("create request", chat_room.__dict__)
     if db_chat_room:
         if chat_room.is_group_chat == False:
             raise HTTPException(status_code=409, detail="Chat room already exists")
@@ -117,8 +119,7 @@ async def create_chat_room(
             for wpp in workout_promise.participants:
                 is_admin = True if wpp.user_id == chat_room.admin_user_id else False
                 chat_room_member_obj = ChatRoomMember(
-                    user_id=wpp.user_id,
-                    chat_room=chat_room_obj,
+                    user=wpp.user,
                     is_admin=is_admin,
                     workout_participant=wpp,
                 )
@@ -126,18 +127,19 @@ async def create_chat_room(
         else:
             for uid in chat_room.members_user_ids:
                 is_admin = True if uid == chat_room.admin_user_id else False
+                user = await get_user_by_id(uid, session)
                 chat_room_member_obj = ChatRoomMember(
-                    user_id=uid,
-                    chat_room=chat_room_obj,
-                    is_admin=False,
+                    is_admin=is_admin,
+                    user=user,
                 )
                 chat_room_obj.members.append(chat_room_member_obj)
 
         session.add(chat_room_obj)
-
         await session.commit()
+        print("chat_room_obj @@@", chat_room_obj.__dict__)
         return chat_room_obj
     except Exception as e:
+        print("error!!!", e)
         await session.rollback()
         raise HTTPException(status_code=500, detail=str(e))
 
@@ -219,7 +221,7 @@ async def add_chat_room_member(
         raise HTTPException(status_code=409, detail="Chat room member already exists")
 
     try:
-        chat_room_member = make_chat_room_member(user_id, chat_room_id, session)
+        chat_room_member = await make_chat_room_member(user_id, chat_room_id, session)
         return chat_room_member
     except Exception as e:
         await session.rollback()
