@@ -1,8 +1,13 @@
+from datetime import datetime, timezone
 from uuid import UUID
 from sqlalchemy import select, func
 
 from sqlalchemy.ext.asyncio import AsyncSession
-from app.models.notification import NotificationWorkout
+from app.core.exceptions.notification import (
+    NotAdminOfNotificationException,
+    NotificaitonNotFoundException,
+)
+from app.models.notification import NotificationWorkout, Notification
 from app.models.workout_promise import WorkoutParticipant, WorkoutPromise
 from app.schemas.notification import (
     NotificationWorkoutBase,
@@ -62,6 +67,24 @@ async def get_notification_workout_list(
     result = await db.execute(stmt)
 
     return total.scalars().first(), result.scalars().all()
+
+
+async def update_notification_workout_by_id(
+    db: AsyncSession,
+    user_id: UUID,
+    notification_id: UUID,
+) -> NotificationWorkout:
+    stmt = select(Notification).where(Notification.id == notification_id)
+    res = await db.execute(stmt)
+    notification = res.scalars().first()
+    if not notification:
+        raise NotificaitonNotFoundException()
+
+    notification.read_at = datetime.now(timezone.utc)
+
+    await db.commit()
+
+    return notification
 
 
 # 새로운 운동 약속 참가자 알림 생성
