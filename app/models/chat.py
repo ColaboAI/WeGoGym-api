@@ -54,9 +54,9 @@ class ChatRoom(TimestampMixin, Base):
     id = Column(GUID, primary_key=True, index=True, default=uuid.uuid4)
     name = Column(String(100), index=True, nullable=True)
     description = Column(String(200), nullable=True)
-    created_by = Column(GUID, nullable=False, default=uuid.uuid4)
     is_private = Column(Boolean, index=True, nullable=False, server_default=true())
-    admin_user_id = Column(GUID, ForeignKey("user.id", ondelete="SET NULL"))
+    admin_user_id = Column(GUID, ForeignKey("user.id", ondelete="SET NULL"), index=True)
+    admin_user: "User" = relationship("User", back_populates="admin_chat_rooms")
     is_group_chat = Column(Boolean, index=True, nullable=False, server_default=true())
 
     members: list[ChatRoomMember] = relationship(
@@ -75,7 +75,7 @@ class ChatRoom(TimestampMixin, Base):
     )
 
     # 1:1 relationship with workout_promise (deactivate collection)
-    workout_promise: list["WorkoutPromise"] = relationship(
+    workout_promise: "WorkoutPromise" = relationship(
         "WorkoutPromise",
         back_populates="chat_room",
         cascade="save-update, merge, delete",

@@ -91,7 +91,7 @@ class ChatRoomCreate(BaseModel):
         description="Description of chat room",
     )
 
-    created_by: UUID4 = Field(
+    admin_user_id: UUID4 = Field(
         ...,
         description="User ID of user who created chat room",
     )
@@ -112,6 +112,11 @@ class ChatRoomCreate(BaseModel):
     retry: bool = Field(
         False,
         description="Retry creating chat room",
+    )
+
+    workout_promise_id: UUID4 | None = Field(
+        None,
+        description="Workout Promise ID of chat room",
     )
 
 
