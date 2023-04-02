@@ -320,7 +320,20 @@ async def get_public_chat_room_list(
     return total.scalars().first(), result.scalars().all()
 
 
-async def make_chat_room_member(user_id: str, room_id: str, session: AsyncSession):
+async def get_chat_room_member_by_user_and_room_id(
+    user_id: UUID,
+    room_id: UUID,
+    session: AsyncSession,
+):
+    stmt = select(ChatRoomMember).where(
+        ChatRoomMember.user_id == user_id, ChatRoomMember.chat_room_id == room_id
+    )
+    result = await session.execute(stmt)
+    chat_room_member = result.scalars().first()
+    return chat_room_member
+
+
+async def make_chat_room_member(user_id: UUID, room_id: UUID, session: AsyncSession):
     chat_room_member = ChatRoomMember(user_id=user_id, chat_room_id=room_id)
     session.add(chat_room_member)
     await session.commit()

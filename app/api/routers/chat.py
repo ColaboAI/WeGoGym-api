@@ -24,9 +24,12 @@ from app.services.chat_service import (
     find_chat_room_by_user_ids,
     get_chat_messages,
     get_chat_room_and_members_by_id,
+    get_chat_room_by_id,
     get_chat_room_list_by_user_id,
+    get_chat_room_member_by_user_and_room_id,
     get_public_chat_room_list,
     get_user_mem_with_ids,
+    make_chat_room_member,
 )
 from app.services.workout_promise_service import get_workout_promise_by_id
 from app.session import get_db_transactional_session
@@ -111,23 +114,24 @@ async def create_chat_room(
                 session, chat_room.workout_promise_id
             )
             chat_room_obj.workout_promise = workout_promise
-
-        admin_member_obj = ChatRoomMember(
-            user_id=chat_room.admin_user_id,
-            chat_room=chat_room_obj,
-            is_admin=True,
-        )
-        chat_room_obj.members.append(admin_member_obj)
-
-        for uid in chat_room.members_user_ids:
-            if uid == chat_room.admin_user_id:
-                continue
-            chat_room_member_obj = ChatRoomMember(
-                user_id=uid,
-                chat_room=chat_room_obj,
-                is_admin=False,
-            )
-            chat_room_obj.members.append(chat_room_member_obj)
+            for wpp in workout_promise.participants:
+                is_admin = True if wpp.user_id == chat_room.admin_user_id else False
+                chat_room_member_obj = ChatRoomMember(
+                    user_id=wpp.user_id,
+                    chat_room=chat_room_obj,
+                    is_admin=is_admin,
+                    workout_participant=wpp,
+                )
+                chat_room_obj.members.append(chat_room_member_obj)
+        else:
+            for uid in chat_room.members_user_ids:
+                is_admin = True if uid == chat_room.admin_user_id else False
+                chat_room_member_obj = ChatRoomMember(
+                    user_id=uid,
+                    chat_room=chat_room_obj,
+                    is_admin=False,
+                )
+                chat_room_obj.members.append(chat_room_member_obj)
 
         session.add(chat_room_obj)
 
@@ -190,6 +194,36 @@ async def get_chat_room_messages(
         "items": res,
         "next_cursor": offset + len(res) if t and t > offset + len(res) else None,
     }
+
+
+@chat_router.post(
+    "/room/{chat_room_id}/user/{user_id}",
+    response_model=ChatRoomMemberRead,
+    status_code=201,
+    dependencies=[Depends(PermissionDependency([IsAuthenticated]))],
+    summary="Add chat room member(Not Admin)",
+)
+async def add_chat_room_member(
+    chat_room_id: UUID,
+    user_id: UUID,
+    session: AsyncSession = Depends(get_db_transactional_session),
+):
+    chat_room = await get_chat_room_by_id(chat_room_id, session)
+    if chat_room is None:
+        raise ChatRoomNotFound
+
+    db_chat_mem = await get_chat_room_member_by_user_and_room_id(
+        user_id, chat_room_id, session
+    )
+    if db_chat_mem:
+        raise HTTPException(status_code=409, detail="Chat room member already exists")
+
+    try:
+        chat_room_member = make_chat_room_member(user_id, chat_room_id, session)
+        return chat_room_member
+    except Exception as e:
+        await session.rollback()
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 @chat_router.delete(
