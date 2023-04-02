@@ -41,7 +41,7 @@ workout_promise_router = APIRouter()
     response_model=WorkoutPromiseListResponse,
     dependencies=[Depends(PermissionDependency([IsAuthenticated]))],
 )
-@Cache.cached(ttl=60)
+@Cache.cached(prefix="workout-promise-list", ttl=60)
 async def get_workout_promises(
     session: AsyncSession = Depends(get_db_transactional_session),
     limit: int = Query(10, description="Limit"),
@@ -64,7 +64,7 @@ async def get_workout_promises(
     response_model=WorkoutPromiseListResponse,
     dependencies=[Depends(PermissionDependency([IsAuthenticated]))],
 )
-@Cache.cached(ttl=60)
+@Cache.cached(prefix="workout-promise-recruiting-list", ttl=60)
 async def get_recruiting_workout_promises(
     session: AsyncSession = Depends(get_db_transactional_session),
     limit: int = Query(10, description="Limit"),
@@ -139,7 +139,7 @@ async def get_workout_promises_joined_by_me(
     response_model=WorkoutPromiseRead,
     dependencies=[Depends(PermissionDependency([IsAuthenticated]))],
 )
-@Cache.cached(ttl=60)
+@Cache.cached(prefix="workout-promise-detail", ttl=60)
 async def get_workout_promise(
     workout_promise_id: UUID,
     session: AsyncSession = Depends(get_db_transactional_session),
@@ -167,6 +167,9 @@ async def make_new_workout_promise(
     else:
         raise UnauthorizedException("You are not authenticated user")
 
+    await Cache.remove_by_prefix("workout-promise-detail")
+    await Cache.remove_by_prefix("workout-promise-list")
+    await Cache.remove_by_prefix("workout-promise-recruiting-list")
     return db_workout_promise
 
 
@@ -185,6 +188,8 @@ async def join_workout_promise(
     db_w_pp = await create_workout_participant(
         db, workout_promise_id, req_body, req.user.id
     )
+    await Cache.remove_by_prefix("workout-promise-detail")
+
     return db_w_pp
 
 
@@ -198,7 +203,8 @@ async def delete_workout_promise(
     db: AsyncSession = Depends(get_db_transactional_session),
 ):
     msg = await delete_workout_promise_by_id(db, workout_promise_id)
-
+    await Cache.remove_by_prefix("workout-promise-list")
+    await Cache.remove_by_prefix("workout-promise-recruiting-list")
     return msg
 
 
@@ -210,7 +216,9 @@ async def leave_workout_promise(
     db: AsyncSession = Depends(get_db_transactional_session),
 ):
     msg = await delete_workout_participant(db, workout_promise_id, user_id)
-
+    await Cache.remove_by_prefix("workout-promise-detail")
+    await Cache.remove_by_prefix("workout-promise-list")
+    await Cache.remove_by_prefix("workout-promise-recruiting-list")
     return msg
 
 
@@ -229,6 +237,9 @@ async def update_workout_promise(
     updated_w_p = await update_workout_promise_by_id(
         db, workout_promise_id, workout_promise, gym_info
     )
+    await Cache.remove_by_prefix("workout-promise-detail")
+    await Cache.remove_by_prefix("workout-promise-list")
+    await Cache.remove_by_prefix("workout-promise-recruiting-list")
     return updated_w_p
 
 
@@ -248,4 +259,8 @@ async def update_workout_participant(
     updated_w_pp = await update_workout_participant_by_admin(
         db, req.user.id, workout_promise_id, user_id, update_req
     )
+    await Cache.remove_by_prefix("workout-promise-detail")
+    await Cache.remove_by_prefix("workout-promise-list")
+    await Cache.remove_by_prefix("workout-promise-recruiting-list")
+
     return updated_w_pp
