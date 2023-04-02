@@ -37,7 +37,7 @@ class WorkoutPromise(TimestampMixin, Base):
     # Child table (One to "Many")
     admin_user_id = Column(
         GUID,
-        ForeignKey("user.id", ondelete="SET NULL"),
+        ForeignKey("user.id", ondelete="CASCADE"),
     )
     admin_user: "User" = relationship(
         "User", back_populates="admin_workout_promises", lazy="select"
@@ -83,7 +83,7 @@ class WorkoutParticipant(TimestampMixin, Base):
 
     # ("Many" to one)
     workout_promise_id = Column(
-        GUID, ForeignKey("workout_promise.id", ondelete="SET NULL")
+        GUID, ForeignKey("workout_promise.id", ondelete="CASCADE")
     )
     workout_promise: WorkoutPromise = relationship(
         "WorkoutPromise", back_populates="participants"

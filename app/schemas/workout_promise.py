@@ -76,8 +76,8 @@ class WorkoutPromiseRead(WorkoutPromiseBase):
 
     gym_info: GymInfoRead | None
     gym_info_id: UUID4 | None
-    admin_user_id: UUID4
-    admin_user: UserRead
+    admin_user_id: UUID4 | None
+    admin_user: UserRead | None
     participants: list["WorkoutParticipantRead"]
     status: WorkoutPromiseStatus
 
@@ -134,7 +134,7 @@ class WorkoutParticipantRead(WorkoutParticipantBase):
     workout_promise_id: UUID4 | None
     created_at: datetime
     updated_at: datetime
-    user_id: UUID4
+    user_id: UUID4 | None
     user: UserRead | None
 
     class Config:

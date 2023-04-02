@@ -55,7 +55,7 @@ class ChatRoom(TimestampMixin, Base):
     name = Column(String(100), index=True, nullable=True)
     description = Column(String(200), nullable=True)
     is_private = Column(Boolean, index=True, nullable=False, server_default=true())
-    admin_user_id = Column(GUID, ForeignKey("user.id", ondelete="SET NULL"), index=True)
+    admin_user_id = Column(GUID, ForeignKey("user.id", ondelete="CASCADE"), index=True)
     admin_user: "User" = relationship("User", back_populates="admin_chat_rooms")
     is_group_chat = Column(Boolean, index=True, nullable=False, server_default=true())
 
