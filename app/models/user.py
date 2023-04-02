@@ -79,3 +79,10 @@ class User(TimestampMixin, Base):  # type: ignore
         cascade="save-update, merge, delete",
         passive_deletes=True,
     )
+
+    admin_chat_rooms: list[ChatRoom] = relationship(
+        "ChatRoom",
+        back_populates="admin_user",
+        cascade="save-update, merge, delete",
+        passive_deletes=True,
+    )

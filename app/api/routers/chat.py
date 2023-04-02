@@ -28,6 +28,7 @@ from app.services.chat_service import (
     get_public_chat_room_list,
     get_user_mem_with_ids,
 )
+from app.services.workout_promise_service import get_workout_promise_by_id
 from app.session import get_db_transactional_session
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -86,7 +87,7 @@ async def create_chat_room(
 ):
     db_chat_room = await find_chat_room_by_user_ids(
         session,
-        [chat_room.created_by, *chat_room.members_user_ids],
+        chat_room.members_user_ids,
         chat_room.is_group_chat,
     )
     if db_chat_room:
@@ -101,56 +102,36 @@ async def create_chat_room(
 
     try:
         chat_room_obj = ChatRoom(
-            **chat_room.dict(exclude={"members_user_ids", "retry"})
+            **chat_room.dict(
+                exclude={"members_user_ids", "retry", "workout_promise_id"}
+            )
         )
-        stmt = select(User).where(User.id == chat_room.created_by)
-        res = await session.execute(stmt)
-        admin_user = res.scalars().first()
-
-        if not admin_user:
-            raise HTTPException(status_code=404, detail="Room Admin User is not found")
+        if chat_room.workout_promise_id:
+            workout_promise = await get_workout_promise_by_id(
+                session, chat_room.workout_promise_id
+            )
+            chat_room_obj.workout_promise = workout_promise
 
         admin_member_obj = ChatRoomMember(
-            user=admin_user,
+            user_id=chat_room.admin_user_id,
             chat_room=chat_room_obj,
             is_admin=True,
         )
         chat_room_obj.members.append(admin_member_obj)
 
-        if chat_room.is_group_chat == True:
-            for id in chat_room.members_user_ids:
-                res = await session.execute(select(User).where(User.id == id))
-                user = res.scalars().first()
-                if not user:
-                    raise HTTPException(status_code=404, detail="User not found")
-                chat_room_member_obj = ChatRoomMember(
-                    user=user,
-                    chat_room=chat_room_obj,
-                    is_admin=False,
-                )
-                # TODO: Watchout for this, it might be a bug.
-                # duplicated members are added to the chat room.(only response)
-                chat_room_obj.members.append(chat_room_member_obj)
-
-        else:
-            if len(chat_room.members_user_ids) != 1:
-                raise HTTPException(
-                    status_code=400, detail="Invalid Request For Direct Chat Room"
-                )
-            res = await session.execute(
-                select(User).where(User.id == chat_room.members_user_ids[0])
-            )
-            user = res.scalars().first()
-            if not user:
-                raise HTTPException(status_code=404, detail="User not found")
+        for uid in chat_room.members_user_ids:
+            if uid == chat_room.admin_user_id:
+                continue
             chat_room_member_obj = ChatRoomMember(
-                user=user, chat_room=chat_room_obj, is_admin=True
+                user_id=uid,
+                chat_room=chat_room_obj,
+                is_admin=False,
             )
+            chat_room_obj.members.append(chat_room_member_obj)
 
         session.add(chat_room_obj)
 
         await session.commit()
-
         return chat_room_obj
     except Exception as e:
         await session.rollback()
