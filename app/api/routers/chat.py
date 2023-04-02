@@ -8,7 +8,6 @@ from app.core.fastapi.dependencies.premission import (
     IsAuthenticated,
     PermissionDependency,
 )
-from app.models.user import User
 from app.schemas.chat import (
     ChatRoomList,
     ChatRoomCreate,
@@ -98,12 +97,12 @@ async def create_chat_room(
     if db_chat_room:
         if chat_room.is_group_chat == False:
             raise HTTPException(status_code=409, detail="Chat room already exists")
-        else:
-            if chat_room.retry == False:
-                raise HTTPException(
-                    status_code=409,
-                    detail="Chat room already exists with same members. If you want to create new chat room with same members please change the name of the chat room and try again",
-                )
+        # else:
+        #     if chat_room.retry == False:
+        #         raise HTTPException(
+        #             status_code=409,
+        #             detail="Chat room already exists with same members. If you want to create new chat room with same members please change the name of the chat room and try again",
+        #         )
 
     try:
         chat_room_obj = ChatRoom(
