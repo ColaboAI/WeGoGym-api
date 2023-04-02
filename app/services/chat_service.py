@@ -377,7 +377,7 @@ async def get_chat_room_members_count(room_id: str, session: AsyncSession):
     return result.fetchone()
 
 
-async def get_user_by_id(user_id: str, session: AsyncSession) -> User:
+async def get_user_by_id(user_id: UUID, session: AsyncSession) -> User:
     stmt = select(User).where(User.id == user_id)
     result = await session.execute(stmt)
     usr: User | None = result.scalars().first()
