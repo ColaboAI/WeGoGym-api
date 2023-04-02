@@ -129,7 +129,7 @@ class ChatRoomUpdate(BaseModel):
 class MessageRead(BaseModel):
     id: UUID4
     chat_room_id: UUID4
-    user_id: UUID4
+    user_id: UUID4 | None
     text: str | None
     created_at: datetime
     media_url: str | None
