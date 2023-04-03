@@ -14,6 +14,17 @@ class NotificationType(str, Enum):
     FOLLOW_REQUEST = "FOLLOW_REQUEST"
     FOLLOW_ACCEPTANCE = "FOLLOW_ACCEPTANCE"
 
+class NotificationWorkoutTitle(str, Enum):
+    NEW_WORKOUT_PROMISE = "새로운 운동 약속이 생성되었습니다."
+    WORKOUT_REQUEST = "새로운 참여 요청이 있습니다."
+    WORKOUT_NEW_PARTICIPANT = "새로운 참여자가 있습니다."
+    NEW_COMMENT = "운동 약속에 새로운 댓글이 달렸습니다."
+    WORKOUT_REJECT = "참여 요청이 거절되었습니다."
+    WORKOUT_ACCEPT = "참여 요청이 승인되었습니다."
+    # TODO: 어감 이상. 다른 표현으로 바꿔야 함.
+    WORKOUT_CANCEL_PARTICIPANT = "약속 참여를 취소한 사람이 있습니다."
+
+    CANCEL_WORKOUT = "운동 약속이 취소되었습니다."
 
 ## 운동 약속 알림 타입
 class NotificationWorkoutType(str, Enum):
@@ -28,6 +39,11 @@ class NotificationWorkoutType(str, Enum):
     WORKOUT_NEW_PARTICIPANT = "WORKOUT_NEW_PARTICIPANT"
     # 운동 약속 모집 완료 (운동 약속 참여자 모두에게 보내는 알림)
     WORKOUT_RECRUIT_END = "WORKOUT_RECRUIT_END"
+
+    # 기존 참여자가 취소 (운동 약속 참여자에게 보내는 알림)
+    WORKOUT_CANCEL_PARTICIPANT = "CANCEL_PARTICIPANT"
+    # 운동 약속 취소 (운동 약속 참여자에게 보내는 알림)
+    CANCEL_WORKOUT = "CANCEL_WORKOUT"
 
 
 class NotificationBase(BaseModel):

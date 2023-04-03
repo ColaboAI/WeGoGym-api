@@ -1,20 +1,17 @@
 from datetime import datetime, timezone
+
 from uuid import UUID
 from sqlalchemy import select, func
 
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.exceptions.notification import (
-    NotAdminOfNotificationException,
     NotificaitonNotFoundException,
 )
 from app.models.notification import NotificationWorkout, Notification
-from app.models.workout_promise import WorkoutParticipant, WorkoutPromise
-from app.schemas.notification import (
-    NotificationWorkoutBase,
-)
+from app.models.workout_promise import WorkoutParticipant
 
 from sqlalchemy.orm import selectinload
-from app.services.user_service import get_my_info_by_id
+
 from app.services.workout_promise_service import (
     get_workout_participant_id_list_by_user_id,
 )
