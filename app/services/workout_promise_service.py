@@ -26,6 +26,7 @@ from app.core.exceptions import (
 )
 
 from sqlalchemy.orm import selectinload
+from app.services.fcm_service import send_notification_workout
 from app.services.user_service import get_my_info_by_id
 
 
@@ -334,6 +335,7 @@ async def delete_workout_promise_by_id(db: AsyncSession, workout_promise_id: UUI
 
 
 # GymInfo가 endpoint 단에서 만들어졌다고 가정.
+# TODO: 모집 완료 알람/푸시
 async def update_workout_promise_by_id(
     db: AsyncSession,
     workout_promise_id: UUID,
@@ -349,6 +351,7 @@ async def update_workout_promise_by_id(
         setattr(db_workout_promise, k, v)
     await db.commit()
     await db.refresh(db_workout_promise)
+
     return db_workout_promise
 
 
@@ -357,9 +360,19 @@ async def get_workout_participant_by_ids(
     user_id: UUID,
     workout_promise_id: UUID,
 ) -> WorkoutParticipant:
-    stmt = select(WorkoutParticipant).where(
-        WorkoutParticipant.user_id == user_id,
-        WorkoutParticipant.workout_promise_id == workout_promise_id,
+    stmt = (
+        select(WorkoutParticipant)
+        .where(
+            WorkoutParticipant.user_id == user_id,
+            WorkoutParticipant.workout_promise_id == workout_promise_id,
+        )
+        .options(
+            selectinload(WorkoutParticipant.workout_promise).load_only(
+                WorkoutPromise.id,
+                WorkoutPromise.title,
+                WorkoutPromise.status,
+            )
+        )
     )
     res = await db.execute(stmt)
     workout_participant = res.scalars().first()
@@ -421,10 +434,13 @@ async def create_workout_participant(
         recipient_id=admin_participant.id,
         recipient=admin_participant,
     )
-
+    # send notification to admin with fcm service
     db.add(new_notification_workout)
-
     await db.commit()
+
+    # SEND FCM NOTIFICATION
+    await send_notification_workout(db, new_notification_workout)
+
     return new_db_workout_participant
 
 
@@ -497,4 +513,8 @@ async def update_workout_participant_by_admin(
 
     await db.commit()
     await db.refresh(db_workout_participant)
+
+    # SEND FCM NOTIFICATION
+    await send_notification_workout(db, new_notification_workout)
+
     return db_workout_participant

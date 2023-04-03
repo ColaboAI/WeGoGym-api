@@ -25,7 +25,7 @@ class ParticipantStatus(str, Enum):
 class GymInfoBase(BaseModel):
     name: str = Field(..., min_length=1, max_length=100)
     address: str = Field(..., min_length=1, max_length=100)
-    zip_code: str | None = Field(None, min_length=1, max_length=100)
+    zip_code: str | None = Field(None, max_length=100)
     status: str | None = Field(None)
 
 
