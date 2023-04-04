@@ -60,8 +60,8 @@ services:
     env_file:
       - .env
     tty: true
-    ports:
-      - '80:8000'
+    expose:
+      - '8000:8000'
     networks:
       - backend
     labels:
@@ -70,6 +70,7 @@ services:
       - "traefik.http.routers.fastapi.rule=Host(`wegogym-api-dev.colabo.ml`)"
       - "traefik.http.routers.fastapi.tls=true"
       - "traefik.http.routers.fastapi.tls.certresolver=letsencrypt"
+      - "traefik.http.services.fastapi.loadbalancer.server.port=8000"
 
 
   redis:
