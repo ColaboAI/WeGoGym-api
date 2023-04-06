@@ -8,7 +8,7 @@ from pydantic import BaseModel, Field, UUID4
 
 
 class CreateUpdateDictModel(BaseModel):
-    def create_update_dict(self):
+    def update_dict(self):
         return self.dict(
             exclude_unset=True,
             exclude={
@@ -63,6 +63,7 @@ class UserCreate(CreateUpdateDictModel):
     phone_number: str = Field(..., description="Phone number: 01012345678")
     username: str = Field(..., description="닉네임")
     is_superuser: bool = False
+    gender: str = Field(..., description="성별")
     age: int = Field(..., description="나이")
     weight: int = Field(..., description="몸무게")
     height: int = Field(..., description="키")
