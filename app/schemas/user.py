@@ -42,7 +42,7 @@ class UserListRead(BaseModel):
 class MyInfoRead(UserRead):
     phone_number: str
     username: str
-    age: int | None
+    age: str | None
     bio: str | None
     gender: str
     weight: int
@@ -64,7 +64,7 @@ class UserCreate(CreateUpdateDictModel):
     username: str = Field(..., description="닉네임")
     is_superuser: bool = False
     gender: str = Field(..., description="성별")
-    age: int = Field(..., description="나이")
+    age: str = Field(..., description="나이")
     weight: int = Field(..., description="몸무게")
     height: int = Field(..., description="키")
     workout_per_week: int = Field(..., description="일주일에 몇 번 운동하는지")
@@ -78,7 +78,7 @@ class UserUpdate(CreateUpdateDictModel):
     profile_pic: str | None = Field(None, description="기존 프로필 사진")
     username: str | None = Field(None, description="닉네임")
     bio: str | None = Field(None, description="자기소개")
-    age: int | None = Field(None, description="나이")
+    age: str | None = Field(None, description="나이")
     weight: int | None = Field(None, description="몸무게")
     height: int | None = Field(None, description="키")
     workout_per_week: int | None = Field(None, description="일주일에 몇 번 운동하는지")
