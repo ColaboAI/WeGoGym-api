@@ -8,6 +8,7 @@ from app.api.routers.auth import auth_router
 from app.api.routers.user import user_router
 from app.api.routers.workout_promise import workout_promise_router
 from app.api.routers.notification import notification_router
+from app.api.routers.voc import voc_router
 
 api_router = APIRouter(prefix="/api/v1")
 
@@ -51,6 +52,12 @@ api_router.include_router(
     notification_router,
     prefix="/notification",
     tags=["notification"],
+)
+
+api_router.include_router(
+    voc_router,
+    prefix="/voc",
+    tags=["voc"],
 )
 
 html = """

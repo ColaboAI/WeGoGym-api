@@ -100,7 +100,7 @@ async def login(req: LoginRequest):
 
 
 @user_router.get(
-    "logout",
+    "/logout",
     summary="Logout",
     description="Logout with token",
     dependencies=[Depends(PermissionDependency([IsAuthenticated]))],
