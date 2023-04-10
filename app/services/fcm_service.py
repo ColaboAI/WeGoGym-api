@@ -147,7 +147,10 @@ async def send_notification_workout(
     if key is None or uid is None:
         return
     title: str = NotificationWorkoutTitle[key]
-    body = f"{noti_workout.sender.workout_promise.title}: {noti_workout.sender.workout_promise.status}"
+    body = f"{noti_workout.sender.name}: {noti_workout.message}"
+
+    if noti_workout.message is None:
+        body = ""
     await send_message_to_single_device_by_uid(
         db,
         uid,
