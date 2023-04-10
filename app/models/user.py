@@ -31,6 +31,7 @@ class User(TimestampMixin, Base):  # type: ignore
     profile_pic = Column(String(255), nullable=True)
     bio = Column(String(100), nullable=True)
     # TODO: age to be calculated from birthdate
+
     age = Column(String(50), server_default="20220701", nullable=False)
     weight = Column(Integer, server_default=text("0"), nullable=False)
     height = Column(Integer, server_default=text("0"), nullable=False)
