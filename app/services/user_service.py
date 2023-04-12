@@ -1,5 +1,5 @@
 from uuid import UUID
-from fastapi import HTTPException
+from fastapi import BackgroundTasks, HTTPException
 
 from sqlalchemy import func, or_, select, and_
 
@@ -15,6 +15,7 @@ from app.utils.token_helper import TokenHelper
 from app.session import transactional_session_factory
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload, raiseload
+from app.utils.ecs_log import logger
 
 
 # User service: user adaptor for sqlalchemy
@@ -109,13 +110,30 @@ class UserService:
         await self.session.close()
 
 
-async def delete_user_by_id(user_id: UUID, session: AsyncSession) -> User:
+async def delete_user_by_id(
+    user_id: UUID, session: AsyncSession, bg: BackgroundTasks
+) -> User:
     user = await get_my_info_by_id(user_id, session)
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
+    if user.phone_number:
+        bg.add_task(delete_user_in_firebase, user.phone_number)
+
     await session.delete(user)
     await session.commit()
     return user
+
+
+def delete_user_in_firebase(phone_number: str):
+    from firebase_admin import auth
+    from firebase_admin.auth import UserRecord
+
+    try:
+        fb_user: UserRecord = auth.get_user_by_phone_number(phone_number)
+        logger.info(f"Successfully fetched user data: {fb_user.uid}")
+        auth.delete_user(fb_user.uid)
+    except Exception as e:
+        logger.debug(e)
 
 
 async def update_my_info_by_id(
@@ -184,3 +202,17 @@ async def get_others_info_by_id(user_id: UUID, session: AsyncSession) -> User:
     if not user:
         raise UserNotFoundException
     return user
+
+
+async def check_user_phone_number(session: AsyncSession, phone_number: str):
+    result = await session.execute(
+        select(User.id).where(User.phone_number == phone_number)
+    )
+    id: str | None = result.scalars().first()
+    return id is not None
+
+
+async def check_username(session: AsyncSession, username: str) -> bool:
+    result = await session.execute(select(User.id).where(User.username == username))
+    id: str | None = result.scalars().first()
+    return id is not None
