@@ -26,7 +26,7 @@ class User(TimestampMixin, Base):  # type: ignore
     id = Column(GUID, primary_key=True, default=uuid.uuid4)
     # TODO: username check
     username = Column(String(100), nullable=False, unique=True, index=True)
-    phone_number = Column(String(100), nullable=False)
+    phone_number = Column(String(100), nullable=False, unique=True, index=True)
     is_superuser = Column(Boolean, server_default=expression.false(), nullable=False)
     profile_pic = Column(String(255), nullable=True)
     bio = Column(String(100), nullable=True)

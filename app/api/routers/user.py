@@ -1,6 +1,16 @@
 from datetime import datetime, timezone
 from uuid import UUID
-from fastapi import APIRouter, Body, Depends, File, Query, Request, UploadFile
+from fastapi import (
+    APIRouter,
+    Body,
+    Depends,
+    File,
+    Query,
+    Request,
+    UploadFile,
+    BackgroundTasks,
+)
+from app.core.exceptions.base import BadRequestException
 from app.core.fastapi.dependencies.premission import (
     AllowAll,
     IsAdmin,
@@ -22,6 +32,8 @@ from app.services.aws_service import upload_image_to_s3
 from app.session import get_db_transactional_session
 from app.services.user_service import (
     UserService,
+    check_user_phone_number,
+    check_username,
     delete_user_by_id,
     get_my_info_by_id,
     get_random_user_with_limit,
@@ -48,6 +60,38 @@ async def get_user_list(
 ):
     t, res = await UserService().get_user_list(limit=limit, offset=offset)
     return {"total": t, "users": res}
+
+
+# check phone number or username exists
+
+
+@user_router.get(
+    "/check",
+    status_code=204,
+    summary="Check phone number or username exists",
+    description="Check phone number or username exists",
+    responses={"400": {"model": ExceptionResponseSchema}},
+    dependencies=[Depends(PermissionDependency([AllowAll]))],
+)
+async def check_user_exists(
+    db: AsyncSession = Depends(get_db_transactional_session),
+    phone_number: str = Query(None, description="Phone number"),
+    username: str = Query(None, description="Username"),
+):
+    if not phone_number and not username:
+        raise BadRequestException(
+            "You must provide phone number or username to check user exists"
+        )
+
+    out = {}
+    if phone_number:
+        out["phone_number"] = await check_user_phone_number(
+            db, phone_number=phone_number
+        )
+    if username:
+        out["username"] = await check_username(db, username=username)
+
+    return out
 
 
 # TODO: get firebase token or user id and check if user exists
@@ -80,9 +124,9 @@ async def create_user(
 async def delete_user(
     req: Request,
     session: AsyncSession = Depends(get_db_transactional_session),
+    bg=BackgroundTasks,
 ):
-    await delete_user_by_id(req.user.id, session)
-
+    await delete_user_by_id(req.user.id, session, bg)
     return {"message": f"User {req.user.id} deleted successfully"}
 
 
