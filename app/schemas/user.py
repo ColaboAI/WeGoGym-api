@@ -123,6 +123,11 @@ class RecommendedUser(BaseModel):
         orm_mode = True
 
 
+class CheckUserInfoResponse(BaseModel):
+    phone_number_exists: bool | None
+    username_exists: bool | None
+
+
 # if TYPE_CHECKING:
 from app.schemas.workout_promise import GymInfoBase, GymInfoRead
 

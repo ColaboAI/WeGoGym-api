@@ -128,8 +128,9 @@ def delete_user_in_firebase(phone_number: str):
     from firebase_admin import auth
     from firebase_admin.auth import UserRecord
 
+    internat_phone_number = f"+82{phone_number[1:]}"
     try:
-        fb_user: UserRecord = auth.get_user_by_phone_number(phone_number)
+        fb_user: UserRecord = auth.get_user_by_phone_number(internat_phone_number)
         logger.info(f"Successfully fetched user data: {fb_user.uid}")
         auth.delete_user(fb_user.uid)
     except Exception as e:

@@ -20,6 +20,7 @@ from app.core.fastapi.dependencies.premission import (
 from app.core.helpers.cache import Cache
 from app.schemas import ExceptionResponseSchema
 from app.schemas.user import (
+    CheckUserInfoResponse,
     LoginResponse,
     MyInfoRead,
     RecommendedUser,
@@ -67,9 +68,9 @@ async def get_user_list(
 
 @user_router.get(
     "/check",
+    response_model=CheckUserInfoResponse,
     summary="Check phone number or username exists",
     description="Check phone number or username exists",
-    responses={"400": {"model": ExceptionResponseSchema}},
     dependencies=[Depends(PermissionDependency([AllowAll]))],
 )
 async def check_user_exists(
@@ -84,11 +85,11 @@ async def check_user_exists(
 
     out = {}
     if phone_number:
-        out["phone_number"] = await check_user_phone_number(
+        out["phone_number_exists"] = await check_user_phone_number(
             db, phone_number=phone_number
         )
     if username:
-        out["username"] = await check_username(db, username=username)
+        out["username_exists"] = await check_username(db, username=username)
 
     return out
 
@@ -122,8 +123,8 @@ async def create_user(
 )
 async def delete_user(
     req: Request,
+    bg: BackgroundTasks,
     session: AsyncSession = Depends(get_db_transactional_session),
-    bg=BackgroundTasks,
 ):
     await delete_user_by_id(req.user.id, session, bg)
     return {"message": f"User {req.user.id} deleted successfully"}
