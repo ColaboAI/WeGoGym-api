@@ -67,7 +67,6 @@ async def get_user_list(
 
 @user_router.get(
     "/check",
-    status_code=204,
     summary="Check phone number or username exists",
     description="Check phone number or username exists",
     responses={"400": {"model": ExceptionResponseSchema}},
