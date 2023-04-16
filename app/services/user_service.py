@@ -2,8 +2,10 @@ from uuid import UUID
 from fastapi import BackgroundTasks, HTTPException
 
 from sqlalchemy import func, or_, select, and_
+from app.core.exceptions.user import UserBlockedException
 
 from app.models import User
+from app.models.user import UserBlockList
 from app.models.workout_promise import GymInfo
 from app.schemas import LoginResponse
 from app.core.exceptions import (
@@ -168,7 +170,17 @@ async def update_my_info_by_id(
     return user
 
 
-async def get_my_info_by_id(user_id: UUID, session: AsyncSession) -> User:
+async def get_my_info_by_id(
+    user_id: UUID, session: AsyncSession, req_user_id: UUID | None = None
+) -> User:
+    is_blocked = False
+    if req_user_id is not None:
+        is_blocked = await is_blocked_user(session, user_id, req_user_id)
+
+    # if blocked, raise exception
+    if is_blocked:
+        raise UserBlockedException
+
     result = await session.execute(
         select(User).options(selectinload(User.gym_info)).where(User.id == user_id)
     )
@@ -179,11 +191,19 @@ async def get_my_info_by_id(user_id: UUID, session: AsyncSession) -> User:
 
 
 async def get_random_user_with_limit(db: AsyncSession, user_id: UUID, limit: int = 3):
+    # exclude myself and blocked user
     result = await db.execute(
         select(User.id, User.profile_pic, User.username)
         .order_by(func.random())
         .limit(limit)
-        .where(User.id != user_id)
+        .where(
+            User.id != user_id,
+            User.id.not_in(
+                select(UserBlockList.blocked_user_id).where(
+                    UserBlockList.user_id == user_id
+                )
+            ),
+        )
     )
 
     out = []
@@ -217,3 +237,81 @@ async def check_username(session: AsyncSession, username: str) -> bool:
     result = await session.execute(select(User.id).where(User.username == username))
     id: str | None = result.scalars().first()
     return id is not None
+
+
+async def block_user_by_id(
+    session: AsyncSession,
+    user_id: UUID,
+    block_user_id: UUID,
+) -> User:
+    user = await get_my_info_by_id(user_id, session)
+    block_user = await get_my_info_by_id(block_user_id, session)
+
+    if user.blocked_users is None:
+        user.blocked_users = [block_user]
+    else:
+        user.blocked_users.append(block_user)
+
+    session.add(user)
+    await session.commit()
+    await session.refresh(user)
+    return user
+
+
+async def get_blocked_users(
+    session: AsyncSession,
+    user_id: UUID,
+) -> list[User]:
+    user = await get_my_info_by_id(user_id, session)
+    return user.blocked_users
+
+
+async def unblock_user_by_id(
+    session: AsyncSession,
+    user_id: UUID,
+    block_user_id: UUID,
+) -> User:
+    user = await get_my_info_by_id(user_id, session)
+    block_user = await get_my_info_by_id(block_user_id, session)
+
+    if user.blocked_users is None:
+        user.blocked_users = []
+    else:
+        user.blocked_users.remove(block_user)
+
+    session.add(user)
+    await session.commit()
+    await session.refresh(user)
+    return user
+
+
+async def get_blocked_me_list(
+    session: AsyncSession,
+    user_id: UUID,
+) -> list[UUID]:
+    stmt = select(UserBlockList.user_id).where(UserBlockList.blocked_user_id == user_id)
+    result = await session.execute(stmt)
+    blocked_user_ids = result.scalars().all()
+    return blocked_user_ids
+
+
+async def get_my_blocked_list(
+    session: AsyncSession,
+    user_id: UUID,
+) -> list[UUID]:
+    stmt = select(UserBlockList.blocked_user_id).where(UserBlockList.user_id == user_id)
+    result = await session.execute(stmt)
+    blocked_user_ids = result.scalars().all()
+    return blocked_user_ids
+
+
+async def is_blocked_user(
+    session: AsyncSession, user_id: UUID, req_user_id: UUID
+) -> bool:
+    stmt = select(UserBlockList).where(
+        UserBlockList.user_id == user_id,
+        UserBlockList.blocked_user_id == req_user_id,
+    )
+    result = await session.execute(stmt)
+    blocked_user: UserBlockList | None = result.scalars().first()
+    return blocked_user is not None

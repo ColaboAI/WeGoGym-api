@@ -33,11 +33,13 @@ from app.services.aws_service import upload_image_to_s3
 from app.session import get_db_transactional_session
 from app.services.user_service import (
     UserService,
+    block_user_by_id,
     check_user_phone_number,
     check_username,
     delete_user_by_id,
     get_my_info_by_id,
     get_random_user_with_limit,
+    unblock_user_by_id,
     update_my_info_by_id,
 )
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -235,9 +237,50 @@ async def get_recommended_users(
 )
 @Cache.cached(ttl=60 * 60)
 async def get_user_info(
+    req: Request,
     user_id: UUID,
     session: AsyncSession = Depends(get_db_transactional_session),
 ):
-    user = await get_my_info_by_id(user_id, session)
+    user = await get_my_info_by_id(user_id, session, req.user.id)
 
     return user
+
+
+@user_router.post(
+    "/{user_id}/block",
+    status_code=204,
+    summary="Block User",
+    description="Block user with token",
+    dependencies=[Depends(PermissionDependency([IsAuthenticated]))],
+)
+async def block_user(
+    req: Request,
+    user_id: UUID,
+    session: AsyncSession = Depends(get_db_transactional_session),
+):
+    await block_user_by_id(
+        session,
+        req.user.id,
+        user_id,
+    )
+    return {"message": f"User {user_id} blocked successfully"}
+
+
+@user_router.post(
+    "/{user_id}/unblock",
+    status_code=204,
+    summary="Unblock User",
+    description="Unblock user with token",
+    dependencies=[Depends(PermissionDependency([IsAuthenticated]))],
+)
+async def unblock_user(
+    req: Request,
+    user_id: UUID,
+    session: AsyncSession = Depends(get_db_transactional_session),
+):
+    await unblock_user_by_id(
+        session,
+        req.user.id,
+        user_id,
+    )
+    return {"message": f"User {user_id} unblocked successfully"}
