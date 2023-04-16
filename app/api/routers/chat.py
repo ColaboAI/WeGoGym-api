@@ -93,16 +93,10 @@ async def create_chat_room(
         chat_room.members_user_ids,
         chat_room.is_group_chat,
     )
-    print("create request", chat_room.__dict__)
+
     if db_chat_room:
         if chat_room.is_group_chat == False:
             raise HTTPException(status_code=409, detail="Chat room already exists")
-        # else:
-        #     if chat_room.retry == False:
-        #         raise HTTPException(
-        #             status_code=409,
-        #             detail="Chat room already exists with same members. If you want to create new chat room with same members please change the name of the chat room and try again",
-        #         )
 
     try:
         chat_room_obj = ChatRoom(
@@ -135,7 +129,6 @@ async def create_chat_room(
 
         session.add(chat_room_obj)
         await session.commit()
-        print("chat_room_obj @@@", chat_room_obj.__dict__)
         return chat_room_obj
     except Exception as e:
         print("error!!!", e)
