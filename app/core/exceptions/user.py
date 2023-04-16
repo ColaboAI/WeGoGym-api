@@ -17,3 +17,9 @@ class UserNotFoundException(CustomException):
     code = 404
     error_code = "USER__NOT_FOUND"
     message = "user not found"
+
+
+class UserBlockedException(CustomException):
+    code = 403
+    error_code = "USER__BLOCKED"
+    message = "user blocked"

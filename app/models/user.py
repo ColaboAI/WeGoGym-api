@@ -6,7 +6,15 @@ Note, imported by alembic migrations logic, see `alembic/env.py`
 
 
 from typing import TYPE_CHECKING
-from sqlalchemy import Boolean, Column, DateTime, ForeignKey, Integer, String, text
+from sqlalchemy import (
+    Boolean,
+    Column,
+    DateTime,
+    ForeignKey,
+    Integer,
+    String,
+    text,
+)
 from sqlalchemy.sql import expression
 from sqlalchemy.orm import relationship
 from app.core.db.mixins.timestamp_mixin import TimestampMixin
@@ -19,6 +27,23 @@ from app.models.workout_promise import WorkoutParticipant
 
 if TYPE_CHECKING:
     from app.models import GymInfo
+
+
+class UserBlockList(TimestampMixin, Base):  # type: ignore
+    __tablename__ = "user_block_list"
+    user_id = Column(
+        GUID,
+        ForeignKey("user.id", ondelete="CASCADE"),
+        primary_key=True,
+        index=True,
+    )
+
+    blocked_user_id = Column(
+        GUID,
+        ForeignKey("user.id", ondelete="CASCADE"),
+        primary_key=True,
+        index=True,
+    )
 
 
 class User(TimestampMixin, Base):  # type: ignore
@@ -88,4 +113,27 @@ class User(TimestampMixin, Base):  # type: ignore
         back_populates="admin_user",
         cascade="save-update, merge, delete",
         passive_deletes=True,
+    )
+
+    # 앱 전체에서 차단 여부
+    blocked = Column(
+        Boolean,
+        default=False,
+        nullable=False,
+        server_default=expression.false(),
+    )
+    blocked_users: list["User"] = relationship(
+        "User",
+        back_populates="blocked_by",
+        secondary=UserBlockList,
+        primaryjoin=id == UserBlockList.user_id,
+        secondaryjoin=id == UserBlockList.blocked_user_id,
+    )
+
+    blocked_by: list["User"] = relationship(
+        "User",
+        back_populates="blocked_users",
+        secondary=UserBlockList,
+        primaryjoin=id == UserBlockList.blocked_user_id,
+        secondaryjoin=id == UserBlockList.user_id,
     )
