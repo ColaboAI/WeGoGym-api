@@ -11,6 +11,7 @@ from app.core.exceptions.chat import (
 from app.models.chat import ChatRoom, ChatRoomMember, Message
 from app.models.user import User, user_block_list
 from app.services.fcm_service import send_message_to_multiple_devices_by_fcm_token_list
+from app.services.user_service import get_blocked_me_list
 from app.utils.ecs_log import logger
 import json
 from fastapi import HTTPException, WebSocket
@@ -71,6 +72,12 @@ class ChatService:
                             json.dumps(asdict(msg_data)),
                         )
 
+                        banned_set = await get_blocked_me_list(
+                            self.session,
+                            self.user_id,
+                        )
+                        banned_set.add(self.user_id)
+
                         db_chat_room = await get_chat_room_and_members_by_id(
                             self.chat_room_id, self.session
                         )
@@ -78,7 +85,8 @@ class ChatService:
                         fcm_tokens = [
                             member.user.fcm_token
                             for member in db_chat_room.members
-                            if member.user.fcm_token and member.user.id != self.user_id
+                            if member.user.fcm_token
+                            and member.user.id not in banned_set
                         ]
                         title = msg.user.username
                         body = msg.text

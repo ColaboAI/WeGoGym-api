@@ -281,13 +281,13 @@ async def unblock_user_by_id(
 async def get_blocked_me_list(
     session: AsyncSession,
     user_id: UUID,
-) -> list[UUID]:
+) -> set[UUID]:
     stmt = select(user_block_list.c.user_id).where(
         user_block_list.c.blocked_user_id == user_id
     )
     result = await session.execute(stmt)
     blocked_user_ids = result.scalars().all()
-    return blocked_user_ids
+    return set(blocked_user_ids)
 
 
 async def get_my_blocked_list(
