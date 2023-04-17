@@ -23,3 +23,9 @@ class UserBlockedException(CustomException):
     code = 403
     error_code = "USER__BLOCKED"
     message = "user blocked"
+
+
+class UserAlreadyExistsException(CustomException):
+    code = 400
+    error_code = "USER__ALREADY_EXISTS"
+    message = "user already exists"

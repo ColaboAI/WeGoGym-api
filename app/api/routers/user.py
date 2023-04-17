@@ -18,6 +18,7 @@ from app.core.fastapi.dependencies.premission import (
     PermissionDependency,
 )
 from app.core.helpers.cache import Cache
+
 from app.schemas import ExceptionResponseSchema
 from app.schemas.user import (
     CheckUserInfoResponse,
@@ -26,6 +27,7 @@ from app.schemas.user import (
     RecommendedUser,
     UserListRead,
     UserCreate,
+    UserRead,
     UserUpdate,
     LoginRequest,
 )
@@ -37,6 +39,7 @@ from app.services.user_service import (
     check_user_phone_number,
     check_username,
     delete_user_by_id,
+    get_my_blocked_list,
     get_my_info_by_id,
     get_random_user_with_limit,
     unblock_user_by_id,
@@ -65,9 +68,62 @@ async def get_user_list(
     return {"total": t, "users": res}
 
 
+@user_router.get(
+    "/block",
+    response_model=list[UserRead],
+    summary="Get blocked users",
+    description="Get blocked users",
+    dependencies=[Depends(PermissionDependency([IsAuthenticated]))],
+)
+async def get_blocked_users(
+    req: Request,
+    session: AsyncSession = Depends(get_db_transactional_session),
+):
+    users = await get_my_blocked_list(session, req.user.id)
+    return users
+
+
+@user_router.post(
+    "/block/{user_id}",
+    status_code=204,
+    summary="Block User",
+    description="Block user with token",
+    dependencies=[Depends(PermissionDependency([IsAuthenticated]))],
+)
+async def block_user(
+    req: Request,
+    user_id: UUID,
+    session: AsyncSession = Depends(get_db_transactional_session),
+):
+    await block_user_by_id(
+        session,
+        req.user.id,
+        user_id,
+    )
+    return {"message": f"User {user_id} blocked successfully"}
+
+
+@user_router.delete(
+    "/block/{user_id}",
+    status_code=204,
+    summary="Unblock User",
+    description="Unblock user with token",
+    dependencies=[Depends(PermissionDependency([IsAuthenticated]))],
+)
+async def unblock_user(
+    req: Request,
+    user_id: UUID,
+    session: AsyncSession = Depends(get_db_transactional_session),
+):
+    await unblock_user_by_id(
+        session,
+        req.user.id,
+        user_id,
+    )
+    return {"message": f"User {user_id} unblocked successfully"}
+
+
 # check phone number or username exists
-
-
 @user_router.get(
     "/check",
     response_model=CheckUserInfoResponse,
@@ -244,43 +300,3 @@ async def get_user_info(
     user = await get_my_info_by_id(user_id, session, req.user.id)
 
     return user
-
-
-@user_router.post(
-    "/{user_id}/block",
-    status_code=204,
-    summary="Block User",
-    description="Block user with token",
-    dependencies=[Depends(PermissionDependency([IsAuthenticated]))],
-)
-async def block_user(
-    req: Request,
-    user_id: UUID,
-    session: AsyncSession = Depends(get_db_transactional_session),
-):
-    await block_user_by_id(
-        session,
-        req.user.id,
-        user_id,
-    )
-    return {"message": f"User {user_id} blocked successfully"}
-
-
-@user_router.post(
-    "/{user_id}/unblock",
-    status_code=204,
-    summary="Unblock User",
-    description="Unblock user with token",
-    dependencies=[Depends(PermissionDependency([IsAuthenticated]))],
-)
-async def unblock_user(
-    req: Request,
-    user_id: UUID,
-    session: AsyncSession = Depends(get_db_transactional_session),
-):
-    await unblock_user_by_id(
-        session,
-        req.user.id,
-        user_id,
-    )
-    return {"message": f"User {user_id} unblocked successfully"}

@@ -1,8 +1,10 @@
+from typing import Mapping
 from uuid import UUID
 from fastapi import BackgroundTasks, HTTPException
 
-from sqlalchemy import func, or_, select, and_
-from app.core.exceptions.user import UserBlockedException
+from sqlalchemy import delete, func, insert, or_, select, and_
+from sqlalchemy.engine import Row
+from app.core.exceptions.user import UserAlreadyExistsException, UserBlockedException
 
 from app.models import User
 from app.models.user import user_block_list
@@ -243,19 +245,15 @@ async def block_user_by_id(
     session: AsyncSession,
     user_id: UUID,
     block_user_id: UUID,
-) -> User:
-    user = await get_my_info_by_id(user_id, session)
-    block_user = await get_my_info_by_id(block_user_id, session)
-
-    if user.blocked_users is None:
-        user.blocked_users = [block_user]
-    else:
-        user.blocked_users.append(block_user)
-
-    session.add(user)
-    await session.commit()
-    await session.refresh(user)
-    return user
+) -> bool:
+    is_blocked = await is_blocked_user(session, user_id, block_user_id)
+    if is_blocked:
+        return True
+    try:
+        await add_block_list(session, user_id, block_user_id)
+    except Exception:
+        raise UserAlreadyExistsException("User already exists in block list")
+    return True
 
 
 async def get_blocked_users(
@@ -270,19 +268,14 @@ async def unblock_user_by_id(
     session: AsyncSession,
     user_id: UUID,
     block_user_id: UUID,
-) -> User:
-    user = await get_my_info_by_id(user_id, session)
-    block_user = await get_my_info_by_id(block_user_id, session)
-
-    if user.blocked_users is None:
-        user.blocked_users = []
-    else:
-        user.blocked_users.remove(block_user)
-
-    session.add(user)
-    await session.commit()
-    await session.refresh(user)
-    return user
+) -> bool:
+    is_blocked = await is_blocked_user(session, user_id, block_user_id)
+    if is_blocked:
+        try:
+            await delete_block_list(session, user_id, block_user_id)
+        except Exception as e:
+            raise UserNotFoundException("User not found in block list")
+    return True
 
 
 async def get_blocked_me_list(
@@ -300,13 +293,16 @@ async def get_blocked_me_list(
 async def get_my_blocked_list(
     session: AsyncSession,
     user_id: UUID,
-) -> list[UUID]:
+) -> list[Mapping]:
     stmt = select(user_block_list.c.blocked_user_id).where(
         user_block_list.c.user_id == user_id
     )
     result = await session.execute(stmt)
     blocked_user_ids = result.scalars().all()
-    return blocked_user_ids
+
+    users = await get_minimal_info_by_ids(session, blocked_user_ids)
+
+    return users
 
 
 async def is_blocked_user(
@@ -319,3 +315,35 @@ async def is_blocked_user(
     result = await session.execute(stmt)
     blocked_user = result.scalars().first()
     return blocked_user is not None
+
+
+async def add_block_list(session: AsyncSession, user_id: UUID, blocked_user_id: UUID):
+    stmt = insert(user_block_list).values(
+        user_id=user_id, blocked_user_id=blocked_user_id
+    )
+    await session.execute(stmt)
+    await session.commit()
+
+
+async def delete_block_list(
+    session: AsyncSession, user_id: UUID, blocked_user_id: UUID
+):
+    stmt = delete(user_block_list).where(
+        user_block_list.c.user_id == user_id,
+        user_block_list.c.blocked_user_id == blocked_user_id,
+    )
+    await session.execute(stmt)
+    await session.commit()
+
+
+async def get_minimal_info_by_ids(
+    session: AsyncSession,
+    user_ids: list[UUID],
+) -> list[Mapping]:
+    result = await session.execute(
+        select(User.id, User.username, User.profile_pic).where(User.id.in_(user_ids))
+    )
+
+    out = result.mappings().all()
+    print("Out !!!: ", out)
+    return out
