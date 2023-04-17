@@ -9,7 +9,7 @@ from app.core.exceptions.chat import (
     UserNotInChatRoom,
 )
 from app.models.chat import ChatRoom, ChatRoomMember, Message
-from app.models.user import User
+from app.models.user import User, user_block_list
 from app.services.fcm_service import send_message_to_multiple_devices_by_fcm_token_list
 from app.utils.ecs_log import logger
 import json
@@ -252,7 +252,14 @@ async def get_chat_room_list_by_user_id(
         )
         .add_columns(last_msg.c.last_message_text, last_msg.c.last_message_created_at)
         .order_by(ChatRoom.created_at.desc())
-        .where(ChatRoom.id == chat_rooms.c.chat_room_id)
+        .where(
+            ChatRoom.id == chat_rooms.c.chat_room_id,
+            ChatRoom.admin_user_id.notin_(
+                select(user_block_list.c.blocked_user_id).where(
+                    user_block_list.c.user_id == user_id
+                )
+            ),
+        )
     )
 
     unread_count = (
@@ -274,7 +281,20 @@ async def get_chat_room_list_by_user_id(
 
     total_stmt = (
         select(func.count(ChatRoomMember.id))
-        .select_from(ChatRoomMember)
+        .select_from(
+            select(ChatRoomMember)
+            .join(
+                ChatRoom,
+                ChatRoom.id == ChatRoomMember.chat_room_id,
+            )
+            .where(
+                ChatRoom.admin_user_id.notin_(
+                    select(user_block_list.c.blocked_user_id).where(
+                        user_block_list.c.user_id == user_id
+                    )
+                ),
+            )
+        )
         .where(ChatRoomMember.user_id == user_id)
     )
     if offset:
