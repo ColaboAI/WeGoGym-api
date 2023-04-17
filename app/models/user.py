@@ -124,13 +124,13 @@ class User(TimestampMixin, Base):  # type: ignore
     )
     blocked_users: list["User"] = relationship(
         "User",
-        back_populates="blocked_by",
+        back_populates="blocked_by_users_list",
         secondary=UserBlockList,
         primaryjoin=id == UserBlockList.user_id,
         secondaryjoin=id == UserBlockList.blocked_user_id,
     )
 
-    blocked_by: list["User"] = relationship(
+    blocked_by_users_list: list["User"] = relationship(
         "User",
         back_populates="blocked_users",
         secondary=UserBlockList,
