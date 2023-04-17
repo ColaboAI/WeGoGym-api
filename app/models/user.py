@@ -13,6 +13,7 @@ from sqlalchemy import (
     ForeignKey,
     Integer,
     String,
+    Table,
     text,
 )
 from sqlalchemy.sql import expression
@@ -29,21 +30,24 @@ if TYPE_CHECKING:
     from app.models import GymInfo
 
 
-class UserBlockList(TimestampMixin, Base):  # type: ignore
-    __tablename__ = "user_block_list"
-    user_id = Column(
+user_block_list = Table(
+    "user_block_list",
+    Base.metadata,
+    Column(
+        "user_id",
         GUID,
         ForeignKey("user.id", ondelete="CASCADE"),
         primary_key=True,
         index=True,
-    )
-
-    blocked_user_id = Column(
+    ),
+    Column(
+        "blocked_user_id",
         GUID,
         ForeignKey("user.id", ondelete="CASCADE"),
         primary_key=True,
         index=True,
-    )
+    ),
+)
 
 
 class User(TimestampMixin, Base):  # type: ignore
@@ -125,15 +129,15 @@ class User(TimestampMixin, Base):  # type: ignore
     blocked_users: list["User"] = relationship(
         "User",
         back_populates="blocked_by_users_list",
-        secondary=UserBlockList,
-        primaryjoin=id == UserBlockList.user_id,
-        secondaryjoin=id == UserBlockList.blocked_user_id,
+        secondary=user_block_list,
+        primaryjoin=id == user_block_list.c.user_id,
+        secondaryjoin=id == user_block_list.c.blocked_user_id,
     )
 
     blocked_by_users_list: list["User"] = relationship(
         "User",
         back_populates="blocked_users",
-        secondary=UserBlockList,
-        primaryjoin=id == UserBlockList.blocked_user_id,
-        secondaryjoin=id == UserBlockList.user_id,
+        secondary=user_block_list,
+        primaryjoin=id == user_block_list.c.blocked_user_id,
+        secondaryjoin=id == user_block_list.c.user_id,
     )

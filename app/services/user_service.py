@@ -5,7 +5,7 @@ from sqlalchemy import func, or_, select, and_
 from app.core.exceptions.user import UserBlockedException
 
 from app.models import User
-from app.models.user import UserBlockList
+from app.models.user import user_block_list
 from app.models.workout_promise import GymInfo
 from app.schemas import LoginResponse
 from app.core.exceptions import (
@@ -199,8 +199,8 @@ async def get_random_user_with_limit(db: AsyncSession, user_id: UUID, limit: int
         .where(
             User.id != user_id,
             User.id.not_in(
-                select(UserBlockList.blocked_user_id).where(
-                    UserBlockList.user_id == user_id
+                select(user_block_list.c.blocked_user_id).where(
+                    user_block_list.c.user_id == user_id
                 )
             ),
         )
@@ -289,7 +289,9 @@ async def get_blocked_me_list(
     session: AsyncSession,
     user_id: UUID,
 ) -> list[UUID]:
-    stmt = select(UserBlockList.user_id).where(UserBlockList.blocked_user_id == user_id)
+    stmt = select(user_block_list.c.user_id).where(
+        user_block_list.c.blocked_user_id == user_id
+    )
     result = await session.execute(stmt)
     blocked_user_ids = result.scalars().all()
     return blocked_user_ids
@@ -299,7 +301,9 @@ async def get_my_blocked_list(
     session: AsyncSession,
     user_id: UUID,
 ) -> list[UUID]:
-    stmt = select(UserBlockList.blocked_user_id).where(UserBlockList.user_id == user_id)
+    stmt = select(user_block_list.c.blocked_user_id).where(
+        user_block_list.c.user_id == user_id
+    )
     result = await session.execute(stmt)
     blocked_user_ids = result.scalars().all()
     return blocked_user_ids
@@ -308,10 +312,10 @@ async def get_my_blocked_list(
 async def is_blocked_user(
     session: AsyncSession, user_id: UUID, req_user_id: UUID
 ) -> bool:
-    stmt = select(UserBlockList).where(
-        UserBlockList.user_id == user_id,
-        UserBlockList.blocked_user_id == req_user_id,
+    stmt = select(user_block_list).where(
+        user_block_list.c.user_id == user_id,
+        user_block_list.c.blocked_user_id == req_user_id,
     )
     result = await session.execute(stmt)
-    blocked_user: UserBlockList | None = result.scalars().first()
+    blocked_user = result.scalars().first()
     return blocked_user is not None
