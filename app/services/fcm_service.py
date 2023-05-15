@@ -110,10 +110,22 @@ async def send_message_to_multiple_devices_by_fcm_token_list(
     if len(tokens) == 0:
         return
 
+    apns = messaging.APNSConfig(
+        headers={"apns-priority": "10"},
+        payload=messaging.APNSPayload(
+            aps=messaging.Aps(
+                sound="default",
+                content_available=True,
+                category="mark-as-read",
+            ),
+        ),
+    )
+
     message = messaging.MulticastMessage(
         notification=messaging.Notification(title=title, body=body),
         tokens=tokens,
         data=data,
+        apns=apns,
     )
     try:
         response = messaging.send_multicast(message)
