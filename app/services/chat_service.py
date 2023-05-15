@@ -289,22 +289,21 @@ async def get_chat_room_list_by_user_id(
 
     total_stmt = (
         select(func.count(ChatRoomMember.id))
-        .select_from(
-            select(ChatRoomMember)
-            .join(
-                ChatRoom,
-                ChatRoom.id == ChatRoomMember.chat_room_id,
-            )
-            .where(
-                ChatRoom.admin_user_id.notin_(
-                    select(user_block_list.c.blocked_user_id).where(
-                        user_block_list.c.user_id == user_id
-                    )
-                ),
-            )
+        .select_from(ChatRoomMember)
+        .join(
+            ChatRoom,
+            ChatRoomMember.chat_room_id == ChatRoom.id,
         )
-        .where(ChatRoomMember.user_id == user_id)
+        .where(
+            ChatRoomMember.user_id == user_id,
+            ChatRoom.admin_user_id.notin_(
+                select(user_block_list.c.blocked_user_id).where(
+                    user_block_list.c.user_id == user_id
+                )
+            ),
+        )
     )
+
     if offset:
         stmt = stmt.offset(offset)
     if limit:
