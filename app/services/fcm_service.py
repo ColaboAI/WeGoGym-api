@@ -1,4 +1,3 @@
-from typing import TYPE_CHECKING
 import uuid
 import firebase_admin
 from firebase_admin import messaging
@@ -38,10 +37,22 @@ async def send_message_to_single_device_by_fcm_token(
     body: str,
     data: dict[str, str] | None = None,
 ):
+    apns = messaging.APNSConfig(
+        headers={"apns-priority": "10"},
+        payload=messaging.APNSPayload(
+            aps=messaging.Aps(
+                sound="default",
+                content_available=True,
+                category="mark-as-read",
+            ),
+        ),
+    )
+
     message = messaging.Message(
         notification=messaging.Notification(title=title, body=body),
         token=fcm_token,
         data=data,
+        apns=apns,
     )
     try:
         response = messaging.send(message)
@@ -63,10 +74,22 @@ async def send_message_to_single_device_by_uid(
     if user is None or user.fcm_token is None:
         return
 
+    apns = messaging.APNSConfig(
+        headers={"apns-priority": "10"},
+        payload=messaging.APNSPayload(
+            aps=messaging.Aps(
+                sound="default",
+                content_available=True,
+                category="mark-as-read",
+            ),
+        ),
+    )
+
     message = messaging.Message(
         notification=messaging.Notification(title=title, body=body),
         token=user.fcm_token,
         data=data,
+        apns=apns,
     )
     try:
         response = messaging.send(message)
@@ -89,10 +112,22 @@ async def send_message_to_multiple_devices_by_uid_list(
     if len(tokens) == 0:
         return
 
+    apns = messaging.APNSConfig(
+        headers={"apns-priority": "10"},
+        payload=messaging.APNSPayload(
+            aps=messaging.Aps(
+                sound="default",
+                content_available=True,
+                category="mark-as-read",
+            ),
+        ),
+    )
+
     message = messaging.MulticastMessage(
         notification=messaging.Notification(title=title, body=body),
         tokens=tokens,
         data=data,
+        apns=apns,
     )
     try:
         response = messaging.send_multicast(message)
@@ -138,10 +173,22 @@ async def send_message_to_multiple_devices_by_fcm_token_list(
 async def send_message_to_topic(
     topic: str, title: str, body: str, data: dict[str, str] | None = None
 ):
+    apns = messaging.APNSConfig(
+        headers={"apns-priority": "10"},
+        payload=messaging.APNSPayload(
+            aps=messaging.Aps(
+                sound="default",
+                content_available=True,
+                category="mark-as-read",
+            ),
+        ),
+    )
+
     message = messaging.Message(
         notification=messaging.Notification(title=title, body=body),
         topic=topic,
         data=data,
+        apns=apns,
     )
     try:
         response = messaging.send(message)
