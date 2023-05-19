@@ -11,9 +11,9 @@ services:
       context: .
       dockerfile: docker/api/Dockerfile
       args:
-        USER_ID: $USER_ID
-        GROUP_ID: $GROUP_ID
-        USER_NAME: "$API_CONTAINER_USER_NAME"
+        USER_ID: $API_CONTAINER_USER_ID
+        GROUP_ID: $API_CONTAINER_GROUP_ID
+        USER_NAME: $API_CONTAINER_USER_NAME
         ostype: "Mac"
     container_name: api
     hostname: api
@@ -26,6 +26,9 @@ services:
       - "8000:8000"
     networks:
       - backend
+    depends_on:
+      - db
+      - redis
 
 
   redis:
@@ -40,6 +43,23 @@ services:
       - '${REDIS_PORT}:6379'
     networks:
       - backend
+  
+  db:
+    restart: always
+    image: postgres:15.3
+    volumes:
+      - ${POSTGRES_HOME_DIR}/data:/var/lib/postgresql/data
+    environment:
+      - POSTGRES_DB=${DEFAULT_DATABASE_DB}
+      - POSTGRES_USER=${DEFAULT_DATABASE_USER}
+      - POSTGRES_PASSWORD=${DEFAULT_DATABASE_PASSWORD}
+    env_file:
+      - .env
+    ports:
+      - "${DEFAULT_DATABASE_PORT}:5432"
+    networks:
+      - backend
+    
 
 networks:
   backend:
