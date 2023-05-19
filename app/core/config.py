@@ -19,6 +19,7 @@ to databases to avoid typo bugs.
 See https://pydantic-docs.helpmanual.io/usage/settings/
 """
 
+from functools import lru_cache
 from pathlib import Path
 from typing import Literal
 
@@ -35,7 +36,7 @@ class Settings(BaseSettings):
     ENVIRONMENT: Literal["DEV", "PYTEST", "STAGE", "PRODUCTION"] = "DEV"
     ACCESS_TOKEN_EXPIRE_MINUTES: int
     BACKEND_CORS_ORIGINS: str | list[AnyHttpUrl]
-    REDIS_HOST: str = "0.0.0.0"
+    REDIS_HOST: str = "localhost"
     REDIS_PORT: int = 6379
     REDIS_USERNAME: str = "wegogym-redis"
     REDIS_PASSWORD: str = "password"
@@ -51,8 +52,8 @@ class Settings(BaseSettings):
     DEFAULT_DATABASE_PASSWORD: str
     DEFAULT_DATABASE_PORT: str
     DEFAULT_DATABASE_DB: str
-    # LOCAL_DATABASE_HOSTNAME: str
     DEFAULT_SQLALCHEMY_DATABASE_URI: str = ""
+
     LOCAL_SQLALCHEMY_DATABASE_URI: str = ""
 
     # FIRST SUPERUSER
@@ -85,6 +86,23 @@ class Settings(BaseSettings):
             path=f"/{values['DEFAULT_DATABASE_DB']}",
         )
 
+    class Config:
+        env_file = f"{PROJECT_DIR}/.env.prod"
+        case_sensitive = True
+
+
+# dev config for local development
+
+
+class DevelopmentConfig(Settings):
+    LOCAL_DATABASE_HOSTNAME: str = "db"
+    LOCAL_DATABASE_USER: str = "wegogym"
+    LOCAL_DATABASE_PASSWORD: str = "a8c783e34a699d7183485daf9c3e0ec7"
+    LOCAL_DATABASE_PORT: str = "5432"
+    LOCAL_DATABASE_DB: str = "wegogym-dev-local"
+    REDIS_HOST: str = "localhost"  # "redis"
+    REDIS_PORT: int = 6379  # 6379
+
     @validator("LOCAL_SQLALCHEMY_DATABASE_URI")
     def _assemble_local_db_connection(cls, v: str, values: dict[str, str]) -> str:
         return AnyUrl.build(
@@ -101,4 +119,11 @@ class Settings(BaseSettings):
         case_sensitive = True
 
 
-settings: Settings = Settings()  # type: ignore
+@lru_cache()
+def get_settings() -> Settings:
+    if Settings().ENVIRONMENT == "DEV":
+        return DevelopmentConfig()
+    return Settings()
+
+
+settings: Settings = get_settings()
