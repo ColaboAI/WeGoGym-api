@@ -1,4 +1,4 @@
-alembic==1.9.1
+alembic==1.11.1
 fastapi==0.94.1
 uvicorn[standard]==0.21.0
 SQLAlchemy==1.4.46
