@@ -13,7 +13,7 @@ ENV PORT=8000
 
 RUN apt-get update && apt-get install -y wget
 
-RUN bash -c 'if [ ${ostype} == Linux ]; then groupadd -r --gid ${GROUP_ID} ${USER_NAME}; fi && \
+RUN bash -c 'groupadd -r --gid ${GROUP_ID} ${USER_NAME} && \
     useradd -r --create-home --shell /bin/bash --uid ${USER_ID} --gid ${GROUP_ID} ${USER_NAME}' && \
     mkdir -p ${WORK_DIR} && chown ${USER_NAME} ${WORK_DIR}
 
