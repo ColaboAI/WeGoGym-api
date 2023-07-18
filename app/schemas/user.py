@@ -61,6 +61,7 @@ class MyInfoRead(UserRead):
 
 class UserCreate(CreateUpdateDictModel):
     phone_number: str = Field(..., description="Phone number: 01012345678")
+    profile_pic: str | None = Field(None, description="프로필 사진")
     username: str = Field(..., description="닉네임")
     is_superuser: bool = False
     gender: str = Field(..., description="성별")
@@ -72,6 +73,21 @@ class UserCreate(CreateUpdateDictModel):
     workout_level: str = Field(..., description="초급, 중급, 고급")
     workout_time_per_day: str = Field(..., description="하루에 몇 시간 운동하는지")
     workout_time_period: str = Field(..., description="오전, 오후, 저녁 등의 시간")
+    workout_style: str = Field(..., description="유산소, 근력 운동 등의 운동 스타일")
+    workout_routine: str = Field(..., description="3분할, 4분할 등의 운동 루틴")
+    workout_partner_gender: str = Field(..., description="선호하는 운동 파트너 성별")
+    city: str = Field(..., description="시/도")
+    district: str = Field(..., description="구/군")
+
+    @classmethod
+    def __get_validators__(cls):
+        yield cls.validate_to_json
+
+    @classmethod
+    def validate_to_json(cls, value):
+        if isinstance(value, str):
+            return cls(**json.loads(value))
+        return value
 
 
 class UserUpdate(CreateUpdateDictModel):
