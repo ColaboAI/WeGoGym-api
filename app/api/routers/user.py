@@ -164,11 +164,17 @@ async def check_user_exists(
     dependencies=[Depends(PermissionDependency([AllowAll]))],
 )
 async def create_user(
-    create_req: UserCreate,
+    data: UserCreate = Body(..., description="User Create Request"),
+    file: UploadFile | None = File(None, description="Profile Image"),
 ):
     usr_svc = UserService()
-    await usr_svc.create_user(**create_req.dict())
-    token = await usr_svc.login(phone_number=create_req.phone_number)
+    user = await usr_svc.create_user(**data.dict())
+    token = await usr_svc.login(phone_number=data.phone_number)
+    img_url = upload_image_to_s3(file, UUID(str(user.id))) if file and user else None
+    if img_url:
+        data.profile_pic = img_url
+    else:
+        del data.profile_pic
 
     return token
 
