@@ -74,7 +74,6 @@ class Settings(BaseSettings):
         if environ.get("ENV", None) == None:
             return AnyUrl.build(
                 scheme="redis",
-                user=values["REDIS_USERNAME"],
                 password=values["REDIS_PASSWORD"],
                 host="localhost",
                 port=values["REDIS_PORT"],
