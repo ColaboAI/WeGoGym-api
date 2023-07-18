@@ -48,7 +48,7 @@ class UserService:
         await self.session.close()
         return total_res.scalars().first(), result.scalars().all()
 
-    async def create_user(self, phone_number: str, username: str, **kwargs) -> None:
+    async def create_user(self, phone_number: str, username: str, **kwargs) -> User:
         try:
             self.session: AsyncSession = self.session_maker()
             query = select(User).where(
@@ -62,8 +62,10 @@ class UserService:
             user = User(phone_number=phone_number, username=username, **kwargs)
             self.session.add(user)
             await self.session.commit()
+
             await self.session.refresh(user)
             await self.session.close()
+            return user
 
         except Exception as e:
             await self.session.rollback()
