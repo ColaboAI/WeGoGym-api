@@ -4,7 +4,7 @@ from app.core.config import settings
 
 
 def get_redis_url():
-    return f"redis://{settings.REDIS_HOST}:{settings.REDIS_PORT}"
+    return settings.REDIS_URL
 
 
 # singleton redis connection pool

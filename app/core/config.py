@@ -20,10 +20,10 @@ See https://pydantic-docs.helpmanual.io/usage/settings/
 """
 
 from functools import lru_cache
+from os import environ
 from pathlib import Path
-from typing import Literal
 
-from pydantic import AnyHttpUrl, AnyUrl, BaseSettings, EmailStr, validator
+from pydantic import AnyHttpUrl, AnyUrl, BaseSettings, validator
 
 PROJECT_DIR = Path(__file__).parent.parent.parent
 
@@ -33,34 +33,28 @@ class Settings(BaseSettings):
     SECRET_KEY: str
     JWT_SECRET_KEY: str
     JWT_ALGORITHM: str = "HS256"
-    ENVIRONMENT: Literal["DEV", "PYTEST", "STAGE", "PRODUCTION"] = "DEV"
+    ENVIRONMENT: str = environ.get(
+        "ENV", "DEV"
+    )  # Literal["DEV", "PRODUCTION", "STAGING"]
     ACCESS_TOKEN_EXPIRE_MINUTES: int
     BACKEND_CORS_ORIGINS: str | list[AnyHttpUrl]
+    REDIS_USERNAME: str = "default"
     REDIS_HOST: str = "localhost"
-    REDIS_PORT: int = 6379
-    REDIS_USERNAME: str = "wegogym-redis"
+    REDIS_PORT: str = "6379"
     REDIS_PASSWORD: str = "password"
-
+    REDIS_URL: str = ""
     # PROJECT NAME, VERSION AND DESCRIPTION
     PROJECT_NAME: str
     VERSION: str
     DESCRIPTION: str
 
     # POSTGRESQL DEFAULT DATABASE
-    DEFAULT_DATABASE_HOSTNAME: str
+    DEFAULT_DATABASE_HOSTNAME: str = "localhost"
     DEFAULT_DATABASE_USER: str
     DEFAULT_DATABASE_PASSWORD: str
     DEFAULT_DATABASE_PORT: str
     DEFAULT_DATABASE_DB: str
     DEFAULT_SQLALCHEMY_DATABASE_URI: str = ""
-
-    LOCAL_SQLALCHEMY_DATABASE_URI: str = ""
-
-    # FIRST SUPERUSER
-    FIRST_SUPERUSER_EMAIL: EmailStr
-    FIRST_SUPERUSER_PASSWORD: str
-    FIRST_SUPERUSER_NAME: str
-    FIRST_SUPERUSER_PHONE_NUMBER: str
 
     S3_BUCKET: str
     AWS_ACCESS_KEY_ID: str
@@ -75,8 +69,34 @@ class Settings(BaseSettings):
             return [item.strip() for item in cors_origins.split(",")]
         return cors_origins
 
+    @validator("REDIS_URL")
+    def _assemble_redis_url(cls, v: str, values: dict[str, str]) -> str:
+        if environ.get("ENV", None) == None:
+            return AnyUrl.build(
+                scheme="redis",
+                user=values["REDIS_USERNAME"],
+                password=values["REDIS_PASSWORD"],
+                host="localhost",
+                port=values["REDIS_PORT"],
+            )
+        return AnyUrl.build(
+            scheme="redis",
+            password=values["REDIS_PASSWORD"],
+            host=values["REDIS_HOST"],
+            port=values["REDIS_PORT"],
+        )
+
     @validator("DEFAULT_SQLALCHEMY_DATABASE_URI")
     def _assemble_default_db_connection(cls, v: str, values: dict[str, str]) -> str:
+        if environ.get("ENV", None) == None:
+            return AnyUrl.build(
+                scheme="postgresql+asyncpg",
+                user=values["DEFAULT_DATABASE_USER"],
+                password=values["DEFAULT_DATABASE_PASSWORD"],
+                host="localhost",
+                port=values["DEFAULT_DATABASE_PORT"],
+                path=f"/{values['DEFAULT_DATABASE_DB']}",
+            )
         return AnyUrl.build(
             scheme="postgresql+asyncpg",
             user=values["DEFAULT_DATABASE_USER"],
@@ -87,38 +107,24 @@ class Settings(BaseSettings):
         )
 
     class Config:
-        env_file = f"{PROJECT_DIR}/.env.prod"
+        env_file = f"{PROJECT_DIR}/.env"
         case_sensitive = True
 
 
 # dev config for local development
 
 
-class DevelopmentConfig(Settings):
-    REDIS_HOST: str = "localhost"  # "redis"
-    REDIS_PORT: int = 6379  # 6379
-
-    @validator("LOCAL_SQLALCHEMY_DATABASE_URI")
-    def _assemble_local_db_connection(cls, v: str, values: dict[str, str]) -> str:
-        return AnyUrl.build(
-            scheme="postgresql+asyncpg",
-            user=values["DEFAULT_DATABASE_USER"],
-            password=values["DEFAULT_DATABASE_PASSWORD"],
-            host="localhost",
-            port=values["DEFAULT_DATABASE_PORT"],
-            path=f"/{values['DEFAULT_DATABASE_DB']}",
-        )
-
+class ProductionSettings(Settings):
     class Config:
-        env_file = f"{PROJECT_DIR}/.env"
+        env_file = f"{PROJECT_DIR}/.env.prod"
         case_sensitive = True
 
 
 @lru_cache()
 def get_settings() -> Settings:
     if Settings().ENVIRONMENT == "DEV":
-        return DevelopmentConfig()
-    return Settings()
+        return Settings()
+    return ProductionSettings()
 
 
 settings: Settings = get_settings()

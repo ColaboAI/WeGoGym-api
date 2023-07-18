@@ -8,7 +8,7 @@ ARG GROUP_ID
 ENV WORK_DIR=/code
 ENV USER_NAME=${USER_NAME}
 ENV PYTHONPATH "${PYTHONPATH}:/"
-ENV ENV=dev
+ENV ENV=DEV
 ENV PORT=8000
 
 RUN apt-get update && apt-get install -y wget
