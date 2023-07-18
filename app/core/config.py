@@ -95,11 +95,6 @@ class Settings(BaseSettings):
 
 
 class DevelopmentConfig(Settings):
-    LOCAL_DATABASE_HOSTNAME: str = "db"
-    LOCAL_DATABASE_USER: str = "wegogym"
-    LOCAL_DATABASE_PASSWORD: str = "a8c783e34a699d7183485daf9c3e0ec7"
-    LOCAL_DATABASE_PORT: str = "5432"
-    LOCAL_DATABASE_DB: str = "wegogym-dev-local"
     REDIS_HOST: str = "localhost"  # "redis"
     REDIS_PORT: int = 6379  # 6379
 
@@ -109,7 +104,7 @@ class DevelopmentConfig(Settings):
             scheme="postgresql+asyncpg",
             user=values["DEFAULT_DATABASE_USER"],
             password=values["DEFAULT_DATABASE_PASSWORD"],
-            host=values["DEFAULT_DATABASE_HOSTNAME"],
+            host="localhost",
             port=values["DEFAULT_DATABASE_PORT"],
             path=f"/{values['DEFAULT_DATABASE_DB']}",
         )
