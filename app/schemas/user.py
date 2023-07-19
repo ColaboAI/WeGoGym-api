@@ -57,11 +57,15 @@ class MyInfoRead(UserRead):
     updated_at: datetime
     # gym_info: "Optional[GymInfoRead]"
     gym_info: "Optional[GymInfoRead]"
+    workout_style: str | None
+    workout_routine: str | None
+    workout_partner_gender: str | None
+    city: str | None
+    district: str | None
 
 
 class UserCreate(CreateUpdateDictModel):
     phone_number: str = Field(..., description="Phone number: 01012345678")
-    profile_pic: str | None = Field(None, description="프로필 사진")
     username: str = Field(..., description="닉네임")
     is_superuser: bool = False
     gender: str = Field(..., description="성별")
@@ -107,6 +111,11 @@ class UserUpdate(CreateUpdateDictModel):
     gym_info: "Optional[GymInfoBase]" = Field(None, description="헬스장 정보")
     fcm_token: str | None = Field(None, description="FCM Token")
     last_active_at: datetime | None = Field(None, description="마지막 활동 시간")
+    workout_style: str | None
+    workout_routine: str | None
+    workout_partner_gender: str | None
+    city: str | None
+    district: str | None
 
     @classmethod
     def __get_validators__(cls):
