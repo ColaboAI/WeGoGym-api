@@ -44,6 +44,7 @@ from app.services.user_service import (
     get_random_user_with_limit,
     unblock_user_by_id,
     update_my_info_by_id,
+    update_my_profile_pic_by_id,
 )
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -166,15 +167,19 @@ async def check_user_exists(
 async def create_user(
     data: UserCreate = Body(..., description="User Create Request"),
     file: UploadFile | None = File(None, description="Profile Image"),
+    session: AsyncSession = Depends(get_db_transactional_session),
 ):
     usr_svc = UserService()
     user = await usr_svc.create_user(**data.dict())
     token = await usr_svc.login(phone_number=data.phone_number)
-    img_url = upload_image_to_s3(file, UUID(str(user.id))) if file and user else None
+    img_url = None
+    update_user = None
+    if file and user:
+        img_url = upload_image_to_s3(file, UUID(str(user.id)))
     if img_url:
-        data.profile_pic = img_url
-    else:
-        del data.profile_pic
+        update_user = await update_my_profile_pic_by_id(
+            user_id=UUID(str(user.id)), profile_pic=img_url, session=session
+        )
 
     return token
 

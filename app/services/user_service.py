@@ -143,6 +143,21 @@ def delete_user_in_firebase(phone_number: str):
         logger.debug(e)
 
 
+async def update_my_profile_pic_by_id(
+    user_id: UUID, profile_pic: str, session: AsyncSession
+) -> User:
+    user = await get_my_info_by_id(user_id, session)
+
+    # Update the profile picture URL
+    user.profile_pic = profile_pic
+
+    # Add the updated user object to the session and commit the changes
+    session.add(user)
+    await session.commit()
+    await session.refresh(user)
+    return user
+
+
 async def update_my_info_by_id(
     user_id: UUID, update_req: UserUpdate, session: AsyncSession
 ) -> User:
