@@ -1,4 +1,6 @@
 FROM redis
+ARG REDIS_PASSWORD
+ENV REDIS_PASSWORD=${REDIS_PASSWORD}
 
 EXPOSE 6379
-CMD ["redis-server"]
+CMD ["sh", "-c", "redis-server --requirepass ${REDIS_PASSWORD}"]

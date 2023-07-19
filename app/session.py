@@ -9,11 +9,7 @@ from sqlalchemy.orm.session import sessionmaker
 from app.core import config
 from sqlalchemy import exc
 
-sqlalchemy_database_uri = ""
-if config.settings.ENVIRONMENT == "DEV":
-    sqlalchemy_database_uri = config.settings.LOCAL_SQLALCHEMY_DATABASE_URI
-else:
-    sqlalchemy_database_uri = config.settings.DEFAULT_SQLALCHEMY_DATABASE_URI
+sqlalchemy_database_uri = config.settings.DEFAULT_SQLALCHEMY_DATABASE_URI
 async_engine = create_async_engine(
     sqlalchemy_database_uri, pool_pre_ping=True, echo=True
 )

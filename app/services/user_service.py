@@ -48,7 +48,7 @@ class UserService:
         await self.session.close()
         return total_res.scalars().first(), result.scalars().all()
 
-    async def create_user(self, phone_number: str, username: str, **kwargs) -> None:
+    async def create_user(self, phone_number: str, username: str, **kwargs) -> User:
         try:
             self.session: AsyncSession = self.session_maker()
             query = select(User).where(
@@ -62,8 +62,10 @@ class UserService:
             user = User(phone_number=phone_number, username=username, **kwargs)
             self.session.add(user)
             await self.session.commit()
+
             await self.session.refresh(user)
             await self.session.close()
+            return user
 
         except Exception as e:
             await self.session.rollback()
@@ -139,6 +141,21 @@ def delete_user_in_firebase(phone_number: str):
         auth.delete_user(fb_user.uid)
     except Exception as e:
         logger.debug(e)
+
+
+async def update_my_profile_pic_by_id(
+    user_id: UUID, profile_pic: str, session: AsyncSession
+) -> User:
+    user = await get_my_info_by_id(user_id, session)
+
+    # Update the profile picture URL
+    user.profile_pic = profile_pic
+
+    # Add the updated user object to the session and commit the changes
+    session.add(user)
+    await session.commit()
+    await session.refresh(user)
+    return user
 
 
 async def update_my_info_by_id(

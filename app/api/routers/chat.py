@@ -131,7 +131,6 @@ async def create_chat_room(
         await session.commit()
         return chat_room_obj
     except Exception as e:
-        print("error!!!", e)
         await session.rollback()
         raise HTTPException(status_code=500, detail=str(e))
 

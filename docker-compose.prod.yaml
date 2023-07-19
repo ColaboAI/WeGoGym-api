@@ -77,6 +77,8 @@ services:
     build:
       context: .
       dockerfile: docker/redis/Dockerfile
+      args:
+        REDIS_PASSWORD: ${REDIS_PASSWORD}
     container_name: redis
     hostname: ${REDIS_HOST}
     env_file:

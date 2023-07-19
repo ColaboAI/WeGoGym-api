@@ -57,6 +57,11 @@ class MyInfoRead(UserRead):
     updated_at: datetime
     # gym_info: "Optional[GymInfoRead]"
     gym_info: "Optional[GymInfoRead]"
+    workout_style: str | None
+    workout_routine: str | None
+    workout_partner_gender: str | None
+    city: str | None
+    district: str | None
 
 
 class UserCreate(CreateUpdateDictModel):
@@ -72,6 +77,21 @@ class UserCreate(CreateUpdateDictModel):
     workout_level: str = Field(..., description="초급, 중급, 고급")
     workout_time_per_day: str = Field(..., description="하루에 몇 시간 운동하는지")
     workout_time_period: str = Field(..., description="오전, 오후, 저녁 등의 시간")
+    workout_style: str = Field(..., description="유산소, 근력 운동 등의 운동 스타일")
+    workout_routine: str = Field(..., description="3분할, 4분할 등의 운동 루틴")
+    workout_partner_gender: str = Field(..., description="선호하는 운동 파트너 성별")
+    city: str = Field(..., description="시/도")
+    district: str = Field(..., description="구/군")
+
+    @classmethod
+    def __get_validators__(cls):
+        yield cls.validate_to_json
+
+    @classmethod
+    def validate_to_json(cls, value):
+        if isinstance(value, str):
+            return cls(**json.loads(value))
+        return value
 
 
 class UserUpdate(CreateUpdateDictModel):
@@ -91,6 +111,11 @@ class UserUpdate(CreateUpdateDictModel):
     gym_info: "Optional[GymInfoBase]" = Field(None, description="헬스장 정보")
     fcm_token: str | None = Field(None, description="FCM Token")
     last_active_at: datetime | None = Field(None, description="마지막 활동 시간")
+    workout_style: str | None
+    workout_routine: str | None
+    workout_partner_gender: str | None
+    city: str | None
+    district: str | None
 
     @classmethod
     def __get_validators__(cls):
