@@ -11,7 +11,7 @@ services:
     # The official v2 Traefik docker image
     image: traefik:v2.9
     # Enables the web UI and tells Traefik to listen to docker
-    command: 
+    command:
       - "--log.level=DEBUG"
       - "--api.dashboard=true"
       - "--providers.docker=true"
@@ -41,11 +41,11 @@ services:
     labels:
       - "traefik.enable=true"
       - "traefik.docker.network=backend"
-      - "traefik.http.routers.dashboard.rule=Host(`dashboard-wegogym-api-dev.colabo.ml`) && (PathPrefix(`/`))"
+      - "traefik.http.routers.dashboard.rule=Host(`dashboard-api-dev.wegogym.kr`) && (PathPrefix(`/`))"
       - "traefik.http.routers.dashboard.tls=true"
       - "traefik.http.routers.dashboard.tls.certresolver=letsencrypt"
       - "traefik.http.routers.dashboard.service=api@internal"
-    
+
   fastapi:
     build:
       context: .
@@ -61,17 +61,16 @@ services:
       - .env.prod
     tty: true
     expose:
-      - '8000:8000'
+      - "8000:8000"
     networks:
       - backend
     labels:
       - "traefik.enable=true"
       - "traefik.docker.network=backend"
-      - "traefik.http.routers.fastapi.rule=Host(`wegogym-api-dev.colabo.ml`)"
+      - "traefik.http.routers.fastapi.rule=Host(`api-dev.wegogym.kr`)"
       - "traefik.http.routers.fastapi.tls=true"
       - "traefik.http.routers.fastapi.tls.certresolver=letsencrypt"
       - "traefik.http.services.fastapi.loadbalancer.server.port=8000"
-
 
   redis:
     build:
@@ -84,13 +83,13 @@ services:
     env_file:
       - .env.prod
     ports:
-      - '${REDIS_PORT}:6379'
+      - "${REDIS_PORT}:6379"
     networks:
       - backend
 
 networks:
   backend:
-    driver: 'bridge'
+    driver: "bridge"
 
 volumes:
   traefik-public-certificates:
