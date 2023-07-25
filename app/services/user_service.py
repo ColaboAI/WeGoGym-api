@@ -362,5 +362,4 @@ async def get_minimal_info_by_ids(
     )
 
     out = result.mappings().all()
-    print("Out !!!: ", out)
     return out
