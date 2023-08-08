@@ -64,6 +64,7 @@ class WorkoutPromiseBase(BaseModel):
     max_participants: int = Field(..., ge=1, le=10)
     promise_time: datetime = Field(...)
     recruit_end_time: datetime | None = Field(None, description="Recruit end time")
+    workout_part: str | None = Field(None, description="Workout part")
 
 
 class WorkoutPromiseRead(WorkoutPromiseBase):
@@ -97,6 +98,7 @@ class WorkoutPromiseUpdate(BaseModel):
     admin_user_id: UUID4 | None = Field(None, description="New Admin User ID")
     gym_info: GymInfoBase | None = Field(None)
     status: WorkoutPromiseStatus | None = Field(None)
+    workout_part: str | None = Field(None, description="Workout part")
 
     def get_update_dict(self):
         return self.dict(

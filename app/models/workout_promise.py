@@ -33,7 +33,7 @@ class WorkoutPromise(TimestampMixin, Base):
     recruit_end_time = Column(DateTime(timezone=True), index=True)
     # TODO: workout_id and related table should be added
     promise_time = Column(DateTime(timezone=True), index=True, server_default=utcnow())
-
+    workout_part = Column(String, index=True, nullable=True)
     # Child table (One to "Many")
     admin_user_id = Column(
         GUID,
