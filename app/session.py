@@ -1,4 +1,5 @@
 from asyncio import current_task
+from functools import wraps
 from sqlalchemy.ext.asyncio import (
     AsyncSession,
     create_async_engine,
@@ -8,6 +9,7 @@ from typing import AsyncGenerator
 from sqlalchemy.orm.session import sessionmaker
 from app.core import config
 from sqlalchemy import exc
+from app.utils.ecs_log import logger
 
 sqlalchemy_database_uri = config.settings.DEFAULT_SQLALCHEMY_DATABASE_URI
 async_engine = create_async_engine(
@@ -66,3 +68,24 @@ async def get_db_autocommit_session() -> AsyncGenerator[AsyncSession, None]:
         await session.rollback()
     finally:
         await session.close()
+
+
+class Transactional:
+    def __call__(self, func):
+        session = transactional_session_factory()
+
+        @wraps(func)
+        async def _transactional(*args, **kwargs):
+            try:
+                kwargs["session"] = session
+                result = await func(*args, **kwargs)
+                await session.commit()
+                return result
+            except Exception as e:
+                logger.exception(f"{type(e).__name__} : {str(e)}")
+                await session.rollback()
+                raise e
+            finally:
+                await session.close()
+
+        return _transactional
