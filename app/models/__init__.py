@@ -7,6 +7,7 @@ from .chat import *
 from .guid import GUID
 from .workout_promise import *
 from .notification import *
+from .community import *
 
 __all__ = [
     "Base",
@@ -19,4 +20,10 @@ __all__ = [
     "WorkoutPromise",
     "WorkoutParticipant",
     "Notification",
+    "Community",
+    "Post",
+    "PostComment",
+    "PostLike",
+    "Comment",
+    "CommentLike",
 ]
