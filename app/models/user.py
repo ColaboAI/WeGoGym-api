@@ -27,7 +27,7 @@ import uuid
 from app.models.workout_promise import WorkoutParticipant
 
 if TYPE_CHECKING:
-    from app.models import GymInfo
+    from app.models import GymInfo, Comment, Post
 
 
 user_block_list = Table(
@@ -145,4 +145,18 @@ class User(TimestampMixin, Base):  # type: ignore
         secondary=user_block_list,
         primaryjoin=id == user_block_list.c.blocked_user_id,
         secondaryjoin=id == user_block_list.c.user_id,
+    )
+
+    posts: list["Post"] = relationship(
+        "Post",
+        back_populates="user",
+        cascade="save-update, merge, delete",
+        passive_deletes=True,
+    )
+
+    comments: list["Comment"] = relationship(
+        "Comment",
+        back_populates="user",
+        cascade="save-update, merge, delete",
+        passive_deletes=True,
     )
