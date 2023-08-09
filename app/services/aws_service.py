@@ -6,7 +6,6 @@ from app.utils.aws import s3_client, bucket_name
 
 
 def upload_image_to_s3(file: UploadFile, uid: UUID) -> str:
-
     img_url = None
     try:
         image_key = f"profile_pic/{uid}/{datetime.now().strftime('%Y-%m-%d_%H:%M:%S')}"
