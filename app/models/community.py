@@ -50,7 +50,7 @@ class Post(TimestampMixin, Base):
 class PostLike(Base):
     __tablename__ = "post_like"
     id = Column(Integer, primary_key=True, index=True, autoincrement=True)
-    is_like = Column(Boolean, nullable=False)
+    is_liked = Column(Boolean, nullable=False)
     user_id = Column(GUID, ForeignKey("user.id"))
     post_id = Column(Integer, ForeignKey("post.id"))
     user: Mapped[User] = relationship("User", back_populates="post_likes")
@@ -78,7 +78,7 @@ class Comment(TimestampMixin, Base):
 class CommentLike(Base):
     __tablename__ = "comment_like"
     id = Column(Integer, primary_key=True, index=True, autoincrement=True)
-    is_like = Column(Integer, nullable=False)
+    is_liked = Column(Integer, nullable=False)
     user_id = Column(GUID, ForeignKey("user.id"))
     comment_id = Column(Integer, ForeignKey("comment.id"))
     user: Mapped[User] = relationship("User", back_populates="comment_likes")
