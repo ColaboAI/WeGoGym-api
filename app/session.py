@@ -72,7 +72,7 @@ async def get_db_autocommit_session() -> AsyncGenerator[AsyncSession, None]:
 
 class Transactional:
     def __call__(self, func):
-        session = transactional_session_factory()
+        session: AsyncSession = transactional_session_factory()
 
         @wraps(func)
         async def _transactional(*args, **kwargs):
