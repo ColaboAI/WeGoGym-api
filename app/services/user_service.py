@@ -16,7 +16,7 @@ from app.core.exceptions import (
 )
 from app.schemas.user import UserUpdate
 from app.utils.token_helper import TokenHelper
-from app.session import transactional_session_factory
+from app.session import Transactional
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload, raiseload
 from app.utils.ecs_log import logger
@@ -24,17 +24,10 @@ from app.utils.ecs_log import logger
 
 # User service: user adaptor for sqlalchemy
 class UserService:
-    session: AsyncSession
-
-    def __init__(self):
-        self.session_maker = transactional_session_factory
-
+    @Transactional()
     async def get_user_list(
-        self,
-        limit: int = 10,
-        offset: int | None = None,
+        self, limit: int = 10, offset: int | None = None, session: AsyncSession = None
     ) -> tuple[int | None, list[User]]:
-        self.session: AsyncSession = self.session_maker()
         query = select(User).order_by(User.created_at.desc())
         total = select(func.count()).select_from(User)
 
@@ -43,38 +36,37 @@ class UserService:
 
         if limit:
             query = query.limit(limit)
-        total_res = await self.session.execute(total)
-        result = await self.session.execute(query)
-        await self.session.close()
+        total_res = await session.execute(total)
+        result = await session.execute(query)
         return total_res.scalars().first(), result.scalars().all()
 
-    async def create_user(self, phone_number: str, username: str, **kwargs) -> User:
+    @Transactional()
+    async def create_user(
+        self, phone_number: str, username: str, session: AsyncSession = None, **kwargs
+    ) -> User:
         try:
-            self.session: AsyncSession = self.session_maker()
             query = select(User).where(
                 or_(User.phone_number == phone_number, User.username == username)
             )
-            result = await self.session.execute(query)
+            result = await session.execute(query)
             is_exist = result.scalars().first()
             if is_exist:
                 raise DuplicatePhoneNumberOrUsernameException
 
             user = User(phone_number=phone_number, username=username, **kwargs)
-            self.session.add(user)
-            await self.session.commit()
+            session.add(user)
+            await session.commit()
 
-            await self.session.refresh(user)
-            await self.session.close()
+            await session.refresh(user)
             return user
 
         except Exception as e:
-            await self.session.rollback()
-            await self.session.close()
+            await session.rollback()
+            await session.close()
             raise e
 
-    async def is_superuser(self, user_id: UUID) -> bool:
-        self.session: AsyncSession = self.session_maker()
-        result = await self.session.execute(select(User).where(User.id == user_id))
+    async def is_superuser(self, user_id: UUID, session: AsyncSession = None) -> bool:
+        result = await session.execute(select(User).where(User.id == user_id))
         user = result.scalars().first()
         if not user:
             return False
@@ -82,12 +74,12 @@ class UserService:
         if user.is_superuser is False:
             return False
 
-        await self.session.close()
         return True
 
-    async def login(self, phone_number: str) -> LoginResponse:
-        self.session: AsyncSession = self.session_maker()
-        result = await self.session.execute(
+    async def login(
+        self, phone_number: str, session: AsyncSession = None
+    ) -> LoginResponse:
+        result = await session.execute(
             select(User).where(and_(User.phone_number == phone_number))
         )
         user = result.scalars().first()
@@ -102,18 +94,15 @@ class UserService:
             ),
             user_id=user.id,
         )
-        await self.session.close()
         return response
 
-    async def logout(self, user_id: UUID) -> None:
-        self.session: AsyncSession = self.session_maker()
-        result = await self.session.execute(select(User).where(User.id == user_id))
+    async def logout(self, user_id: UUID, session: AsyncSession = None) -> None:
+        result = await session.execute(select(User).where(User.id == user_id))
         user: User | None = result.scalars().first()
         if not user:
             raise UserNotFoundException("User not found")
         user.fcm_token = None
-        await self.session.commit()
-        await self.session.close()
+        await session.commit()
 
 
 async def delete_user_by_id(

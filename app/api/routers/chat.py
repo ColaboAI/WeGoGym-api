@@ -1,7 +1,7 @@
 from datetime import datetime, timezone
 
 from uuid import UUID
-from fastapi import APIRouter, Depends, HTTPException, Query, Request, Response
+from fastapi import APIRouter, Depends, HTTPException, Query, Request
 from sqlalchemy import select
 from app.core.exceptions.chat import ChatRoomNotFound
 from app.core.fastapi.dependencies.premission import (
