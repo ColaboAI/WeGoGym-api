@@ -26,14 +26,8 @@ autocommit_session_factory = async_scoped_session(
     ),
     scopefunc=current_task,
 )
-transactional_session_factory = async_scoped_session(
-    sessionmaker(
-        async_engine,
-        expire_on_commit=False,
-        class_=AsyncSession,
-        future=True,
-    ),
-    scopefunc=current_task,
+transactional_session_factory = sessionmaker(
+    async_engine, expire_on_commit=False, class_=AsyncSession, future=True
 )
 
 
@@ -76,6 +70,8 @@ class Transactional:
 
         @wraps(func)
         async def _transactional(*args, **kwargs):
+            if kwargs.get("session", None):
+                return await func(*args, **kwargs)
             try:
                 kwargs["session"] = session
                 result = await func(*args, **kwargs)
