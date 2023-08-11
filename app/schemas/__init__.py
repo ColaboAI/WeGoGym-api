@@ -2,6 +2,9 @@ from .user import *
 from .audio import *
 from .chat import *
 from .workout_promise import *
+from .voc import *
+from .community import *
+
 
 __all__ = [
     "UserRead",
