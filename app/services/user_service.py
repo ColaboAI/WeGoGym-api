@@ -26,7 +26,10 @@ from app.utils.ecs_log import logger
 class UserService:
     @Transactional()
     async def get_user_list(
-        self, limit: int = 10, offset: int | None = None, session: AsyncSession = None
+        self,
+        session: AsyncSession,
+        limit: int = 10,
+        offset: int | None = None,
     ) -> tuple[int | None, list[User]]:
         query = select(User).order_by(User.created_at.desc())
         total = select(func.count()).select_from(User)
@@ -42,7 +45,7 @@ class UserService:
 
     @Transactional()
     async def create_user(
-        self, phone_number: str, username: str, session: AsyncSession = None, **kwargs
+        self, phone_number: str, username: str, session: AsyncSession, **kwargs
     ) -> User:
         try:
             query = select(User).where(
@@ -65,7 +68,8 @@ class UserService:
             await session.close()
             raise e
 
-    async def is_superuser(self, user_id: UUID, session: AsyncSession = None) -> bool:
+    @Transactional()
+    async def is_superuser(self, user_id: UUID, session: AsyncSession) -> bool:
         result = await session.execute(select(User).where(User.id == user_id))
         user = result.scalars().first()
         if not user:
@@ -76,9 +80,8 @@ class UserService:
 
         return True
 
-    async def login(
-        self, phone_number: str, session: AsyncSession = None
-    ) -> LoginResponse:
+    @Transactional()
+    async def login(self, phone_number: str, session: AsyncSession) -> LoginResponse:
         result = await session.execute(
             select(User).where(and_(User.phone_number == phone_number))
         )
@@ -96,7 +99,8 @@ class UserService:
         )
         return response
 
-    async def logout(self, user_id: UUID, session: AsyncSession = None) -> None:
+    @Transactional()
+    async def logout(self, user_id: UUID, session: AsyncSession) -> None:
         result = await session.execute(select(User).where(User.id == user_id))
         user: User | None = result.scalars().first()
         if not user:
