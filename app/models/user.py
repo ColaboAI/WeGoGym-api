@@ -17,7 +17,7 @@ from sqlalchemy import (
     text,
 )
 from sqlalchemy.sql import expression
-from sqlalchemy.orm import relationship
+from sqlalchemy.orm import relationship, Mapped
 from app.core.db.mixins.timestamp_mixin import TimestampMixin
 
 from app.models import Base
@@ -26,8 +26,9 @@ from app.models.guid import GUID
 import uuid
 from app.models.workout_promise import WorkoutParticipant
 
+
 if TYPE_CHECKING:
-    from app.models import GymInfo, Comment, Post
+    from app.models import GymInfo, Post, PostLike, Comment, CommentLike
 
 
 user_block_list = Table(
@@ -86,14 +87,14 @@ class User(TimestampMixin, Base):  # type: ignore
     gym_info: "GymInfo" = relationship("GymInfo", back_populates="users")
 
     # Parent relationship with ChatRoomMember (Many to "One")
-    chat_room_members: list[ChatRoom] = relationship(
+    chat_room_members: Mapped[list[ChatRoom]] = relationship(
         "ChatRoomMember",
         back_populates="user",
         cascade="save-update, merge, delete",
         passive_deletes=True,
     )
     # Parent relationship with Message (Many to "One")
-    messages: list[Message] = relationship(
+    messages: Mapped[list[Message]] = relationship(
         "Message",
         back_populates="user",
         cascade="save-update, merge, delete",
@@ -101,7 +102,7 @@ class User(TimestampMixin, Base):  # type: ignore
     )
 
     # Parent relationship with WorkoutParticipant (Many to "One")
-    workout_participants: list[WorkoutParticipant] = relationship(
+    workout_participants: Mapped[list[WorkoutParticipant]] = relationship(
         "WorkoutParticipant",
         back_populates="user",
         cascade="save-update, merge, delete",
@@ -110,14 +111,14 @@ class User(TimestampMixin, Base):  # type: ignore
 
     # Parent relationship with WorkoutPromise (One to Many) (Admin)
     # What promises this user has made or is Admin of
-    admin_workout_promises: list[WorkoutParticipant] = relationship(
+    admin_workout_promises: Mapped[list[WorkoutParticipant]] = relationship(
         "WorkoutPromise",
         back_populates="admin_user",
         cascade="save-update, merge, delete",
         passive_deletes=True,
     )
 
-    admin_chat_rooms: list[ChatRoom] = relationship(
+    admin_chat_rooms: Mapped[list[ChatRoom]] = relationship(
         "ChatRoom",
         back_populates="admin_user",
         cascade="save-update, merge, delete",
@@ -131,7 +132,7 @@ class User(TimestampMixin, Base):  # type: ignore
         nullable=False,
         server_default=expression.false(),
     )
-    blocked_users: list["User"] = relationship(
+    blocked_users: Mapped[list["User"]] = relationship(
         "User",
         back_populates="blocked_by_users_list",
         secondary=user_block_list,
@@ -139,7 +140,7 @@ class User(TimestampMixin, Base):  # type: ignore
         secondaryjoin=id == user_block_list.c.blocked_user_id,
     )
 
-    blocked_by_users_list: list["User"] = relationship(
+    blocked_by_users_list: Mapped[list["User"]] = relationship(
         "User",
         back_populates="blocked_users",
         secondary=user_block_list,
@@ -147,15 +148,29 @@ class User(TimestampMixin, Base):  # type: ignore
         secondaryjoin=id == user_block_list.c.user_id,
     )
 
-    posts: list["Post"] = relationship(
+    posts: Mapped[list["Post"]] = relationship(
         "Post",
         back_populates="user",
         cascade="save-update, merge, delete",
         passive_deletes=True,
     )
 
-    comments: list["Comment"] = relationship(
+    comments: Mapped[list["Comment"]] = relationship(
         "Comment",
+        back_populates="user",
+        cascade="save-update, merge, delete",
+        passive_deletes=True,
+    )
+
+    post_likes: Mapped[list["PostLike"]] = relationship(
+        "PostLike",
+        back_populates="user",
+        cascade="save-update, merge, delete",
+        passive_deletes=True,
+    )
+
+    comment_likes: Mapped[list["CommentLike"]] = relationship(
+        "CommentLike",
         back_populates="user",
         cascade="save-update, merge, delete",
         passive_deletes=True,
