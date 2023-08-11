@@ -1,8 +1,7 @@
 from datetime import datetime
 from enum import Enum
-from re import A
-from pydantic import BaseModel, ConfigDict, Field
-from typing import List, Optional
+from pydantic import UUID4, BaseModel, Field
+import ujson
 
 
 class CommunityEnum(int, Enum):
@@ -45,18 +44,40 @@ class PostBase(BaseModel):
 class PostCreate(PostBase):
     title: str = Field(min_length=1, max_length=200)
     content: str = Field(min_length=1, max_length=1000)
+    video: list[str] | None = Field(
+        None, description="video url. ex) https://www.youtube.com/watch?v=1234"
+    )
+
+    def create_dict(self, user_id: UUID4) -> dict:
+        d = self.dict(exclude_unset=True)
+        d["user_id"] = user_id
+        if "video" in d and d["video"] is not None:
+            d["video"] = ujson.dumps(d["video"])
+        return d
 
 
 class PostUpdate(BaseModel):
-    id: int = Field(...)
-    community_id: int = Field(...)
-    title: Optional[str] = Field(min_length=1, max_length=200)
-    content: Optional[str] = Field(min_length=1, max_length=1000)
+    title: str | None = Field(None, min_length=1, max_length=200)
+    content: str | None = Field(None, min_length=1, max_length=1000)
+    video: list[str] | None = Field(
+        None, description="video url. ex) https://www.youtube.com/watch?v=1234"
+    )
+
+    def create_dict(self) -> dict:
+        d = self.dict(exclude_unset=True)
+        if "video" in d and d["video"] is not None:
+            d["video"] = ujson.dumps(d["video"])
+        return d
 
 
 class PostRead(PostBase):
     id: int
-    user_id: int
+    user_id: UUID4
+    image: list[str] | None = Field(None, description="Json encoded list of image urls")
+    # Json encoded list of video urls
+    video: list[str] | None = Field(
+        None, description="video url. ex) https://www.youtube.com/watch?v=1234"
+    )
     available: bool
     created_at: datetime
     updated_at: datetime
@@ -66,7 +87,7 @@ class PostRead(PostBase):
 
 
 class PostResponse(PostRead):
-    like_cnt: int = 0
+    like_cnt: int | None = None
 
 
 class CommentBase(BaseModel):
@@ -80,12 +101,12 @@ class CommentCreate(CommentBase):
 
 
 class CommentUpdate(BaseModel):
-    content: Optional[str] = Field(..., min_length=1)
+    content: str | None = Field(..., min_length=1)
 
 
 class CommentRead(CommentBase):
     id: int
-    user_id: int
+    user_id: UUID4
     available: bool
     created_at: datetime
     updated_at: datetime
@@ -95,16 +116,16 @@ class CommentRead(CommentBase):
 
 
 class CommentResponse(CommentRead):
-    like_cnt: int = 0
+    like_cnt: int | None = None
 
 
 class GetCommentsResponse(BaseModel):
-    result: List[CommentResponse]
-    total_count: int
-    has_next: bool
+    total: int
+    items: list[CommentResponse]
+    next_cursor: int | None
 
 
 class GetPostsResponse(BaseModel):
-    result: List[PostResponse]
-    total_count: int
-    has_next: bool
+    total: int
+    items: list[PostResponse]
+    next_cursor: int | None
