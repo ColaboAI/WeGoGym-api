@@ -10,6 +10,7 @@ from app.api.routers.workout_promise import workout_promise_router
 from app.api.routers.notification import notification_router
 from app.api.routers.voc import voc_router
 from app.api.routers.version import version_router
+from app.api.routers.community import router as community_router
 
 api_router = APIRouter(prefix="/api/v1")
 
@@ -67,6 +68,9 @@ api_router.include_router(
     tags=["version"],
 )
 
+api_router.include_router(
+    community_router,
+)
 html = """
 <!DOCTYPE html>
 <html>
