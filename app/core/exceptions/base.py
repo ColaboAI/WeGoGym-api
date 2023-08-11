@@ -45,3 +45,9 @@ class DuplicateValueException(CustomException):
     code = HTTPStatus.UNPROCESSABLE_ENTITY.value
     error_code = HTTPStatus.UNPROCESSABLE_ENTITY.name
     message = HTTPStatus.UNPROCESSABLE_ENTITY.description
+
+
+class ConflictException(CustomException):
+    code = HTTPStatus.CONFLICT.value
+    error_code = HTTPStatus.CONFLICT.name
+    message = HTTPStatus.CONFLICT.description
