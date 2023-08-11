@@ -35,8 +35,15 @@ class Post(TimestampMixin, Base):
     available = Column(Boolean, nullable=False, server_default="1")
     image = Column(TEXT)
     video = Column(TEXT)
-    user_id = Column(GUID, ForeignKey("user.id"))
-    community_id = Column(Integer, ForeignKey("community.id"))
+    user_id = Column(
+        GUID, ForeignKey("user.id", ondelete="CASCADE"), index=True, nullable=False
+    )
+    community_id = Column(
+        Integer,
+        ForeignKey("community.id"),
+        index=True,
+        nullable=False,
+    )
     user: Mapped[User] = relationship("User", back_populates="posts")
     community: Mapped[Community] = relationship("Community", back_populates="posts")
     post_likes: Mapped[list["PostLike"]] = relationship(
@@ -47,12 +54,16 @@ class Post(TimestampMixin, Base):
     like_cnt: Mapped[int] = query_expression()
 
 
-class PostLike(Base):
+class PostLike(TimestampMixin, Base):
     __tablename__ = "post_like"
     id = Column(Integer, primary_key=True, index=True, autoincrement=True)
-    is_liked = Column(Boolean, nullable=False)
-    user_id = Column(GUID, ForeignKey("user.id"))
-    post_id = Column(Integer, ForeignKey("post.id"))
+    is_liked = Column(Integer, nullable=False)
+    user_id = Column(
+        GUID, ForeignKey("user.id", ondelete="CASCADE"), index=True, nullable=False
+    )
+    post_id = Column(
+        Integer, ForeignKey("post.id", ondelete="CASCADE"), index=True, nullable=False
+    )
     user: Mapped[User] = relationship("User", back_populates="post_likes")
     post: Mapped[Post] = relationship("Post", back_populates="post_likes")
     __table_args__ = (UniqueConstraint("user_id", "post_id"),)
@@ -64,8 +75,12 @@ class Comment(TimestampMixin, Base):
     is_ai_coach = Column(Integer, nullable=False, server_default="0")
     available = Column(Boolean, nullable=False, server_default="1")
     content = Column(TEXT, nullable=False)
-    user_id = Column(GUID, ForeignKey("user.id"))
-    post_id = Column(Integer, ForeignKey("post.id"))
+    user_id = Column(
+        GUID, ForeignKey("user.id", ondelete="CASCADE"), index=True, nullable=False
+    )
+    post_id = Column(
+        Integer, ForeignKey("post.id", ondelete="CASCADE"), index=True, nullable=False
+    )
     user: Mapped[User] = relationship("User", back_populates="comments")
     post: Mapped[Post] = relationship("Post", back_populates="comments")
     comment_likes: Mapped[list["CommentLike"]] = relationship(
@@ -75,12 +90,19 @@ class Comment(TimestampMixin, Base):
     like_cnt: Mapped[int] = query_expression()
 
 
-class CommentLike(Base):
+class CommentLike(TimestampMixin, Base):
     __tablename__ = "comment_like"
     id = Column(Integer, primary_key=True, index=True, autoincrement=True)
     is_liked = Column(Integer, nullable=False)
-    user_id = Column(GUID, ForeignKey("user.id"))
-    comment_id = Column(Integer, ForeignKey("comment.id"))
+    user_id = Column(
+        GUID, ForeignKey("user.id", ondelete="CASCADE"), index=True, nullable=False
+    )
+    comment_id = Column(
+        Integer,
+        ForeignKey("comment.id", ondelete="CASCADE"),
+        index=True,
+        nullable=False,
+    )
     user: Mapped[User] = relationship("User", back_populates="comment_likes")
     comment: Mapped[Comment] = relationship("Comment", back_populates="comment_likes")
     __table_args__ = (UniqueConstraint("user_id", "comment_id"),)
