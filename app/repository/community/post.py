@@ -1,7 +1,8 @@
+from app.models.user import User
 from app.session import Transactional
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import delete, select, func, case, update
-from sqlalchemy.orm import with_expression
+from sqlalchemy.orm import with_expression, selectinload, contains_eager
 from app.models.community import Post, PostLike
 
 
@@ -12,6 +13,7 @@ async def get_list_with_like_cnt_where_community_id(
     stmt = (
         select(Post)
         .join_from(Post, PostLike, isouter=True, onclause=Post.id == PostLike.post_id)
+        .options(selectinload(Post.user).load_only("id", "username", "profile_pic"))
         .options(
             with_expression(
                 Post.like_cnt,
@@ -54,12 +56,11 @@ async def create(post: dict, session: AsyncSession):
     return post_obj
 
 
-# TODO: use sql or orm
 @Transactional()
 async def update_where_id(id: int, post_data: dict, session: AsyncSession) -> Post:
     stmt = update(Post).where(Post.id == id).values(**post_data)
     await session.execute(stmt)
-    res = await get_where_id(id, session=session)
+    res = await get_with_like_cnt_where_id(id, session=session)
     return res
 
 
@@ -74,6 +75,8 @@ async def delete_where_id(id: int, session: AsyncSession):
 async def get_with_like_cnt_where_id(id: int, session: AsyncSession):
     stmt = (
         select(Post)
+        .join(Post.user, isouter=True)
+        .options(contains_eager(Post.user).load_only("id", "username", "profile_pic"))
         .join_from(Post, PostLike, isouter=True, onclause=Post.id == PostLike.post_id)
         .options(
             with_expression(
@@ -87,8 +90,7 @@ async def get_with_like_cnt_where_id(id: int, session: AsyncSession):
             )
         )
         .where(Post.id == id)
-        .group_by(Post.id)
-        .order_by(Post.created_at.desc())
+        .group_by(Post.id, User.id)
     )
     res = await session.execute(stmt)
     return res.scalar_one()

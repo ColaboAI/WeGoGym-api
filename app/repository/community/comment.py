@@ -1,8 +1,9 @@
 from uuid import UUID
+from app.models.user import User
 from app.session import Transactional
 from app.models.community import Comment, CommentLike
 from sqlalchemy import delete, select, case, func, update
-from sqlalchemy.orm import with_expression
+from sqlalchemy.orm import with_expression, selectinload, contains_eager
 from sqlalchemy.ext.asyncio import AsyncSession
 
 
@@ -29,6 +30,7 @@ async def get_list_with_like_cnt_where_post_id(
                 ),
             )
         )
+        .options(selectinload(Comment.user).load_only("id", "username", "profile_pic"))
         .group_by(Comment.id)
         .order_by(Comment.created_at.desc())
         .where(Comment.post_id == post_id)
@@ -57,6 +59,10 @@ async def get_where_id(id: int, session: AsyncSession):
 async def get_with_like_cnt_where_id(id: int, session: AsyncSession):
     stmt = (
         select(Comment)
+        .join(Comment.user, isouter=True)
+        .options(
+            contains_eager(Comment.user).load_only("id", "username", "profile_pic")
+        )
         .join_from(
             Comment,
             CommentLike,
@@ -75,7 +81,7 @@ async def get_with_like_cnt_where_id(id: int, session: AsyncSession):
             )
         )
         .where(Comment.id == id)
-        .group_by(Comment.id)
+        .group_by(Comment.id, User.id)
     )
 
     res = await session.execute(stmt)
@@ -93,7 +99,7 @@ async def count_where_post_id(post_id: int, session: AsyncSession):
 async def update_where_id(comment_id, comment_data: dict, session: AsyncSession):
     stmt = update(Comment).where(Comment.id == comment_id).values(**comment_data)
     await session.execute(stmt)
-    return await get_where_id(comment_id, session=session)
+    return await get_with_like_cnt_where_id(comment_id, session=session)
 
 
 @Transactional()
