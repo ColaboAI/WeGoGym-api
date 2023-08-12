@@ -11,6 +11,15 @@ class CommunityEnum(int, Enum):
     ANONYMOUS = 4
 
 
+class AuthorRead(BaseModel):
+    id: UUID4
+    username: str
+    profile_pic: str | None = None
+
+    class Config:
+        orm_mode = True
+
+
 class CommunityCreate(BaseModel):
     name: str = Field(..., min_length=1, max_length=200)
     description: str = Field(..., min_length=1)
@@ -72,7 +81,6 @@ class PostUpdate(BaseModel):
 
 class PostRead(PostBase):
     id: int
-    user_id: UUID4
     image: list[str] | None = Field(None, description="Json encoded list of image urls")
     # Json encoded list of video urls
     video: list[str] | None = Field(
@@ -81,6 +89,7 @@ class PostRead(PostBase):
     available: bool
     created_at: datetime
     updated_at: datetime
+    user: AuthorRead | None = None
 
     class Config:
         orm_mode = True
@@ -110,6 +119,7 @@ class CommentRead(CommentBase):
     available: bool
     created_at: datetime
     updated_at: datetime
+    user: AuthorRead | None = None
 
     class Config:
         orm_mode = True
