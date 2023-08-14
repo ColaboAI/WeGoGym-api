@@ -28,12 +28,16 @@ async def create_community(community_data: dict):
     return await community.create(community_data)
 
 
-async def get_posts_where_community_id(community_id: int, limit: int, offset: int):
+async def get_posts_where_community_id(
+    community_id: int | None, limit: int, offset: int
+):
     try:
         total = await post.count_where_community_id(community_id)
     except NoResultFound as e:
         raise NotFoundException("Community not found") from e
-    posts = await post.get_list_with_like_cnt_where_community_id(
+    posts: list[
+        Post
+    ] = await post.get_list_with_like_cnt_comment_cnt_where_community_id(
         community_id, limit, offset
     )
     next_cursor = offset + len(posts) if total and total > offset + len(posts) else None
@@ -58,8 +62,6 @@ async def create_post(
             image_urls = ujson.dumps(res)
 
             post_obj = await post.update_where_id(post_obj.id, {"image": image_urls})
-
-        post_obj.like_cnt = 0
 
         return post_obj
     except IntegrityError as e:
@@ -152,7 +154,6 @@ async def create_comment(user_id: UUID4, comment_data: CommentCreate):
     comment_["user_id"] = user_id
     try:
         cmt_obj = await comment.create(comment_)
-        cmt_obj.like_cnt = 0
         return cmt_obj
     except IntegrityError as e:
         raise BadRequestException(str(e.orig)) from e
