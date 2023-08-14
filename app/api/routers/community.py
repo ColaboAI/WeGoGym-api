@@ -24,11 +24,11 @@ from app.core.fastapi.dependencies.premission import (
     PermissionDependency,
 )
 
-router = APIRouter(prefix="/community", tags=["community"])
+router = APIRouter(prefix="/communities", tags=["community"])
 
 
 @router.get(
-    "/communities",
+    "",
     status_code=200,
     response_model=List[CommunityRead],
     summary="Get all communities",
@@ -37,18 +37,8 @@ async def get_all_communities():
     return await community_service.get_all_communities()
 
 
-@router.get(
-    "/communities/{community_id}",
-    status_code=200,
-    response_model=CommunityRead,
-    summary="Get community where community_id",
-)
-async def get_community(community_id: int):
-    return await community_service.get_community_where_id(community_id)
-
-
 @router.post(
-    "/communities",
+    "",
     status_code=201,
     response_model=CommunityRead,
     summary="Create new community",
@@ -95,6 +85,16 @@ async def get_posts_where_community_id(
         Depends(PermissionDependency([IsAuthenticated])),
     ],
 )
+@router.get(
+    "/{community_id}",
+    status_code=200,
+    response_model=CommunityRead,
+    summary="Get community where community_id",
+)
+async def get_community(community_id: int):
+    return await community_service.get_community_where_id(community_id)
+
+
 async def post_post(
     images: list[UploadFile] | None = None,
     post: Json[PostCreate] = Form(...),
