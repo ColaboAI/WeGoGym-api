@@ -96,7 +96,8 @@ class PostRead(PostBase):
 
 
 class PostResponse(PostRead):
-    like_cnt: int | None = None
+    like_cnt: int | None = 0
+    comment_cnt: int | None = 0
 
 
 class CommentBase(BaseModel):
@@ -115,7 +116,6 @@ class CommentUpdate(BaseModel):
 
 class CommentRead(CommentBase):
     id: int
-    user_id: UUID4
     available: bool
     created_at: datetime
     updated_at: datetime
@@ -126,7 +126,8 @@ class CommentRead(CommentBase):
 
 
 class CommentResponse(CommentRead):
-    like_cnt: int | None = None
+    like_cnt: int | None = 0
+    comment_cnt: int | None = 0
 
 
 class GetCommentsResponse(BaseModel):
