@@ -1,4 +1,3 @@
-from re import U
 from app.core.db.mixins.timestamp_mixin import TimestampMixin
 from app.models import Base
 from sqlalchemy import (
