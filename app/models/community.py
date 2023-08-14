@@ -52,6 +52,7 @@ class Post(TimestampMixin, Base):
     comments: Mapped[list["Comment"]] = relationship("Comment", back_populates="post")
 
     like_cnt: Mapped[int] = query_expression()
+    comment_cnt: Mapped[int] = query_expression()
 
 
 class PostLike(TimestampMixin, Base):
@@ -64,7 +65,9 @@ class PostLike(TimestampMixin, Base):
     post_id = Column(
         Integer, ForeignKey("post.id", ondelete="CASCADE"), index=True, nullable=False
     )
-    user: Mapped[User] = relationship("User", back_populates="post_likes")
+    user: Mapped[User] = relationship(
+        "User", back_populates="post_likes", uselist=False
+    )
     post: Mapped[Post] = relationship("Post", back_populates="post_likes")
     __table_args__ = (UniqueConstraint("user_id", "post_id"),)
 
@@ -81,8 +84,8 @@ class Comment(TimestampMixin, Base):
     post_id = Column(
         Integer, ForeignKey("post.id", ondelete="CASCADE"), index=True, nullable=False
     )
-    user: Mapped[User] = relationship("User", back_populates="comments")
-    post: Mapped[Post] = relationship("Post", back_populates="comments")
+    user: Mapped[User] = relationship("User", back_populates="comments", uselist=False)
+    post: Mapped[Post] = relationship("Post", back_populates="comments", uselist=False)
     comment_likes: Mapped[list["CommentLike"]] = relationship(
         "CommentLike", back_populates="comment"
     )
