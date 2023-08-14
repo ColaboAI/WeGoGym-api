@@ -1,9 +1,5 @@
-import re
-from urllib import response
-from fastapi import APIRouter, Depends, Form, UploadFile
+from fastapi import APIRouter, Depends, Form, Query, UploadFile
 from typing import List
-from fastapi.encoders import jsonable_encoder
-from fastapi.params import File
 
 from pydantic import UUID4, Json
 from app.utils.common import load_posts_json_fields, normalize_post
@@ -75,7 +71,7 @@ async def post_community(
     summary="Get posts with pagination",
 )
 async def get_posts_where_community_id(
-    community_id: int,
+    community_id: int | None = Query(None, description="community id"),
     pagination: dict = Depends(limit_offset_query),
 ):
     total, posts, next_cursor = await community_service.get_posts_where_community_id(
