@@ -42,11 +42,19 @@ async def get_list_with_like_cnt_where_post_id(
 
 @Transactional()
 async def create(comment_data: dict, session: AsyncSession):
-    post = Comment(**comment_data)
-    session.add(post)
+    comment = Comment(**comment_data)
+    session.add(comment)
     await session.commit()
-    await session.refresh(post)
-    return post
+    return await session.scalar(
+        select(Comment)
+        .join(Comment.user, isouter=True)
+        .options(
+            contains_eager(Comment.user).load_only(
+                User.id, User.username, User.profile_pic
+            )
+        )
+        .where(Comment.id == comment.id)
+    )
 
 
 @Transactional()
