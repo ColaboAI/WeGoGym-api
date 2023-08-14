@@ -3,16 +3,17 @@ from app.session import Transactional
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import delete, select, func, case, update
 from sqlalchemy.orm import with_expression, selectinload, contains_eager
-from app.models.community import Post, PostLike
+from app.models.community import Comment, Post, PostLike
 
 
 @Transactional()
-async def get_list_with_like_cnt_where_community_id(
-    community_id: int, limit: int, offset: int, session: AsyncSession
+async def get_list_with_like_cnt_comment_cnt_where_community_id(
+    community_id: int | None, limit: int, offset: int, session: AsyncSession
 ):
     stmt = (
         select(Post)
         .join_from(Post, PostLike, isouter=True, onclause=Post.id == PostLike.post_id)
+        .join_from(Post, Comment, isouter=True, onclause=Post.id == Comment.post_id)
         .options(selectinload(Post.user).load_only("id", "username", "profile_pic"))
         .options(
             with_expression(
@@ -25,18 +26,33 @@ async def get_list_with_like_cnt_where_community_id(
                 ),
             )
         )
+        .options(
+            with_expression(
+                Post.comment_cnt,
+                func.count(
+                    case(
+                        (Comment.available == True, Comment.id),
+                    ).distinct()
+                ),
+            )
+        )
         .group_by(Post.id)
         .order_by(Post.created_at.desc())
-        .where(Post.community_id == community_id)
+        .where(Post.available == True)
     )
+
+    if community_id:
+        stmt = stmt.where(Post.community_id == community_id)
     stmt = stmt.limit(limit).offset(offset)
     res = await session.execute(stmt)
     return res.scalars().all()
 
 
 @Transactional()
-async def count_where_community_id(community_id: int, session: AsyncSession):
-    stmt = select(func.count(Post.id)).where(Post.community_id == community_id)
+async def count_where_community_id(community_id: int | None, session: AsyncSession):
+    stmt = select(func.count(Post.id)).where(Post.available == True)
+    if community_id:
+        stmt = stmt.where(Post.community_id == community_id)
     res = await session.execute(stmt)
     return res.scalar_one()
 
