@@ -98,6 +98,7 @@ class PostRead(PostBase):
 class PostResponse(PostRead):
     like_cnt: int | None = 0
     comment_cnt: int | None = 0
+    is_liked: int = -1
 
 
 class CommentBase(BaseModel):
@@ -128,6 +129,7 @@ class CommentRead(CommentBase):
 class CommentResponse(CommentRead):
     like_cnt: int | None = 0
     comment_cnt: int | None = 0
+    is_liked: int = -1
 
 
 class GetCommentsResponse(BaseModel):

@@ -29,7 +29,7 @@ async def create_community(community_data: dict):
 
 
 async def get_posts_where_community_id(
-    community_id: int | None, limit: int, offset: int
+    community_id: int | None, limit: int, offset: int, user_id: UUID4 | None
 ):
     try:
         total = await post.count_where_community_id(community_id)
@@ -38,7 +38,7 @@ async def get_posts_where_community_id(
     posts: list[
         Post
     ] = await post.get_list_with_like_cnt_comment_cnt_where_community_id(
-        community_id, limit, offset
+        community_id, limit, offset, user_id
     )
     next_cursor = offset + len(posts) if total and total > offset + len(posts) else None
     return total, posts, next_cursor
@@ -75,9 +75,9 @@ async def get_post_where_id(id: int) -> Post:
         raise PostNotFound from e
 
 
-async def get_post_with_like_cnt_where_id(id: int):
+async def get_post_with_like_cnt_where_id(id: int, user_id: UUID4 | None = None):
     try:
-        return await post.get_with_like_cnt_where_id(id)
+        return await post.get_with_like_cnt_where_id(id, user_id=user_id)
     except NoResultFound as e:
         raise PostNotFound from e
 
@@ -123,13 +123,13 @@ async def delete_post_where_id(id: int, user_id: UUID4):
 
 async def create_or_update_post_like(post_id: int, user_id: UUID4, like: int):
     await post.create_or_update_like(post_id, user_id, like)
-    return await get_post_with_like_cnt_where_id(post_id)
+    return await get_post_with_like_cnt_where_id(post_id, user_id)
 
 
 async def delete_post_like(post_id: int, user_id: UUID4):
     try:
         await post.delete_like_where_post_id_and_user_id(post_id, user_id)
-        return await get_post_with_like_cnt_where_id(post_id)
+        return await get_post_with_like_cnt_where_id(post_id, user_id)
     except NoResultFound as e:
         raise PostNotFound from e
 

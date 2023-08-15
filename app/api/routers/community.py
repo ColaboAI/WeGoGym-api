@@ -19,6 +19,7 @@ from app.schemas.community import (
 )
 from app.services import community_service
 from app.core.fastapi.dependencies.premission import (
+    AllowAll,
     IsAuthenticated,
     IsAdmin,
     PermissionDependency,
@@ -59,13 +60,17 @@ async def post_community(
     status_code=200,
     response_model=GetPostsResponse,
     summary="Get posts with pagination",
+    dependencies=[
+        Depends(PermissionDependency([AllowAll])),
+    ],
 )
 async def get_posts_where_community_id(
     community_id: int | None = Query(None, description="community id"),
     pagination: dict = Depends(limit_offset_query),
+    user_id: UUID4 | None = Depends(get_user_id_from_request),
 ):
     total, posts, next_cursor = await community_service.get_posts_where_community_id(
-        community_id=community_id, **pagination
+        community_id=community_id, **pagination, user_id=user_id
     )
     posts = normalize_post(posts)
     return {

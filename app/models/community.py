@@ -53,6 +53,8 @@ class Post(TimestampMixin, Base):
     like_cnt: Mapped[int] = query_expression()
     comment_cnt: Mapped[int] = query_expression()
 
+    is_liked: Mapped[int] = query_expression()
+
 
 class PostLike(TimestampMixin, Base):
     __tablename__ = "post_like"
@@ -90,6 +92,7 @@ class Comment(TimestampMixin, Base):
     )
 
     like_cnt: Mapped[int] = query_expression()
+    is_liked: Mapped[int] = query_expression()
 
 
 class CommentLike(TimestampMixin, Base):

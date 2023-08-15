@@ -1,14 +1,19 @@
+from pydantic import UUID4
 from app.models.user import User
 from app.session import Transactional
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import delete, select, func, case, update
+from sqlalchemy import and_, delete, select, func, case, update
 from sqlalchemy.orm import with_expression, selectinload, contains_eager
 from app.models.community import Comment, Post, PostLike
 
 
 @Transactional()
 async def get_list_with_like_cnt_comment_cnt_where_community_id(
-    community_id: int | None, limit: int, offset: int, session: AsyncSession
+    community_id: int | None,
+    limit: int,
+    offset: int,
+    user_id: UUID4 | None,
+    session: AsyncSession,
 ):
     stmt = (
         select(Post)
@@ -43,6 +48,19 @@ async def get_list_with_like_cnt_comment_cnt_where_community_id(
 
     if community_id:
         stmt = stmt.where(Post.community_id == community_id)
+    if user_id:
+        stmt = stmt.options(
+            with_expression(
+                Post.is_liked,
+                func.max(
+                    case(
+                        (and_(PostLike.user_id == user_id, PostLike.is_liked == 1), 1),
+                        (and_(PostLike.is_liked == 0), 0),
+                        else_=-1,
+                    ),
+                ),
+            )
+        )
     stmt = stmt.limit(limit).offset(offset)
     res = await session.execute(stmt)
     return res.scalars().all()
@@ -88,7 +106,9 @@ async def delete_where_id(id: int, session: AsyncSession):
 
 
 @Transactional()
-async def get_with_like_cnt_where_id(id: int, session: AsyncSession):
+async def get_with_like_cnt_where_id(
+    id: int, user_id: UUID4 | None, session: AsyncSession
+):
     stmt = (
         select(Post)
         .join(Post.user, isouter=True)
@@ -108,6 +128,19 @@ async def get_with_like_cnt_where_id(id: int, session: AsyncSession):
         .where(Post.id == id)
         .group_by(Post.id, User.id)
     )
+    if user_id:
+        stmt = stmt.options(
+            with_expression(
+                Post.is_liked,
+                func.max(
+                    case(
+                        (and_(PostLike.user_id == user_id, PostLike.is_liked == 1), 1),
+                        (and_(PostLike.is_liked == 0), 0),
+                        else_=-1,
+                    ),
+                ),
+            )
+        )
     res = await session.execute(stmt)
     return res.scalar_one()
 
