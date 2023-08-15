@@ -90,16 +90,6 @@ async def get_posts_where_community_id(
         Depends(PermissionDependency([IsAuthenticated])),
     ],
 )
-@router.get(
-    "/{community_id}",
-    status_code=200,
-    response_model=CommunityRead,
-    summary="Get community where community_id",
-)
-async def get_community(community_id: int):
-    return await community_service.get_community_where_id(community_id)
-
-
 async def post_post(
     images: list[UploadFile] | None = None,
     post: Json[PostCreate] = Form(...),
@@ -198,9 +188,13 @@ async def post_post_unlike(
     response_model=GetCommentsResponse,
     summary="Get comments with pagination",
 )
-async def get_comments(post_id: int, pagination: dict = Depends(limit_offset_query)):
+async def get_comments(
+    post_id: int,
+    user_id: UUID4 | None = Depends(get_user_id_from_request),
+    pagination: dict = Depends(limit_offset_query),
+):
     total, items, next_cursor = await community_service.get_comments_where_post_id(
-        post_id=post_id, **pagination
+        post_id=post_id, **pagination, user_id=user_id
     )
     return {"total": total, "items": items, "next_cursor": next_cursor}
 
@@ -281,3 +275,13 @@ async def post_comment_unlike(
     user_id: UUID4 = Depends(get_user_id_from_request),
 ):
     return await community_service.create_or_update_comment_like(comment_id, user_id, 0)
+
+
+@router.get(
+    "/{community_id}",
+    status_code=200,
+    response_model=CommunityRead,
+    summary="Get community where community_id",
+)
+async def get_community(community_id: int):
+    return await community_service.get_community_where_id(community_id)

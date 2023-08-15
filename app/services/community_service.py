@@ -134,11 +134,15 @@ async def delete_post_like(post_id: int, user_id: UUID4):
         raise PostNotFound from e
 
 
-async def get_comments_where_post_id(post_id: int, limit: int, offset: int):
+async def get_comments_where_post_id(
+    post_id: int, user_id: UUID4 | None, limit: int, offset: int
+):
     try:
         total, comments = await asyncio.gather(
             comment.count_where_post_id(post_id),
-            comment.get_list_with_like_cnt_where_post_id(post_id, limit, offset),
+            comment.get_list_with_like_cnt_where_post_id(
+                post_id, user_id, limit, offset
+            ),
         )
     except NoResultFound as e:
         raise NotFoundException("Post not found") from e
@@ -163,8 +167,8 @@ async def get_comment_where_id(id: int):
     return await comment.get_where_id(id)
 
 
-async def get_comment_with_like_cnt_where_id(id: int):
-    return await comment.get_with_like_cnt_where_id(id)
+async def get_comment_with_like_cnt_where_id(id: int, user_id: UUID4 | None = None):
+    return await comment.get_with_like_cnt_where_id(id, user_id)
 
 
 async def update_comment_where_id(id: int, user_id: UUID4, comment_data: CommentUpdate):
@@ -194,7 +198,7 @@ async def delete_comment_where_id(id: int, user_id: UUID4):
 async def create_or_update_comment_like(comment_id: int, user_id: UUID4, like: int):
     try:
         await comment.create_or_update_like(comment_id, user_id, like)
-        return await get_comment_with_like_cnt_where_id(comment_id)
+        return await get_comment_with_like_cnt_where_id(comment_id, user_id)
     except IntegrityError as e:
         raise BadRequestException(str(e.orig)) from e
 
@@ -202,6 +206,6 @@ async def create_or_update_comment_like(comment_id: int, user_id: UUID4, like: i
 async def delete_comment_like(comment_id: int, user_id: UUID4):
     try:
         await comment.delete_like_where_comment_id_and_user_id(comment_id, user_id)
-        return await get_comment_with_like_cnt_where_id(comment_id)
+        return await get_comment_with_like_cnt_where_id(comment_id, user_id)
     except NoResultFound as e:
         raise NotFoundException("Like not found") from e
