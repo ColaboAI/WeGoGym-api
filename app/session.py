@@ -75,13 +75,13 @@ class Transactional:
             try:
                 kwargs["session"] = session
                 result = await func(*args, **kwargs)
-                await session.commit()
                 return result
             except Exception as e:
                 logger.exception(f"{type(e).__name__} : {str(e)}")
                 await session.rollback()
                 raise e
             finally:
+                await session.commit()
                 await session.close()
 
         return _transactional
