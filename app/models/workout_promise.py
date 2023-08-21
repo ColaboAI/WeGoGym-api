@@ -1,6 +1,15 @@
 from typing import TYPE_CHECKING
 import uuid
-from sqlalchemy import Column, String, DateTime, Integer, ForeignKey, Boolean, Table
+from sqlalchemy import (
+    Column,
+    Float,
+    String,
+    DateTime,
+    Integer,
+    ForeignKey,
+    Boolean,
+    Table,
+)
 from sqlalchemy.orm import relationship
 from app.core.db.mixins.timestamp_mixin import TimestampMixin
 from app.models.base import Base
@@ -49,9 +58,11 @@ class WorkoutPromise(TimestampMixin, Base):
         "ChatRoom", back_populates="workout_promise", lazy="select"
     )
 
-    gym_info_id = Column(GUID, ForeignKey("gym_info.id", ondelete="SET NULL"))
-    gym_info: "GymInfo" = relationship(
-        "GymInfo", back_populates="workout_promises", lazy="select"
+    promise_location_id = Column(
+        GUID, ForeignKey("promise_location.id", ondelete="SET NULL")
+    )
+    promise_location: "PromiseLocation" = relationship(
+        "PromiseLocation", back_populates="workout_promises", lazy="select"
     )
     # Parent relationship (Many to "One")
     participants: list["WorkoutParticipant"] = relationship(
@@ -186,18 +197,22 @@ class GymFacility(Base):
     )
 
 
-# class Workout(TimestampMixin, Base):
-#     __tablename__ = "workout"
-#     __mapper_args__ = {"eager_defaults": True}
-#     id = Column(GUID, primary_key=True, index=True, default=uuid.uuid4)
-#     name = Column(String, index=True, nullable=False)
-#     description = Column(String, index=True)
-#     category = Column(String, index=True, nullable=False)
-#     difficulty = Column(String, index=True, nullable=False)
-#     equipment = Column(String, index=True, nullable=False)
-#     muscle_group = Column(String, index=True, nullable=False)
-#     duration = Column(Integer, index=True, nullable=False)
-#     calories = Column(Integer, index=True, nullable=False)
-#     video_url = Column(String, index=True, nullable=False)
-#     thumbnail_url = Column(String, index=True, nullable=False)
-#     is_public = Column(Boolean, default=False, index=True)
+class PromiseLocation(TimestampMixin, Base):
+    __tablename__ = "promise_location"
+    __mapper_args__ = {"eager_defaults": True}
+    id = Column(GUID, primary_key=True, index=True, default=uuid.uuid4)
+    # 장소 이름
+    place_name = Column(String, nullable=False)
+    # 위도
+    latitude = Column(Float, nullable=False)
+    # 경도
+    longitude = Column(Float, nullable=False)
+    # 주소
+    address = Column(String, nullable=False)
+
+    workout_promises: list[WorkoutPromise] = relationship(
+        "WorkoutPromise",
+        back_populates="promise_location",
+        cascade="save-update, merge, delete",
+        passive_deletes=True,
+    )
