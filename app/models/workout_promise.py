@@ -160,14 +160,6 @@ class GymInfo(TimestampMixin, Base):  # type: ignore
     # 영업 상태
     status = Column(String)
 
-    # (Many to "one") with workout_promise
-    workout_promises: list[WorkoutPromise] = relationship(
-        "WorkoutPromise",
-        back_populates="gym_info",
-        cascade="save-update, merge, delete",
-        passive_deletes=True,
-    )
-
     # Parent relationship (Many to "One")
     users: list["User"] = relationship(
         "User",
