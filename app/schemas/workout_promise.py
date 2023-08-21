@@ -57,6 +57,39 @@ class GymInfoRead(GymInfoBase):
         orm_mode = True
 
 
+class PromiseLocationBase(BaseModel):
+    place_name: str = Field(..., min_length=1, max_length=100)
+    address: str = Field(..., min_length=1, max_length=100)
+    latitude: float | None = Field(None)
+    longitude: float | None = Field(None)
+
+
+class PromiseLocationUpdate(BaseModel):
+    place_name: str | None = Field(None, min_length=1, max_length=100)
+    address: str | None = Field(None, min_length=1, max_length=100)
+    latitude: float | None = Field(None)
+    longitude: float | None = Field(None)
+
+    def get_update_dict(self):
+        return self.dict(
+            exclude_unset=True,
+            exclude={
+                "id",
+                "created_at",
+                "updated_at",
+            },
+        )
+
+
+class PromiseLocationRead(PromiseLocationBase):
+    id: UUID4
+    created_at: datetime
+    updated_at: datetime
+
+    class Config:
+        orm_mode = True
+
+
 class WorkoutPromiseBase(BaseModel):
     title: str = Field(..., min_length=1, max_length=100)
     description: str = Field(..., min_length=1, max_length=1000)
@@ -75,8 +108,8 @@ class WorkoutPromiseRead(WorkoutPromiseBase):
     created_at: datetime
     updated_at: datetime
 
-    gym_info: GymInfoRead | None
-    gym_info_id: UUID4 | None
+    promise_location: PromiseLocationRead | None
+    promise_location_id: UUID4 | None
     admin_user_id: UUID4 | None
     admin_user: UserRead | None
     participants: list["WorkoutParticipantRead"]
@@ -96,7 +129,7 @@ class WorkoutPromiseUpdate(BaseModel):
     promise_time: datetime | None = Field(None, description="Promise datetime")
     recruit_end_time: datetime | None = Field(None, description="Recruit end datetime")
     admin_user_id: UUID4 | None = Field(None, description="New Admin User ID")
-    gym_info: GymInfoBase | None = Field(None)
+    promise_location: PromiseLocationBase | None = Field(None)
     status: WorkoutPromiseStatus | None = Field(None)
     workout_part: str | None = Field(None, description="Workout part")
 
@@ -109,7 +142,7 @@ class WorkoutPromiseUpdate(BaseModel):
                 "updated_at",
                 "chat_room_id",
                 "admin_user_id",
-                "gym_info_id",
+                "promise_location_id",
             },
         )
 
