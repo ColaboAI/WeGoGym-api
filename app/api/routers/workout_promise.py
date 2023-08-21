@@ -9,6 +9,7 @@ from app.core.fastapi.dependencies.premission import (
 from app.core.helpers.cache import Cache
 from app.schemas.workout_promise import (
     GymInfoBase,
+    PromiseLocationBase,
     WorkoutParticipantBase,
     WorkoutParticipantRead,
     WorkoutParticipantUpdate,
@@ -157,12 +158,12 @@ async def get_workout_promise(
 async def make_new_workout_promise(
     request: Request,
     workout_promise: WorkoutPromiseBase = Body(...),
-    gym_info: GymInfoBase = Body(None),
+    promise_location: PromiseLocationBase = Body(None),
     db: AsyncSession = Depends(get_db_transactional_session),
 ):
     if request.user.id:
         db_workout_promise = await create_workout_promise(
-            db, request.user.id, workout_promise, gym_info
+            db, request.user.id, workout_promise, promise_location
         )
     else:
         raise UnauthorizedException("You are not authenticated user")
@@ -231,11 +232,11 @@ async def leave_workout_promise(
 async def update_workout_promise(
     workout_promise_id: UUID,
     workout_promise: WorkoutPromiseUpdate = Body(...),
-    gym_info: GymInfoBase = Body(None),
+    promise_location: PromiseLocationBase = Body(None),
     db: AsyncSession = Depends(get_db_transactional_session),
 ):
     updated_w_p = await update_workout_promise_by_id(
-        db, workout_promise_id, workout_promise, gym_info
+        db, workout_promise_id, workout_promise, promise_location
     )
     await Cache.remove_by_prefix("workout-promise-detail")
     await Cache.remove_by_prefix("workout-promise-list")
