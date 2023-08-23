@@ -107,7 +107,7 @@ async def delete_where_id(id: int, session: AsyncSession):
 
 @Transactional()
 async def get_with_like_cnt_where_id(
-    id: int, user_id: UUID4 | None, session: AsyncSession
+    id: int, session: AsyncSession, user_id: UUID4 | None = None
 ):
     stmt = (
         select(Post)
