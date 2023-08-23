@@ -51,14 +51,15 @@ class PostBase(BaseModel):
 
 
 class PostCreate(PostBase):
-    title: str = Field(min_length=1, max_length=200)
+    title: str = Field(min_length=1, max_length=100)
     content: str = Field(min_length=1, max_length=1000)
+    want_ai_coach: bool = Field(True)
     video: list[str] | None = Field(
         None, description="video url. ex) https://www.youtube.com/watch?v=1234"
     )
 
     def create_dict(self, user_id: UUID4) -> dict:
-        d = self.dict(exclude_unset=True)
+        d = self.dict(exclude_unset=True, exclude={"want_ai_coach"})
         d["user_id"] = user_id
         if "video" in d and d["video"] is not None:
             d["video"] = ujson.dumps(d["video"])
