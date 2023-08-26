@@ -33,13 +33,13 @@ async def get_posts_where_community_id(
 ):
     try:
         total = await post.count_where_community_id(community_id)
+        posts = await post.get_list_with_like_cnt_comment_cnt_where_community_id(
+            community_id, limit, offset, user_id
+        )
+
     except NoResultFound as e:
         raise NotFoundException("Community not found") from e
-    posts: list[
-        Post
-    ] = await post.get_list_with_like_cnt_comment_cnt_where_community_id(
-        community_id, limit, offset, user_id
-    )
+
     next_cursor = offset + len(posts) if total and total > offset + len(posts) else None
     return total, posts, next_cursor
 
@@ -138,12 +138,13 @@ async def get_comments_where_post_id(
     post_id: int, user_id: UUID4 | None, limit: int, offset: int
 ):
     try:
-        total, comments = await asyncio.gather(
-            comment.count_where_post_id(post_id),
-            comment.get_list_with_like_cnt_where_post_id(
+        total = await comment.count_where_post_id(post_id)
+        comments = (
+            await comment.get_list_with_like_cnt_where_post_id(
                 post_id, user_id, limit, offset
             ),
         )
+
     except NoResultFound as e:
         raise NotFoundException("Post not found") from e
 
