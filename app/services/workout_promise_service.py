@@ -4,12 +4,18 @@ from sqlalchemy import select, func
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.exceptions.workout_promise import NotAdminOfWorkoutPromiseException
 from app.models.notification import NotificationWorkout
-from app.models.workout_promise import GymInfo, WorkoutParticipant, WorkoutPromise
+from app.models.workout_promise import (
+    GymInfo,
+    PromiseLocation,
+    WorkoutParticipant,
+    WorkoutPromise,
+)
 from app.schemas.notification import NotificationWorkoutType
 from app.schemas.workout_promise import (
     GymInfoBase,
     GymInfoUpdate,
     ParticipantStatus,
+    PromiseLocationBase,
     WorkoutParticipantBase,
     WorkoutParticipantUpdate,
     WorkoutPromiseBase,
@@ -83,6 +89,39 @@ async def update_gym_info_by_id(
     return gym
 
 
+async def get_promise_location_by_place_name_and_addr(
+    db: AsyncSession, promise_location_place_name: str, promise_location_address: str
+) -> PromiseLocation | None:
+    stmt = select(PromiseLocation).where(
+        PromiseLocation.place_name == promise_location_place_name,
+        PromiseLocation.address == promise_location_address,
+    )
+    res = await db.execute(stmt)
+    promise_location: PromiseLocation | None = res.scalars().first()
+    return promise_location
+
+
+async def create_promise_location(
+    db: AsyncSession, promise_location: PromiseLocationBase
+) -> PromiseLocation:
+    new_promise_location = PromiseLocation(**promise_location.dict())
+    db.add(new_promise_location)
+    await db.commit()
+    return new_promise_location
+
+
+async def get_promise_location_or_create(
+    db: AsyncSession, promise_location: PromiseLocationBase
+) -> PromiseLocation:
+    _promise_location = await get_promise_location_by_place_name_and_addr(
+        db, promise_location.place_name, promise_location.address
+    )
+    if _promise_location:
+        return _promise_location
+    else:
+        return await create_promise_location(db, promise_location)
+
+
 async def get_workout_promise_list(
     db: AsyncSession,
     limit: int = 10,
@@ -98,7 +137,7 @@ async def get_workout_promise_list(
                     "id", "username", "profile_pic"
                 )
             ),
-            selectinload(WorkoutPromise.gym_info),
+            selectinload(WorkoutPromise.promise_location),
             selectinload(WorkoutPromise.admin_user).load_only(
                 "id", "username", "profile_pic"
             ),
@@ -138,7 +177,7 @@ async def get_recruiting_workout_promise_list(
                     "id", "username", "profile_pic"
                 )
             ),
-            selectinload(WorkoutPromise.gym_info),
+            selectinload(WorkoutPromise.promise_location),
             selectinload(WorkoutPromise.admin_user).load_only(
                 "id", "username", "profile_pic"
             ),
@@ -181,7 +220,7 @@ async def get_workout_promise_list_written_by_me(
                     "id", "username", "profile_pic"
                 )
             ),
-            selectinload(WorkoutPromise.gym_info),
+            selectinload(WorkoutPromise.promise_location),
             selectinload(WorkoutPromise.admin_user).load_only(
                 "id", "username", "profile_pic"
             ),
@@ -223,7 +262,7 @@ async def get_workout_promise_list_joined_by_me(
                 selectinload(WorkoutParticipant.user)
             ),
         )
-        .options(selectinload(WorkoutPromise.gym_info))
+        .options(selectinload(WorkoutPromise.promise_location))
         .options(selectinload(WorkoutPromise.admin_user))
         .where(WorkoutPromise.is_private.is_(False))
         .where(
@@ -282,7 +321,7 @@ async def get_workout_promise_by_id(
                 selectinload(WorkoutParticipant.user)
             ),
             selectinload(WorkoutPromise.chat_room),
-            selectinload(WorkoutPromise.gym_info),
+            selectinload(WorkoutPromise.promise_location),
             selectinload(WorkoutPromise.admin_user),
         )
         .where(WorkoutPromise.id == workout_promise_id)
@@ -298,7 +337,7 @@ async def create_workout_promise(
     db: AsyncSession,
     admin_user_id: UUID,
     workout_promise: WorkoutPromiseBase,
-    gym_info: GymInfoBase | None = None,
+    promise_location: PromiseLocationBase | None = None,
 ) -> WorkoutPromise:
     new_workout_promise = WorkoutPromise(
         **workout_promise.dict(
@@ -307,10 +346,10 @@ async def create_workout_promise(
     )
     new_workout_promise.admin_user_id = admin_user_id
 
-    db_gym_info = None
-    if gym_info:
-        db_gym_info = await get_gym_info_or_create(db, gym_info)
-        new_workout_promise.gym_info = db_gym_info
+    db_promise_location = None
+    if promise_location:
+        db_promise_location = await get_promise_location_or_create(db, promise_location)
+        new_workout_promise.promise_location = db_promise_location
 
     # Make Admin Participant
     admin_participant = WorkoutParticipant(
@@ -340,12 +379,12 @@ async def update_workout_promise_by_id(
     db: AsyncSession,
     workout_promise_id: UUID,
     workout_promise: WorkoutPromiseUpdate,
-    gym_info: GymInfoBase | None = None,
+    promise_location: PromiseLocationBase | None = None,
 ) -> WorkoutPromise:
     db_workout_promise = await get_workout_promise_by_id(db, workout_promise_id)
-    if gym_info:
-        db_gym_info = await get_gym_info_or_create(db, gym_info)
-        db_workout_promise.gym_info = db_gym_info
+    if promise_location:
+        db_promise_location = await get_promise_location_or_create(db, promise_location)
+        db_workout_promise.promise_location = db_promise_location
 
     for k, v in workout_promise.get_update_dict().items():
         setattr(db_workout_promise, k, v)
