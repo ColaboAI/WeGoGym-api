@@ -1,10 +1,11 @@
 import asyncio
 import signal
 from fastapi import FastAPI, Request, status
-from fastapi.exceptions import RequestValidationError
+from fastapi.encoders import jsonable_encoder
+from fastapi.exceptions import RequestValidationError, ResponseValidationError
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.middleware import Middleware
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, PlainTextResponse
 
 from app.api.api import api_router
 from app.core import conn
@@ -41,17 +42,20 @@ def init_listeners(app_: FastAPI) -> None:
 
     # TODO: Remove this(only for debug)
     @app_.exception_handler(RequestValidationError)
-    async def validation_exception_handler(
-        request: Request, exc: RequestValidationError
-    ):
+    async def validation_exception_handler(request: Request, exc: RequestValidationError):
         exc_str = f"{exc}".replace("\n", " ").replace("   ", " ")
         print(f"{request}: {exc_str}")
         content = {"status_code": 10422, "message": exc_str, "detail": exc.errors()}
 
-        print(content)
-        return JSONResponse(
-            content=content, status_code=status.HTTP_422_UNPROCESSABLE_ENTITY
-        )
+        return JSONResponse(content=jsonable_encoder(content), status_code=status.HTTP_422_UNPROCESSABLE_ENTITY)
+
+    @app_.exception_handler(ResponseValidationError)
+    async def response_val_error(request, exc):
+        exc_str = f"{exc}".replace("\n", " ").replace("   ", " ")
+        print(f"{request}: {exc_str}")
+        content = {"status_code": 10422, "message": exc_str, "detail": exc.errors()}
+
+        return JSONResponse(content=jsonable_encoder(content), status_code=status.HTTP_422_UNPROCESSABLE_ENTITY)
 
     # Graceful shutdown
     @app_.on_event("shutdown")
