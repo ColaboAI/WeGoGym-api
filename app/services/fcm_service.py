@@ -9,14 +9,10 @@ from app.models.user import User
 from app.utils.ecs_log import logger
 from app.schemas.notification import NotificationWorkoutTitle
 
-default_app = firebase_admin.initialize_app(
-    credential=firebase_admin.credentials.Certificate("firebase.json")
-)
+default_app = firebase_admin.initialize_app(credential=firebase_admin.credentials.Certificate("firebase.json"))
 
 
-async def subscribe_fcm_token_to_topic(
-    db: AsyncSession, user_id: uuid.UUID, topic: str
-):
+async def subscribe_fcm_token_to_topic(db: AsyncSession, user_id: uuid.UUID, topic: str):
     from app.models.user import User
 
     user = await db.get(User, user_id)
@@ -170,9 +166,7 @@ async def send_message_to_multiple_devices_by_fcm_token_list(
 
 
 # topic 으로 메시지를 보내는 함수
-async def send_message_to_topic(
-    topic: str, title: str, body: str, data: dict[str, str] | None = None
-):
+async def send_message_to_topic(topic: str, title: str, body: str, data: dict[str, str] | None = None):
     apns = messaging.APNSConfig(
         headers={"apns-priority": "10"},
         payload=messaging.APNSPayload(

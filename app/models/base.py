@@ -1,11 +1,20 @@
-from sqlalchemy.orm import declarative_base, DeclarativeMeta
+import re
+from sqlalchemy import MetaData
+from sqlalchemy.orm import DeclarativeBase, declared_attr
+from sqlalchemy.ext.asyncio import AsyncAttrs
 
-Base: DeclarativeMeta = declarative_base()  # type: ignore
 
-Base.metadata.naming_convention = {
-    "ix": "ix_%(column_0_label)s",
-    "uq": "uq_%(table_name)s_%(column_0_name)s",
-    "ck": "ck_%(table_name)s_%(constraint_name)s",
-    "fk": "fk_%(table_name)s_%(column_0_name)s_%(referred_table_name)s",
-    "pk": "pk_%(table_name)s",
-}
+class Base(AsyncAttrs, DeclarativeBase):
+    @declared_attr.directive
+    def __tablename__(cls) -> str:  # pylint: disable=no-self-argument
+        return re.sub("(?<!^)(?=[A-Z])", "_", cls.__name__).lower()
+
+    metadata = MetaData(
+        naming_convention={
+            "ix": "ix_%(column_0_label)s",
+            "uq": "uq_%(table_name)s_%(column_0_name)s",
+            "ck": "ck_%(table_name)s_%(constraint_name)s",
+            "fk": "fk_%(table_name)s_%(column_0_name)s_%(referred_table_name)s",
+            "pk": "pk_%(table_name)s",
+        }
+    )

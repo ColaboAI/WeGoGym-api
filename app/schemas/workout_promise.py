@@ -36,7 +36,7 @@ class GymInfoUpdate(BaseModel):
     status: str | None = Field(None)
 
     def get_update_dict(self):
-        return self.dict(
+        return self.model_dump(
             exclude_unset=True,
             exclude={
                 "id",
@@ -71,7 +71,7 @@ class PromiseLocationUpdate(BaseModel):
     longitude: float | None = Field(None)
 
     def get_update_dict(self):
-        return self.dict(
+        return self.model_dump(
             exclude_unset=True,
             exclude={
                 "id",
@@ -134,7 +134,7 @@ class WorkoutPromiseUpdate(BaseModel):
     workout_part: str | None = Field(None, description="Workout part")
 
     def get_update_dict(self):
-        return self.dict(
+        return self.model_dump(
             exclude_unset=True,
             exclude={
                 "id",
@@ -154,9 +154,7 @@ class WorkoutParticipantBase(BaseModel):
         description="NickName of participant in Promise",
     )
     status: ParticipantStatus = Field(ParticipantStatus.PENDING)
-    status_message: str | None = Field(
-        None, description="Status message of participant"
-    )
+    status_message: str | None = Field(None, description="Status message of participant")
     is_admin: bool = Field(False, description="Is admin of Promise")
 
     class Config:
@@ -179,13 +177,11 @@ class WorkoutParticipantRead(WorkoutParticipantBase):
 class WorkoutParticipantUpdate(BaseModel):
     name: str | None = Field(None, min_length=1, max_length=100)
     status: ParticipantStatus | None = Field(None)
-    status_message: str | None = Field(
-        None, description="Status message of participant"
-    )
+    status_message: str | None = Field(None, description="Status message of participant")
     is_admin: bool = Field(False, description="Is admin of Promise")
 
     def get_update_dict(self):
-        return self.dict(
+        return self.model_dump(
             exclude_unset=True,
             exclude={
                 "id",

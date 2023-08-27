@@ -23,7 +23,9 @@ from functools import lru_cache
 from os import environ
 from pathlib import Path
 
-from pydantic import AnyHttpUrl, AnyUrl, BaseSettings, validator
+from pydantic import AnyHttpUrl, AnyUrl, validator
+from pydantic_settings import BaseSettings
+from sqlalchemy import URL, make_url
 
 PROJECT_DIR = Path(__file__).parent.parent.parent
 
@@ -33,13 +35,11 @@ class Settings(BaseSettings):
     SECRET_KEY: str
     JWT_SECRET_KEY: str
     JWT_ALGORITHM: str = "HS256"
-    ENVIRONMENT: str = environ.get(
-        "ENV", "DEV"
-    )  # Literal["DEV", "PRODUCTION", "STAGING"]
+    ENVIRONMENT: str = environ.get("ENV", "DEV")  # Literal["DEV", "PRODUCTION", "STAGING"]
     ACCESS_TOKEN_EXPIRE_MINUTES: int
     BACKEND_CORS_ORIGINS: str | list[AnyHttpUrl]
     REDIS_USERNAME: str = "default"
-    REDIS_HOST: str = "localhost"
+    REDIS_HOST: str = "127.0.0.1"
     REDIS_PORT: str = "6379"
     REDIS_PASSWORD: str = "password"
     REDIS_URL: str = ""
@@ -64,50 +64,60 @@ class Settings(BaseSettings):
 
     # VALIDATORS
     @validator("BACKEND_CORS_ORIGINS")
+    @classmethod
     def _assemble_cors_origins(cls, cors_origins: str | list[AnyHttpUrl]):
         if isinstance(cors_origins, str):
             return [item.strip() for item in cors_origins.split(",")]
         return cors_origins
 
     @validator("REDIS_URL")
+    @classmethod
     def _assemble_redis_url(cls, v: str, values: dict[str, str]) -> str:
+        url = None
         if environ.get("ENV", None) == None:
-            return AnyUrl.build(
+            url = AnyUrl.build(
                 scheme="redis",
                 password=values["REDIS_PASSWORD"],
-                host="localhost",
-                port=values["REDIS_PORT"],
+                host="127.0.0.1",
+                port=int(values["REDIS_PORT"]),
             )
-        return AnyUrl.build(
-            scheme="redis",
-            password=values["REDIS_PASSWORD"],
-            host=values["REDIS_HOST"],
-            port=values["REDIS_PORT"],
-        )
+        else:
+            url = AnyUrl.build(
+                scheme="redis",
+                password=values["REDIS_PASSWORD"],
+                host=values["REDIS_HOST"],
+                port=int(values["REDIS_PORT"]),
+            )
+        return str(url)
 
     @validator("DEFAULT_SQLALCHEMY_DATABASE_URI")
-    def _assemble_default_db_connection(cls, v: str, values: dict[str, str]) -> str:
+    @classmethod
+    def _assemble_default_db_connection(cls, v: str, values: dict[str, str]) -> URL:
+        url = None
         if environ.get("ENV", None) == None:
-            return AnyUrl.build(
+            url = AnyUrl.build(
                 scheme="postgresql+asyncpg",
-                user=values["DEFAULT_DATABASE_USER"],
+                username=values["DEFAULT_DATABASE_USER"],
                 password=values["DEFAULT_DATABASE_PASSWORD"],
-                host="localhost",
-                port=values["DEFAULT_DATABASE_PORT"],
-                path=f"/{values['DEFAULT_DATABASE_DB']}",
+                host="127.0.0.1",
+                port=int(values["DEFAULT_DATABASE_PORT"]),
+                path=f"{values['DEFAULT_DATABASE_DB']}",
             )
-        return AnyUrl.build(
-            scheme="postgresql+asyncpg",
-            user=values["DEFAULT_DATABASE_USER"],
-            password=values["DEFAULT_DATABASE_PASSWORD"],
-            host=values["DEFAULT_DATABASE_HOSTNAME"],
-            port=values["DEFAULT_DATABASE_PORT"],
-            path=f"/{values['DEFAULT_DATABASE_DB']}",
-        )
+        else:
+            url = AnyUrl.build(
+                scheme="postgresql+asyncpg",
+                username=values["DEFAULT_DATABASE_USER"],
+                password=values["DEFAULT_DATABASE_PASSWORD"],
+                host=values["DEFAULT_DATABASE_HOSTNAME"],
+                port=int(values["DEFAULT_DATABASE_PORT"]),
+                path=f"{values['DEFAULT_DATABASE_DB']}",
+            )
+        return make_url(str(url))
 
     class Config:
         env_file = f"{PROJECT_DIR}/.env"
         case_sensitive = True
+        extra = "allow"
 
 
 # dev config for local development

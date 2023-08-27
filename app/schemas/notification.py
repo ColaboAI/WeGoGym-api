@@ -14,6 +14,7 @@ class NotificationType(str, Enum):
     FOLLOW_REQUEST = "FOLLOW_REQUEST"
     FOLLOW_ACCEPTANCE = "FOLLOW_ACCEPTANCE"
 
+
 class NotificationWorkoutTitle(str, Enum):
     NEW_WORKOUT_PROMISE = "새로운 운동 약속이 생성되었습니다."
     WORKOUT_REQUEST = "새로운 참여 요청이 있습니다."
@@ -25,6 +26,7 @@ class NotificationWorkoutTitle(str, Enum):
     WORKOUT_CANCEL_PARTICIPANT = "약속 참여를 취소한 사람이 있습니다."
 
     CANCEL_WORKOUT = "운동 약속이 취소되었습니다."
+
 
 ## 운동 약속 알림 타입
 class NotificationWorkoutType(str, Enum):
@@ -79,7 +81,7 @@ class NotificationWorkoutUpdate(BaseModel):
     read_at: datetime | None = Field(None, description="읽은 시간")
 
     def get_update_dict(self):
-        return self.dict(
+        return self.model_dump(
             exclude_unset=True,
             exclude={
                 "id",

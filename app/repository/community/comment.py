@@ -32,7 +32,7 @@ async def get_list_with_like_cnt_where_post_id(
                 ),
             )
         )
-        .options(selectinload(Comment.user).load_only("id", "username", "profile_pic"))
+        .options(selectinload(Comment.user).load_only(User.id, User.username, User.profile_pic))
         .group_by(Comment.id)
         .order_by(Comment.created_at.desc())
         .where(Comment.post_id == post_id)
@@ -69,11 +69,7 @@ async def create(comment_data: dict, session: AsyncSession):
     return await session.scalar(
         select(Comment)
         .join(Comment.user, isouter=True)
-        .options(
-            contains_eager(Comment.user).load_only(
-                User.id, User.username, User.profile_pic
-            )
-        )
+        .options(contains_eager(Comment.user).load_only(User.id, User.username, User.profile_pic))
         .where(Comment.id == comment.id)
     )
 
@@ -85,15 +81,11 @@ async def get_where_id(id: int, session: AsyncSession):
 
 
 @Transactional()
-async def get_with_like_cnt_where_id(
-    id: int, user_id: UUID4 | None, session: AsyncSession
-):
+async def get_with_like_cnt_where_id(id: int, user_id: UUID4 | None, session: AsyncSession):
     stmt = (
         select(Comment)
         .join(Comment.user, isouter=True)
-        .options(
-            contains_eager(Comment.user).load_only("id", "username", "profile_pic")
-        )
+        .options(contains_eager(Comment.user).load_only(User.id, User.username, User.profile_pic))
         .join_from(
             Comment,
             CommentLike,
@@ -160,9 +152,7 @@ async def delete_where_id(id, session: AsyncSession):
 
 
 @Transactional()
-async def get_like_where_comment_id_and_user_id(
-    c_id: int, u_id: UUID, session: AsyncSession
-):
+async def get_like_where_comment_id_and_user_id(c_id: int, u_id: UUID, session: AsyncSession):
     stmt = select(CommentLike).where(
         (CommentLike.comment_id == c_id),
         (CommentLike.user_id == u_id),
@@ -172,18 +162,14 @@ async def get_like_where_comment_id_and_user_id(
 
 
 @Transactional()
-async def create_or_update_like(
-    comment_id: int, user_id: int, is_like: int, session: AsyncSession
-):
+async def create_or_update_like(comment_id: int, user_id: int, is_like: int, session: AsyncSession):
     comment_like: CommentLike = await get_like_where_comment_id_and_user_id(
         comment_id,
         user_id,
         session=session,
     )
     if comment_like is None:
-        comment_like = CommentLike(
-            comment_id=comment_id, user_id=user_id, is_liked=is_like
-        )
+        comment_like = CommentLike(comment_id=comment_id, user_id=user_id, is_liked=is_like)
         session.add(comment_like)
     else:
         if comment_like.is_liked == is_like:
@@ -196,9 +182,7 @@ async def create_or_update_like(
 
 
 @Transactional()
-async def delete_like_where_comment_id_and_user_id(
-    comment_id: int, user_id: int, session: AsyncSession
-):
+async def delete_like_where_comment_id_and_user_id(comment_id: int, user_id: int, session: AsyncSession):
     stmt = delete(CommentLike).where(
         (CommentLike.comment_id == comment_id),
         (CommentLike.user_id == user_id),

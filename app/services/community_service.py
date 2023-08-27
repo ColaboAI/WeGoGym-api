@@ -28,13 +28,11 @@ async def create_community(community_data: dict):
     return await community.create(community_data)
 
 
-async def get_posts_where_community_id(
-    community_id: int | None, limit: int, offset: int, user_id: UUID4 | None
-):
+async def get_posts_where_community_id(community_id: int | None, limit: int, offset: int, user_id: UUID4 | None):
     try:
-        total = await post.count_where_community_id(community_id)
-        posts = await post.get_list_with_like_cnt_comment_cnt_where_community_id(
-            community_id, limit, offset, user_id
+        total, posts = await asyncio.gather(
+            post.count_where_community_id(community_id),
+            post.get_list_with_like_cnt_comment_cnt_where_community_id(community_id, limit, offset, user_id),
         )
 
     except NoResultFound as e:
@@ -44,9 +42,7 @@ async def get_posts_where_community_id(
     return total, posts, next_cursor
 
 
-async def create_post(
-    user_id: UUID4, post_data: PostCreate, images: list[UploadFile] | None
-):
+async def create_post(user_id: UUID4, post_data: PostCreate, images: list[UploadFile] | None):
     post_dict = post_data.create_dict(user_id)
     try:
         post_obj: Post = await post.create(post_dict)
@@ -82,9 +78,7 @@ async def get_post_with_like_cnt_where_id(id: int, user_id: UUID4 | None = None)
         raise PostNotFound from e
 
 
-async def update_post_where_id(
-    id: int, user_id: UUID4, post_data: PostUpdate, images: list[UploadFile] | None
-):
+async def update_post_where_id(id: int, user_id: UUID4, post_data: PostUpdate, images: list[UploadFile] | None):
     post_obj = await get_post_where_id(id)
 
     if post_obj.user_id != user_id:
@@ -134,23 +128,17 @@ async def delete_post_like(post_id: int, user_id: UUID4):
         raise PostNotFound from e
 
 
-async def get_comments_where_post_id(
-    post_id: int, user_id: UUID4 | None, limit: int, offset: int
-):
+async def get_comments_where_post_id(post_id: int, user_id: UUID4 | None, limit: int, offset: int):
     try:
-        total = await comment.count_where_post_id(post_id)
-        comments = (
-            await comment.get_list_with_like_cnt_where_post_id(
-                post_id, user_id, limit, offset
-            ),
+        total, comments = await asyncio.gather(
+            comment.count_where_post_id(post_id),
+            comment.get_list_with_like_cnt_where_post_id(post_id, user_id, limit, offset),
         )
 
     except NoResultFound as e:
         raise NotFoundException("Post not found") from e
 
-    next_cursor = (
-        offset + len(comments) if total and total > offset + len(comments) else None
-    )
+    next_cursor = offset + len(comments) if total and total > offset + len(comments) else None
     return total, comments, next_cursor
 
 
