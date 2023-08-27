@@ -1,5 +1,7 @@
+from datetime import datetime
 from typing import TYPE_CHECKING
 import uuid
+from pydantic import UUID4
 from sqlalchemy import (
     Column,
     Float,
@@ -10,7 +12,7 @@ from sqlalchemy import (
     Boolean,
     Table,
 )
-from sqlalchemy.orm import relationship
+from sqlalchemy.orm import relationship, Mapped, mapped_column
 from app.core.db.mixins.timestamp_mixin import TimestampMixin
 from app.models.base import Base
 from app.models.guid import GUID
@@ -25,47 +27,40 @@ if TYPE_CHECKING:
 
 
 class WorkoutPromise(TimestampMixin, Base):
-    __tablename__ = "workout_promise"
     __mapper_args__ = {"eager_defaults": True}
-    id = Column(GUID, primary_key=True, index=True, default=uuid.uuid4)
-    title = Column(String, index=True, nullable=False)
-    description = Column(String, index=True, nullable=False)
-    max_participants = Column(Integer, default=3, nullable=False)
-    is_private = Column(Boolean, default=False)
-    status = Column(
+    id: Mapped[UUID4] = mapped_column(GUID, primary_key=True, index=True, default=uuid.uuid4)
+    title: Mapped[str] = mapped_column(String, index=True, nullable=False)
+    description: Mapped[str] = mapped_column(String, index=True, nullable=False)
+    max_participants: Mapped[int] = mapped_column(Integer, default=3, nullable=False)
+    is_private: Mapped[bool] = mapped_column(Boolean, default=False)
+    status: Mapped[str] = mapped_column(
         String,
         default=WorkoutPromiseStatus.RECRUITING,
         server_default=WorkoutPromiseStatus.RECRUITING,
         index=True,
         nullable=False,
     )
-    recruit_end_time = Column(DateTime(timezone=True), index=True)
+    recruit_end_time: Mapped[datetime] = mapped_column(DateTime(timezone=True), index=True)
     # TODO: workout_id and related table should be added
-    promise_time = Column(DateTime(timezone=True), index=True, server_default=utcnow())
-    workout_part = Column(String, index=True, nullable=True)
+    promise_time: Mapped[datetime] = mapped_column(DateTime(timezone=True), index=True, server_default=utcnow())
+    workout_part: Mapped[str] = mapped_column(String, index=True, nullable=True)
     # Child table (One to "Many")
-    admin_user_id = Column(
+    admin_user_id: Mapped[UUID4] = mapped_column(
         GUID,
         ForeignKey("user.id", ondelete="CASCADE"),
     )
-    admin_user: "User" = relationship(
-        "User", back_populates="admin_workout_promises", lazy="select"
-    )
+    admin_user: Mapped["User"] = relationship("User", back_populates="admin_workout_promises", lazy="select")
 
     # 1:1 relationship
-    chat_room_id = Column(GUID, ForeignKey("chat_room.id", ondelete="SET NULL"))
-    chat_room: "ChatRoom" = relationship(
-        "ChatRoom", back_populates="workout_promise", lazy="select"
-    )
+    chat_room_id: Mapped[UUID4] = mapped_column(GUID, ForeignKey("chat_room.id", ondelete="SET NULL"))
+    chat_room: Mapped["ChatRoom"] = relationship("ChatRoom", back_populates="workout_promise", lazy="select")
 
-    promise_location_id = Column(
-        GUID, ForeignKey("promise_location.id", ondelete="SET NULL")
-    )
-    promise_location: "PromiseLocation" = relationship(
+    promise_location_id: Mapped[UUID4] = mapped_column(GUID, ForeignKey("promise_location.id", ondelete="SET NULL"))
+    promise_location: Mapped["PromiseLocation"] = relationship(
         "PromiseLocation", back_populates="workout_promises", lazy="select"
     )
     # Parent relationship (Many to "One")
-    participants: list["WorkoutParticipant"] = relationship(
+    participants: Mapped[list["WorkoutParticipant"]] = relationship(
         "WorkoutParticipant",
         back_populates="workout_promise",
         cascade="save-update, merge, delete",
@@ -75,40 +70,31 @@ class WorkoutPromise(TimestampMixin, Base):
 
 
 class WorkoutParticipant(TimestampMixin, Base):
-    __tablename__ = "workout_participant"
     __mapper_args__ = {"eager_defaults": True}
-    id = Column(GUID, primary_key=True, index=True, default=uuid.uuid4)
-    name = Column(String, index=True)
+    id: Mapped[UUID4] = mapped_column(GUID, primary_key=True, index=True, default=uuid.uuid4)
+    name: Mapped[str] = mapped_column(String, index=True)
 
     # 참여 여부, 승인 여부
-    status = Column(String, default=ParticipantStatus.PENDING, index=True)
+    status: Mapped[str] = mapped_column(String, default=ParticipantStatus.PENDING, index=True)
 
     # 참여신청 시, 상태메세지를 입력할 수 있음
     # 참여 후에는 상태메세지로 참여자의 운동 등의 상태를 알 수 있음
-    status_message = Column(String)
-    is_admin = Column(Boolean, default=False, nullable=False)
+    status_message: Mapped[str] = mapped_column(String)
+    is_admin: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
 
     # ("Many" to one)
-    user_id = Column(GUID, ForeignKey("user.id", ondelete="CASCADE"))
-    user: "User" = relationship("User", back_populates="workout_participants")
+    user_id: Mapped[UUID4] = mapped_column(GUID, ForeignKey("user.id", ondelete="CASCADE"))
+    user: Mapped["User"] = relationship("User", back_populates="workout_participants")
 
     # ("Many" to one)
-    workout_promise_id = Column(
-        GUID, ForeignKey("workout_promise.id", ondelete="CASCADE")
-    )
-    workout_promise: WorkoutPromise = relationship(
-        "WorkoutPromise", back_populates="participants"
-    )
+    workout_promise_id: Mapped[UUID4] = mapped_column(GUID, ForeignKey("workout_promise.id", ondelete="CASCADE"))
+    workout_promise: Mapped[WorkoutPromise] = relationship("WorkoutPromise", back_populates="participants")
 
     # 1:1 relationship child
-    chat_room_member_id = Column(
-        GUID, ForeignKey("chat_room_member.id", ondelete="SET NULL")
-    )
-    chat_room_member: "ChatRoomMember" = relationship(
-        "ChatRoomMember", back_populates="workout_participant"
-    )
+    chat_room_member_id: Mapped[UUID4] = mapped_column(GUID, ForeignKey("chat_room_member.id", ondelete="SET NULL"))
+    chat_room_member: Mapped["ChatRoomMember"] = relationship("ChatRoomMember", back_populates="workout_participant")
 
-    notifications_workout_sender: list["NotificationWorkout"] = relationship(
+    notifications_workout_sender: Mapped[list["NotificationWorkout"]] = relationship(
         "NotificationWorkout",
         back_populates="sender",
         cascade="save-update, merge, delete",
@@ -116,7 +102,7 @@ class WorkoutParticipant(TimestampMixin, Base):
         foreign_keys="NotificationWorkout.sender_id",
     )
 
-    notifications_workout_recipient: list["NotificationWorkout"] = relationship(
+    notifications_workout_recipient: Mapped[list["NotificationWorkout"]] = relationship(
         "NotificationWorkout",
         back_populates="recipient",
         cascade="save-update, merge, delete",
@@ -146,29 +132,28 @@ gym_info_facility_association = Table(
 
 
 class GymInfo(TimestampMixin, Base):  # type: ignore
-    __tablename__ = "gym_info"
     __mapper_args__ = {"eager_defaults": True}
-    id = Column(GUID, primary_key=True, index=True, default=uuid.uuid4)
+    id: Mapped[UUID4] = mapped_column(GUID, primary_key=True, index=True, default=uuid.uuid4)
     # 헬스장 이름
-    name = Column(String, index=True, nullable=False)
+    name: Mapped[str] = mapped_column(String, index=True, nullable=False)
     # 사용자가 직접 등록한 헬스장인지 여부
-    is_custom_gym = Column(Boolean, default=False)
+    is_custom_gym: Mapped[bool] = mapped_column(Boolean, default=False)
     # 도로명 주소
-    address = Column(String, index=True, nullable=False, unique=True)
+    address: Mapped[str] = mapped_column(String, index=True, nullable=False, unique=True)
     # 우편번호
-    zip_code = Column(String)
+    zip_code: Mapped[str] = mapped_column(String)
     # 영업 상태
-    status = Column(String)
+    status: Mapped[str] = mapped_column(String)
 
     # Parent relationship (Many to "One")
-    users: list["User"] = relationship(
+    users: Mapped[list["User"]] = relationship(
         "User",
         back_populates="gym_info",
         cascade="save-update, merge, delete",
         passive_deletes=True,
     )
     # (Many to Many, 삭제시 cascade 안함.)
-    facilities: list["GymFacility"] = relationship(
+    facilities: Mapped[list["GymFacility"]] = relationship(
         "GymFacility",
         secondary=gym_info_facility_association,
         back_populates="gym_infos",
@@ -176,13 +161,12 @@ class GymInfo(TimestampMixin, Base):  # type: ignore
 
 
 class GymFacility(Base):
-    __tablename__ = "gym_facility"
-    id = Column(GUID, primary_key=True, index=True, default=uuid.uuid4)
-    name = Column(String, index=True, nullable=False, unique=True)
-    description = Column(String, index=True)
+    id: Mapped[UUID4] = mapped_column(GUID, primary_key=True, index=True, default=uuid.uuid4)
+    name: Mapped[str] = mapped_column(String, index=True, nullable=False, unique=True)
+    description: Mapped[str] = mapped_column(String, index=True)
 
     # (Many to Many)
-    gym_infos: list[GymInfo] = relationship(
+    gym_infos: Mapped[list[GymInfo]] = relationship(
         "GymInfo",
         secondary=gym_info_facility_association,
         back_populates="facilities",
@@ -190,19 +174,18 @@ class GymFacility(Base):
 
 
 class PromiseLocation(TimestampMixin, Base):
-    __tablename__ = "promise_location"
     __mapper_args__ = {"eager_defaults": True}
-    id = Column(GUID, primary_key=True, index=True, default=uuid.uuid4)
+    id: Mapped[UUID4] = mapped_column(GUID, primary_key=True, index=True, default=uuid.uuid4)
     # 장소 이름
-    place_name = Column(String, nullable=False)
+    place_name: Mapped[str] = mapped_column(String, nullable=False)
     # 위도
-    latitude = Column(Float, nullable=False)
+    latitude: Mapped[float] = mapped_column(Float, nullable=False)
     # 경도
-    longitude = Column(Float, nullable=False)
+    longitude: Mapped[float] = mapped_column(Float, nullable=False)
     # 주소
-    address = Column(String, nullable=False)
+    address: Mapped[str] = mapped_column(String, nullable=False)
 
-    workout_promises: list[WorkoutPromise] = relationship(
+    workout_promises: Mapped[list[WorkoutPromise]] = relationship(
         "WorkoutPromise",
         back_populates="promise_location",
         cascade="save-update, merge, delete",

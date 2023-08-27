@@ -15,7 +15,8 @@ from app.services.user_service import get_blocked_me_list
 from app.utils.ecs_log import logger
 import json
 from fastapi import HTTPException, WebSocket
-from aioredis.client import Redis, PubSub
+
+from redis.asyncio.client import Redis, PubSub
 from app.core.helpers.redis import get_redis_conn
 from dataclasses import asdict, dataclass
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -78,15 +79,12 @@ class ChatService:
                         )
                         banned_set.add(self.user_id)
 
-                        db_chat_room = await get_chat_room_and_members_by_id(
-                            self.chat_room_id, self.session
-                        )
+                        db_chat_room = await get_chat_room_and_members_by_id(self.chat_room_id, self.session)
 
                         fcm_tokens = [
                             member.user.fcm_token
                             for member in db_chat_room.members
-                            if member.user.fcm_token
-                            and member.user.id not in banned_set
+                            if member.user.fcm_token and member.user.id not in banned_set
                         ]
                         title = msg.user.username
                         body = msg.text
@@ -96,9 +94,7 @@ class ChatService:
                         )
 
                 else:
-                    logger.warning(
-                        f"Websocket state: {self.ws.application_state}, reconnecting..."  # noqa: E501
-                    )
+                    logger.warning(f"Websocket state: {self.ws.application_state}, reconnecting...")  # noqa: E501
                     break
             except Exception as e:
                 logger.debug(f"pub handler {e}")
@@ -118,9 +114,7 @@ class ChatService:
                         await self.ws.send_json(asdict(chat_message), mode="text")
 
                 else:
-                    logger.warning(
-                        f"Websocket state: {self.ws.application_state}, reconnecting..."  # noqa: E501
-                    )
+                    logger.warning(f"Websocket state: {self.ws.application_state}, reconnecting...")  # noqa: E501
                     break
             except Exception as e:
                 logger.debug(f"sub handler: {e}")
@@ -164,9 +158,7 @@ async def get_user_mem_with_ids(
 ) -> ChatRoomMember:
     """return chat room member if user is in room"""
 
-    stmt = select(ChatRoomMember).where(
-        ChatRoomMember.chat_room_id == room_id, ChatRoomMember.user_id == user_id
-    )
+    stmt = select(ChatRoomMember).where(ChatRoomMember.chat_room_id == room_id, ChatRoomMember.user_id == user_id)
     result = await session.execute(stmt)
     data = result.scalars().first()
     if data is None:
@@ -174,16 +166,17 @@ async def get_user_mem_with_ids(
     return data
 
 
-async def get_chat_room_and_members_by_id(
-    chat_room_id: UUID, session: AsyncSession
-) -> ChatRoom:
+async def get_chat_room_and_members_by_id(chat_room_id: UUID, session: AsyncSession) -> ChatRoom:
     """return chat room and members by room_id"""
     stmt = (
         select(ChatRoom)
         .options(
             selectinload(ChatRoom.members).options(
                 selectinload(ChatRoomMember.user).load_only(
-                    "id", "username", "profile_pic", "fcm_token"
+                    User.id,
+                    User.username,
+                    User.profile_pic,
+                    User.fcm_token,
                 )
             )
         )
@@ -248,9 +241,7 @@ async def get_chat_room_list_by_user_id(
         select(ChatRoom)
         .options(
             selectinload(ChatRoom.members).options(
-                selectinload(ChatRoomMember.user).load_only(
-                    User.id, User.username, User.profile_pic
-                ),
+                selectinload(ChatRoomMember.user).load_only(User.id, User.username, User.profile_pic),
             )
         )
         .join(
@@ -263,9 +254,7 @@ async def get_chat_room_list_by_user_id(
         .where(
             ChatRoom.id == chat_rooms.c.chat_room_id,
             ChatRoom.admin_user_id.notin_(
-                select(user_block_list.c.blocked_user_id).where(
-                    user_block_list.c.user_id == user_id
-                )
+                select(user_block_list.c.blocked_user_id).where(user_block_list.c.user_id == user_id)
             ),
         )
     )
@@ -297,9 +286,7 @@ async def get_chat_room_list_by_user_id(
         .where(
             ChatRoomMember.user_id == user_id,
             ChatRoom.admin_user_id.notin_(
-                select(user_block_list.c.blocked_user_id).where(
-                    user_block_list.c.user_id == user_id
-                )
+                select(user_block_list.c.blocked_user_id).where(user_block_list.c.user_id == user_id)
             ),
         )
     )
@@ -323,20 +310,10 @@ async def get_chat_room_list_by_user_id(
 
 
 # public
-async def get_public_chat_room_list(
-    session: AsyncSession, limit: int, offset: int | None = None
-):
+async def get_public_chat_room_list(session: AsyncSession, limit: int, offset: int | None = None):
     """return all chat room that user is in"""
-    stmt = (
-        select(ChatRoom)
-        .order_by(ChatRoom.created_at.desc())
-        .where(ChatRoom.is_private.is_(False))
-    )
-    total_stmt = (
-        select(func.count(ChatRoom.id))
-        .select_from(ChatRoom)
-        .where(ChatRoom.is_private.is_(False))
-    )
+    stmt = select(ChatRoom).order_by(ChatRoom.created_at.desc()).where(ChatRoom.is_private.is_(False))
+    total_stmt = select(func.count(ChatRoom.id)).select_from(ChatRoom).where(ChatRoom.is_private.is_(False))
     if offset:
         stmt = stmt.offset(offset)
     if limit:
@@ -352,16 +329,14 @@ async def get_chat_room_member_by_user_and_room_id(
     room_id: UUID,
     session: AsyncSession,
 ):
-    stmt = select(ChatRoomMember).where(
-        ChatRoomMember.user_id == user_id, ChatRoomMember.chat_room_id == room_id
-    )
+    stmt = select(ChatRoomMember).where(ChatRoomMember.user_id == user_id, ChatRoomMember.chat_room_id == room_id)
     result = await session.execute(stmt)
     chat_room_member = result.scalars().first()
     return chat_room_member
 
 
 async def make_chat_room_member(user_id: UUID, room_id: UUID, session: AsyncSession):
-    chat_room_member = ChatRoomMember(user_id=user_id, chat_room_id=room_id)
+    chat_room_member = ChatRoomMember(user_id=user_id, chat_room_id=room_id)  # type: ignore
     session.add(chat_room_member)
     await session.commit()
     return chat_room_member
@@ -372,9 +347,7 @@ async def delete_chat_room_member_by_user_and_room_id(
     user_id: UUID,
     room_id: UUID,
 ):
-    stmt = text(
-        "DELETE FROM chat_room_member WHERE user_id = :user_id AND chat_room_id = :room_id"
-    )
+    stmt = text("DELETE FROM chat_room_member WHERE user_id = :user_id AND chat_room_id = :room_id")
     try:
         await session.execute(stmt, {"user_id": user_id, "room_id": room_id})
         await session.commit()
@@ -413,10 +386,8 @@ async def get_user_by_id(user_id: UUID, session: AsyncSession) -> User:
     return usr
 
 
-async def post_chat_message(
-    user_id: UUID, room_id: UUID, message: str, session: AsyncSession
-):
-    msg = Message(user_id=user_id, chat_room_id=room_id, text=message)
+async def post_chat_message(user_id: UUID, room_id: UUID, message: str, session: AsyncSession):
+    msg = Message(user_id=user_id, chat_room_id=room_id, text=message)  # type: ignore
     session.add(msg)
 
     await session.commit()
@@ -439,9 +410,7 @@ async def get_chat_messages(
         )
         .order_by(Message.created_at.desc(), Message.id.desc())
     )
-    total_stmt = select(func.count(Message.id)).where(
-        Message.chat_room_id == room_id, Message.created_at > created_at
-    )
+    total_stmt = select(func.count(Message.id)).where(Message.chat_room_id == room_id, Message.created_at > created_at)
     total = await session.execute(total_stmt)
     if offset:
         stmt = stmt.offset(offset)
@@ -452,9 +421,7 @@ async def get_chat_messages(
     return total.scalars().first(), result.scalars().all()
 
 
-async def update_last_read_at_by_mem_id(
-    session: AsyncSession, chat_room_member_id: str
-):
+async def update_last_read_at_by_mem_id(session: AsyncSession, chat_room_member_id: str):
     stmt = select(ChatRoomMember).where(ChatRoomMember.id == chat_room_member_id)
     result = await session.execute(stmt)
     chat_room_member_obj = result.scalars().first()
@@ -466,9 +433,7 @@ async def update_last_read_at_by_mem_id(
     await session.commit()
 
 
-async def delete_chat_room_member_by_id(
-    session: AsyncSession, chat_room_member_id: str, user_id: str
-):
+async def delete_chat_room_member_by_id(session: AsyncSession, chat_room_member_id: str, user_id: str):
     # stmt = text(
     #     "DELETE FROM chat_room_members WHERE id = :chat_room_member_id AND user_id = :user_id"
     # )
@@ -476,9 +441,7 @@ async def delete_chat_room_member_by_id(
     #     stmt, {"chat_room_member_id": chat_room_member_id, "user_id": user_id}
     # )
     # await session.commit()
-    stmt = delete(ChatRoomMember).where(
-        ChatRoomMember.id == chat_room_member_id, ChatRoomMember.user_id == user_id
-    )
+    stmt = delete(ChatRoomMember).where(ChatRoomMember.id == chat_room_member_id, ChatRoomMember.user_id == user_id)
     try:
         await session.execute(stmt)
         await session.commit()
@@ -507,9 +470,7 @@ async def get_chat_message_by_id(session: AsyncSession, message_id: UUID) -> Mes
     return msg
 
 
-async def get_last_message_and_members_by_room_id(
-    session: AsyncSession, room_id: UUID
-) -> Message | None:
+async def get_last_message_and_members_by_room_id(session: AsyncSession, room_id: UUID) -> Message | None:
     stmt = (
         select(Message)
         .where(Message.chat_room_id == room_id)
@@ -532,10 +493,7 @@ async def find_chat_room_by_user_ids(
             ChatRoom.id,
         )
         .join(ChatRoomMember, ChatRoom.id == ChatRoomMember.chat_room_id)
-        .where(
-            (ChatRoom.is_group_chat.is_(is_group_chat))
-            & (ChatRoomMember.user_id.in_(user_ids))
-        )
+        .where((ChatRoom.is_group_chat.is_(is_group_chat)) & (ChatRoomMember.user_id.in_(user_ids)))
         .group_by(ChatRoom.id)
         .having(func.count(distinct(ChatRoomMember.user_id)) == len(user_ids))
     )

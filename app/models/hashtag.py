@@ -1,7 +1,10 @@
+from typing import TYPE_CHECKING
 from app.models import Base
-from sqlalchemy import Column, Integer, String, ForeignKey, Table
-from sqlalchemy.orm import relationship
+from sqlalchemy import Integer, String, ForeignKey, Table, Column
+from sqlalchemy.orm import relationship, mapped_column, Mapped
 
+if TYPE_CHECKING:
+    from .audio import Audio
 
 audio_hashtag_association_table = Table(
     "audio_hashtag_association",
@@ -12,9 +15,6 @@ audio_hashtag_association_table = Table(
 
 
 class Hashtag(Base):
-    __tablename__ = "hashtag"
-    id = Column(Integer, primary_key=True, index=True)
-    name = Column(String(100), nullable=False, unique=True)
-    audio = relationship(  # type: ignore
-        "Audio", secondary=audio_hashtag_association_table, back_populates="hashtag"
-    )
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
+    name: Mapped[str] = mapped_column(String(100), nullable=False, unique=True)
+    audio: Mapped["Audio"] = relationship("Audio", secondary=audio_hashtag_association_table, back_populates="hashtag")  # type: ignore

@@ -1,5 +1,6 @@
-from sqlalchemy import Column, DateTime
-from sqlalchemy.orm import declared_attr, declarative_mixin
+from datetime import datetime
+from sqlalchemy import DateTime
+from sqlalchemy.orm import declared_attr, declarative_mixin, Mapped, mapped_column
 
 from app.utils.generics import utcnow
 
@@ -7,12 +8,12 @@ from app.utils.generics import utcnow
 @declarative_mixin
 class TimestampMixin:
     @declared_attr
-    def created_at(cls) -> Column[DateTime]:
-        return Column(DateTime(timezone=True), server_default=utcnow(), nullable=False)
+    def created_at(cls) -> Mapped[datetime]:
+        return mapped_column(DateTime(timezone=True), server_default=utcnow(), nullable=False)
 
     @declared_attr
-    def updated_at(cls) -> Column[DateTime]:
-        return Column(
+    def updated_at(cls) -> Mapped[datetime]:
+        return mapped_column(
             DateTime(timezone=True),
             server_default=utcnow(),
             onupdate=utcnow(),

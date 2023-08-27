@@ -8,6 +8,7 @@ from app.core.exceptions.notification import (
     NotificaitonNotFoundException,
 )
 from app.models.notification import NotificationWorkout, Notification
+from app.models.user import User
 from app.models.workout_promise import WorkoutParticipant
 
 from sqlalchemy.orm import selectinload
@@ -23,10 +24,8 @@ async def get_notification_workout_list(
     user_id: UUID,
     limit: int = 10,
     offset: int | None = 0,
-) -> tuple[int | None, list[NotificationWorkout]]:
-    workout_participant_id_list_by_user_id = (
-        await get_workout_participant_id_list_by_user_id(db, user_id)
-    )
+):
+    workout_participant_id_list_by_user_id = await get_workout_participant_id_list_by_user_id(db, user_id)
 
     stmt = (
         select(NotificationWorkout)
@@ -34,23 +33,19 @@ async def get_notification_workout_list(
         .options(
             selectinload(NotificationWorkout.sender).options(
                 selectinload(WorkoutParticipant.user).load_only(
-                    "id", "username", "profile_pic"
+                    User.id,
+                    User.username,
+                    User.profile_pic,
                 )
             ),
-            selectinload(NotificationWorkout.recipient).options(
-                selectinload(WorkoutParticipant.user)
-            ),
+            selectinload(NotificationWorkout.recipient).options(selectinload(WorkoutParticipant.user)),
         )
-        .where(
-            NotificationWorkout.recipient_id.in_(workout_participant_id_list_by_user_id)
-        )
+        .where(NotificationWorkout.recipient_id.in_(workout_participant_id_list_by_user_id))
     )
 
     t_stmt = (
         select(func.count("*"))
-        .where(
-            NotificationWorkout.recipient_id.in_(workout_participant_id_list_by_user_id)
-        )
+        .where(NotificationWorkout.recipient_id.in_(workout_participant_id_list_by_user_id))
         .select_from(NotificationWorkout)
     )
 
@@ -70,8 +65,8 @@ async def update_notification_workout_by_id(
     db: AsyncSession,
     user_id: UUID,
     notification_id: UUID,
-) -> NotificationWorkout:
-    stmt = select(Notification).where(Notification.id == notification_id)
+):
+    stmt = select(NotificationWorkout).where(Notification.id == notification_id)
     res = await db.execute(stmt)
     notification = res.scalars().first()
     if not notification:

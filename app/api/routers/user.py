@@ -1,15 +1,19 @@
 from datetime import datetime, timezone
+from typing_extensions import Annotated
+
 from uuid import UUID
 from fastapi import (
     APIRouter,
     Body,
     Depends,
     File,
+    Form,
     Query,
     Request,
     UploadFile,
     BackgroundTasks,
 )
+from pydantic import Json
 from app.core.exceptions.base import BadRequestException
 from app.core.fastapi.dependencies.premission import (
     AllowAll,
@@ -138,18 +142,13 @@ async def check_user_exists(
     username: str = Query(None, description="Username"),
 ):
     if not phone_number and not username:
-        raise BadRequestException(
-            "You must provide phone number or username to check user exists"
-        )
+        raise BadRequestException("You must provide phone number or username to check user exists")
 
     out = {}
     if phone_number:
-        out["phone_number_exists"] = await check_user_phone_number(
-            db, phone_number=phone_number
-        )
+        out["phone_number_exists"] = await check_user_phone_number(db, phone_number=phone_number)
     if username:
         out["username_exists"] = await check_username(db, username=username)
-
     return out
 
 
@@ -165,12 +164,12 @@ async def check_user_exists(
     dependencies=[Depends(PermissionDependency([AllowAll]))],
 )
 async def create_user(
-    data: UserCreate = Body(..., description="User Create Request"),
-    file: UploadFile | None = File(None, description="Profile Image"),
+    data: Annotated[Json[UserCreate], Form()],
+    file: Annotated[UploadFile | None, File(description="Profile Image")] = None,
     session: AsyncSession = Depends(get_db_transactional_session),
 ):
     usr_svc = UserService()
-    user = await usr_svc.create_user(**data.dict())
+    user = await usr_svc.create_user(**data.model_dump())
     token = await usr_svc.login(phone_number=data.phone_number)
     img_url = None
     update_user = None
@@ -248,8 +247,8 @@ async def get_my_info(
 )
 async def patch_my_info(
     req: Request,
-    data: UserUpdate = Body(...),
-    file: UploadFile | None = File(None, description="새로운 프로필 사진"),
+    data: Annotated[Json[UserUpdate], Form()],
+    file: Annotated[UploadFile | None, File(description="새로운 프로필 사진")] = None,
     session: AsyncSession = Depends(get_db_transactional_session),
 ):
     img_url = upload_image_to_s3(file, req.user.id) if file else None

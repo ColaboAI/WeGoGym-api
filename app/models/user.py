@@ -5,7 +5,9 @@ Note, imported by alembic migrations logic, see `alembic/env.py`
 """
 
 
+from datetime import datetime
 from typing import TYPE_CHECKING
+from pydantic import UUID4
 from sqlalchemy import (
     Boolean,
     Column,
@@ -17,7 +19,7 @@ from sqlalchemy import (
     text,
 )
 from sqlalchemy.sql import expression
-from sqlalchemy.orm import relationship, Mapped
+from sqlalchemy.orm import relationship, Mapped, mapped_column
 from app.core.db.mixins.timestamp_mixin import TimestampMixin
 
 from app.models import Base
@@ -52,39 +54,38 @@ user_block_list = Table(
 
 
 class User(TimestampMixin, Base):  # type: ignore
-    __tablename__ = "user"
-    id = Column(GUID, primary_key=True, default=uuid.uuid4)
+    id: Mapped[UUID4] = mapped_column(GUID, primary_key=True, default=uuid.uuid4)
     # TODO: username check
-    username = Column(String(100), nullable=False, unique=True, index=True)
-    phone_number = Column(String(100), nullable=False, unique=True, index=True)
-    is_superuser = Column(Boolean, server_default=expression.false(), nullable=False)
-    profile_pic = Column(String(255), nullable=True)
-    bio = Column(String(100), nullable=True)
+    username: Mapped[str] = mapped_column(String(100), nullable=False, unique=True, index=True)
+    phone_number: Mapped[str] = mapped_column(String(100), nullable=False, unique=True, index=True)
+    is_superuser: Mapped[bool] = mapped_column(Boolean, server_default=expression.false(), nullable=False)
+    profile_pic: Mapped[str] = mapped_column(String(255), nullable=True)
+    bio: Mapped[str] = mapped_column(String(100), nullable=True)
     # TODO: age to be calculated from birthdate
 
-    age = Column(String(50), server_default="20220701", nullable=False)
-    weight = Column(Integer, server_default=text("0"), nullable=False)
-    height = Column(Integer, server_default=text("0"), nullable=False)
-    gender = Column(String(50), server_default="other", nullable=False)
-    workout_per_week = Column(Integer, server_default=text("0"), nullable=False)
-    workout_level = Column(String(100), nullable=True)
-    workout_goal = Column(String(255), nullable=True)
-    workout_time_per_day = Column(String(100), nullable=True)
-    workout_time_period = Column(String(50), nullable=True)
-    workout_style = Column(String(255), nullable=True)
-    workout_routine = Column(String(255), nullable=True)
-    workout_partner_gender = Column(String(50), nullable=True)
-    city = Column(String(255), nullable=True)
-    district = Column(String(255), nullable=True)
-    address = Column(String(255), nullable=True)
-    fcm_token = Column(String(255), nullable=True)
+    age: Mapped[str] = mapped_column(String(50), server_default="20220701", nullable=False)
+    weight: Mapped[int] = mapped_column(Integer, server_default=text("0"), nullable=False)
+    height: Mapped[int] = mapped_column(Integer, server_default=text("0"), nullable=False)
+    gender: Mapped[str] = mapped_column(String(50), server_default="other", nullable=False)
+    workout_per_week: Mapped[int] = mapped_column(Integer, server_default=text("0"), nullable=False)
+    workout_level: Mapped[str | None] = mapped_column(String(100), nullable=True)
+    workout_goal: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    workout_time_per_day: Mapped[str | None] = mapped_column(String(100), nullable=True)
+    workout_time_period: Mapped[str | None] = mapped_column(String(50), nullable=True)
+    workout_style: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    workout_routine: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    workout_partner_gender: Mapped[str | None] = mapped_column(String(50), nullable=True)
+    city: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    district: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    address: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    fcm_token: Mapped[str | None] = mapped_column(String(255), nullable=True)
     # TODO: last_active_at should be updated when user is active (init app)
     # remove fcm_token when user is inactive with 2 months
-    last_active_at = Column(DateTime(timezone=True), nullable=True)
+    last_active_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
 
     # Child relationship with GymInfo ("many" to one)
-    gym_info_id = Column(GUID, ForeignKey("gym_info.id", ondelete="SET NULL"))
-    gym_info: "GymInfo" = relationship("GymInfo", back_populates="users")
+    gym_info_id: Mapped[UUID4] = mapped_column(GUID, ForeignKey("gym_info.id", ondelete="SET NULL"))
+    gym_info: Mapped["GymInfo"] = relationship("GymInfo", back_populates="users")
 
     # Parent relationship with ChatRoomMember (Many to "One")
     chat_room_members: Mapped[list[ChatRoom]] = relationship(
@@ -126,7 +127,7 @@ class User(TimestampMixin, Base):  # type: ignore
     )
 
     # 앱 전체에서 차단 여부
-    blocked = Column(
+    blocked: Mapped[bool] = mapped_column(
         Boolean,
         default=False,
         nullable=False,

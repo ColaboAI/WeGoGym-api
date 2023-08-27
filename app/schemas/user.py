@@ -1,15 +1,16 @@
 """
 All fields in schemas are defaults from FastAPI Users, repeated below for easier view
 """
-from typing import Optional
+from typing import Any, Optional
 from datetime import datetime
-import json
-from pydantic import BaseModel, Field, UUID4
+from pydantic_core import CoreSchema
+import ujson
+from pydantic import BaseModel, Field, UUID4, GetCoreSchemaHandler
 
 
 class CreateUpdateDictModel(BaseModel):
     def update_dict(self):
-        return self.dict(
+        return self.model_dump(
             exclude_unset=True,
             exclude={
                 # TODO: 일반적인 update에서 수정 불가능한 필드 설정
@@ -22,7 +23,7 @@ class CreateUpdateDictModel(BaseModel):
         )
 
     def create_update_dict_superuser(self):
-        return self.dict(exclude_unset=True, exclude={"id"})
+        return self.model_dump(exclude_unset=True, exclude={"id"})
 
 
 class UserRead(CreateUpdateDictModel):
@@ -83,16 +84,6 @@ class UserCreate(CreateUpdateDictModel):
     city: str = Field(..., description="시/도")
     district: str = Field(..., description="구/군")
 
-    @classmethod
-    def __get_validators__(cls):
-        yield cls.validate_to_json
-
-    @classmethod
-    def validate_to_json(cls, value):
-        if isinstance(value, str):
-            return cls(**json.loads(value))
-        return value
-
 
 class UserUpdate(CreateUpdateDictModel):
     profile_pic: str | None = Field(None, description="기존 프로필 사진")
@@ -111,21 +102,11 @@ class UserUpdate(CreateUpdateDictModel):
     gym_info: "Optional[GymInfoBase]" = Field(None, description="헬스장 정보")
     fcm_token: str | None = Field(None, description="FCM Token")
     last_active_at: datetime | None = Field(None, description="마지막 활동 시간")
-    workout_style: str | None
-    workout_routine: str | None
-    workout_partner_gender: str | None
-    city: str | None
-    district: str | None
-
-    @classmethod
-    def __get_validators__(cls):
-        yield cls.validate_to_json
-
-    @classmethod
-    def validate_to_json(cls, value):
-        if isinstance(value, str):
-            return cls(**json.loads(value))
-        return value
+    workout_style: str | None = Field(None, description="유산소, 근력 운동 등의 운동 스타일")
+    workout_routine: str | None = Field(None, description="3분할, 4분할 등의 운동 루틴")
+    workout_partner_gender: str | None = Field(None, description="선호하는 운동 파트너 성별")
+    city: str | None = Field(None, description="시/도")
+    district: str | None = Field(None, description="구/군")
 
 
 class LoginRequest(BaseModel):
@@ -149,8 +130,8 @@ class RecommendedUser(BaseModel):
 
 
 class CheckUserInfoResponse(BaseModel):
-    phone_number_exists: bool | None
-    username_exists: bool | None
+    phone_number_exists: bool | None = None
+    username_exists: bool | None = None
 
 
 # if TYPE_CHECKING:

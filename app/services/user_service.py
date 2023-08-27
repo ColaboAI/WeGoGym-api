@@ -1,9 +1,8 @@
-from typing import Mapping
-from uuid import UUID
+from typing import Mapping, Sequence
 from fastapi import BackgroundTasks, HTTPException
+from pydantic import UUID4
 
 from sqlalchemy import delete, func, insert, or_, select, and_
-from sqlalchemy.engine import Row
 from app.core.exceptions.user import UserAlreadyExistsException, UserBlockedException
 
 from app.models import User
@@ -30,7 +29,7 @@ class UserService:
         session: AsyncSession,
         limit: int = 10,
         offset: int | None = None,
-    ) -> tuple[int | None, list[User]]:
+    ):
         query = select(User).order_by(User.created_at.desc())
         total = select(func.count()).select_from(User)
 
@@ -44,19 +43,15 @@ class UserService:
         return total_res.scalars().first(), result.scalars().all()
 
     @Transactional()
-    async def create_user(
-        self, phone_number: str, username: str, session: AsyncSession, **kwargs
-    ) -> User:
+    async def create_user(self, phone_number: str, username: str, session: AsyncSession, **kwargs) -> User:
         try:
-            query = select(User).where(
-                or_(User.phone_number == phone_number, User.username == username)
-            )
+            query = select(User).where(or_(User.phone_number == phone_number, User.username == username))
             result = await session.execute(query)
             is_exist = result.scalars().first()
             if is_exist:
                 raise DuplicatePhoneNumberOrUsernameException
 
-            user = User(phone_number=phone_number, username=username, **kwargs)
+            user = User(phone_number=phone_number, username=username, **kwargs)  # type: ignore
             session.add(user)
             await session.commit()
 
@@ -69,7 +64,7 @@ class UserService:
             raise e
 
     @Transactional()
-    async def is_superuser(self, user_id: UUID, session: AsyncSession) -> bool:
+    async def is_superuser(self, user_id: UUID4, session: AsyncSession) -> bool:
         result = await session.execute(select(User).where(User.id == user_id))
         user = result.scalars().first()
         if not user:
@@ -82,9 +77,7 @@ class UserService:
 
     @Transactional()
     async def login(self, phone_number: str, session: AsyncSession) -> LoginResponse:
-        result = await session.execute(
-            select(User).where(and_(User.phone_number == phone_number))
-        )
+        result = await session.execute(select(User).where(and_(User.phone_number == phone_number)))
         user = result.scalars().first()
 
         if not user:
@@ -92,15 +85,13 @@ class UserService:
 
         response = LoginResponse(
             token=TokenHelper.encode(payload={"user_id": str(user.id)}),
-            refresh_token=TokenHelper.encode(
-                payload={"sub": "refresh"}, expire_period=60 * 60 * 24 * 30
-            ),
+            refresh_token=TokenHelper.encode(payload={"sub": "refresh"}, expire_period=60 * 60 * 24 * 30),
             user_id=user.id,
         )
         return response
 
     @Transactional()
-    async def logout(self, user_id: UUID, session: AsyncSession) -> None:
+    async def logout(self, user_id: UUID4, session: AsyncSession) -> None:
         result = await session.execute(select(User).where(User.id == user_id))
         user: User | None = result.scalars().first()
         if not user:
@@ -109,9 +100,7 @@ class UserService:
         await session.commit()
 
 
-async def delete_user_by_id(
-    user_id: UUID, session: AsyncSession, bg: BackgroundTasks
-) -> User:
+async def delete_user_by_id(user_id: UUID4, session: AsyncSession, bg: BackgroundTasks) -> User:
     user = await get_my_info_by_id(user_id, session)
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
@@ -136,9 +125,7 @@ def delete_user_in_firebase(phone_number: str):
         logger.debug(e)
 
 
-async def update_my_profile_pic_by_id(
-    user_id: UUID, profile_pic: str, session: AsyncSession
-) -> User:
+async def update_my_profile_pic_by_id(user_id: UUID4, profile_pic: str, session: AsyncSession) -> User:
     user = await get_my_info_by_id(user_id, session)
 
     # Update the profile picture URL
@@ -151,16 +138,14 @@ async def update_my_profile_pic_by_id(
     return user
 
 
-async def update_my_info_by_id(
-    user_id: UUID, update_req: UserUpdate, session: AsyncSession
-) -> User:
+async def update_my_info_by_id(user_id: UUID4, update_req: UserUpdate, session: AsyncSession) -> User:
     user = await get_my_info_by_id(user_id, session)
     # unsubscribe old fcm token
     if update_req.fcm_token is not None:
         if user.fcm_token != update_req.fcm_token:
             old_fcm_token = user.fcm_token
 
-    for k, v in update_req.dict(exclude_unset=True).items():
+    for k, v in update_req.update_dict().items():
         if v is not None:
             if k == "gym_info":
                 if user.gym_info is not None:
@@ -174,6 +159,7 @@ async def update_my_info_by_id(
                     db_gym_info = GymInfo(**v)
                 user.gym_info = db_gym_info
             else:
+                print(k, v)
                 setattr(user, k, v)
 
     session.add(user)
@@ -182,9 +168,7 @@ async def update_my_info_by_id(
     return user
 
 
-async def get_my_info_by_id(
-    user_id: UUID, session: AsyncSession, req_user_id: UUID | None = None
-) -> User:
+async def get_my_info_by_id(user_id: UUID4, session: AsyncSession, req_user_id: UUID4 | None = None) -> User:
     is_blocked = False
     if req_user_id is not None:
         is_blocked = await is_blocked_user(session, user_id, req_user_id)
@@ -193,16 +177,14 @@ async def get_my_info_by_id(
     if is_blocked:
         raise UserBlockedException
 
-    result = await session.execute(
-        select(User).options(selectinload(User.gym_info)).where(User.id == user_id)
-    )
+    result = await session.execute(select(User).options(selectinload(User.gym_info)).where(User.id == user_id))
     user: User | None = result.scalars().first()
     if not user:
         raise UserNotFoundException
     return user
 
 
-async def get_random_user_with_limit(db: AsyncSession, user_id: UUID, limit: int = 3):
+async def get_random_user_with_limit(db: AsyncSession, user_id: UUID4, limit: int = 3):
     # exclude myself and blocked user
     result = await db.execute(
         select(User.id, User.profile_pic, User.username)
@@ -210,11 +192,7 @@ async def get_random_user_with_limit(db: AsyncSession, user_id: UUID, limit: int
         .limit(limit)
         .where(
             User.id != user_id,
-            User.id.not_in(
-                select(user_block_list.c.blocked_user_id).where(
-                    user_block_list.c.user_id == user_id
-                )
-            ),
+            User.id.not_in(select(user_block_list.c.blocked_user_id).where(user_block_list.c.user_id == user_id)),
         )
     )
 
@@ -225,11 +203,9 @@ async def get_random_user_with_limit(db: AsyncSession, user_id: UUID, limit: int
     return out
 
 
-async def get_others_info_by_id(user_id: UUID, session: AsyncSession) -> User:
+async def get_others_info_by_id(user_id: UUID4, session: AsyncSession) -> User:
     result = await session.execute(
-        select(User)
-        .options(selectinload(User.gym_info), raiseload("*"))
-        .where(User.id == user_id)
+        select(User).options(selectinload(User.gym_info), raiseload("*")).where(User.id == user_id)
     )
     user: User | None = result.scalars().first()
     if not user:
@@ -238,23 +214,21 @@ async def get_others_info_by_id(user_id: UUID, session: AsyncSession) -> User:
 
 
 async def check_user_phone_number(session: AsyncSession, phone_number: str):
-    result = await session.execute(
-        select(User.id).where(User.phone_number == phone_number)
-    )
-    id: str | None = result.scalars().first()
+    result = await session.execute(select(User.id).where(User.phone_number == phone_number))
+    id: UUID4 | None = result.scalars().first()
     return id is not None
 
 
 async def check_username(session: AsyncSession, username: str) -> bool:
     result = await session.execute(select(User.id).where(User.username == username))
-    id: str | None = result.scalars().first()
+    id: UUID4 | None = result.scalars().first()
     return id is not None
 
 
 async def block_user_by_id(
     session: AsyncSession,
-    user_id: UUID,
-    block_user_id: UUID,
+    user_id: UUID4,
+    block_user_id: UUID4,
 ) -> bool:
     is_blocked = await is_blocked_user(session, user_id, block_user_id)
     if is_blocked:
@@ -268,7 +242,7 @@ async def block_user_by_id(
 
 async def get_blocked_users(
     session: AsyncSession,
-    user_id: UUID,
+    user_id: UUID4,
 ) -> list[User]:
     user = await get_my_info_by_id(user_id, session)
     return user.blocked_users
@@ -276,8 +250,8 @@ async def get_blocked_users(
 
 async def unblock_user_by_id(
     session: AsyncSession,
-    user_id: UUID,
-    block_user_id: UUID,
+    user_id: UUID4,
+    block_user_id: UUID4,
 ) -> bool:
     is_blocked = await is_blocked_user(session, user_id, block_user_id)
     if is_blocked:
@@ -290,11 +264,9 @@ async def unblock_user_by_id(
 
 async def get_blocked_me_list(
     session: AsyncSession,
-    user_id: UUID,
-) -> set[UUID]:
-    stmt = select(user_block_list.c.user_id).where(
-        user_block_list.c.blocked_user_id == user_id
-    )
+    user_id: UUID4,
+) -> set[UUID4]:
+    stmt = select(user_block_list.c.user_id).where(user_block_list.c.blocked_user_id == user_id)
     result = await session.execute(stmt)
     blocked_user_ids = result.scalars().all()
     return set(blocked_user_ids)
@@ -302,22 +274,18 @@ async def get_blocked_me_list(
 
 async def get_my_blocked_list(
     session: AsyncSession,
-    user_id: UUID,
+    user_id: UUID4,
 ) -> list[Mapping]:
-    stmt = select(user_block_list.c.blocked_user_id).where(
-        user_block_list.c.user_id == user_id
-    )
+    stmt = select(user_block_list.c.blocked_user_id).where(user_block_list.c.user_id == user_id)
     result = await session.execute(stmt)
-    blocked_user_ids = result.scalars().all()
+    blocked_user_ids: Sequence[UUID4] = result.scalars().all()
 
     users = await get_minimal_info_by_ids(session, blocked_user_ids)
 
     return users
 
 
-async def is_blocked_user(
-    session: AsyncSession, user_id: UUID, req_user_id: UUID
-) -> bool:
+async def is_blocked_user(session: AsyncSession, user_id: UUID4, req_user_id: UUID4) -> bool:
     stmt = select(user_block_list).where(
         user_block_list.c.user_id == user_id,
         user_block_list.c.blocked_user_id == req_user_id,
@@ -327,17 +295,13 @@ async def is_blocked_user(
     return blocked_user is not None
 
 
-async def add_block_list(session: AsyncSession, user_id: UUID, blocked_user_id: UUID):
-    stmt = insert(user_block_list).values(
-        user_id=user_id, blocked_user_id=blocked_user_id
-    )
+async def add_block_list(session: AsyncSession, user_id: UUID4, blocked_user_id: UUID4):
+    stmt = insert(user_block_list).values(user_id=user_id, blocked_user_id=blocked_user_id)
     await session.execute(stmt)
     await session.commit()
 
 
-async def delete_block_list(
-    session: AsyncSession, user_id: UUID, blocked_user_id: UUID
-):
+async def delete_block_list(session: AsyncSession, user_id: UUID4, blocked_user_id: UUID4):
     stmt = delete(user_block_list).where(
         user_block_list.c.user_id == user_id,
         user_block_list.c.blocked_user_id == blocked_user_id,
@@ -348,11 +312,9 @@ async def delete_block_list(
 
 async def get_minimal_info_by_ids(
     session: AsyncSession,
-    user_ids: list[UUID],
-) -> list[Mapping]:
-    result = await session.execute(
-        select(User.id, User.username, User.profile_pic).where(User.id.in_(user_ids))
-    )
+    user_ids: Sequence[UUID4],
+):
+    result = await session.execute(select(User.id, User.username, User.profile_pic).where(User.id.in_(user_ids)))
 
     out = result.mappings().all()
     return out

@@ -31,13 +31,13 @@ class ChatRoomMemberUpdate(BaseModel):
 
 class ChatRoomRead(BaseModel):
     id: UUID4
-    name: str | None
-    description: str | None
+    name: str | None = None
+    description: str | None = None
     created_at: datetime
     updated_at: datetime
     is_private: bool
     is_group_chat: bool
-    unread_count: int | None
+    unread_count: int | None = None
 
     class Config:
         orm_mode = True

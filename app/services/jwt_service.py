@@ -25,7 +25,5 @@ class JwtService:
 
         return RefreshTokenSchema(
             token=TokenHelper.encode(payload={"user_id": dec_token.get("user_id")}),
-            refresh_token=TokenHelper.encode(
-                payload={"sub": "refresh"}, expire_period=60 * 60 * 24 * 30
-            ),
+            refresh_token=TokenHelper.encode(payload={"sub": "refresh"}, expire_period=60 * 60 * 24 * 30),
         )

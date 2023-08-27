@@ -4,6 +4,7 @@ from sqlalchemy import select, func
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.exceptions.workout_promise import NotAdminOfWorkoutPromiseException
 from app.models.notification import NotificationWorkout
+from app.models.user import User
 from app.models.workout_promise import (
     GymInfo,
     PromiseLocation,
@@ -45,12 +46,8 @@ async def get_gym_info_by_id(db: AsyncSession, gym_info_id: UUID) -> GymInfo:
     return gym
 
 
-async def get_gym_info_by_name_and_addr(
-    db: AsyncSession, gym_info_name: str, gym_info_addr: str
-) -> GymInfo | None:
-    stmt = select(GymInfo).where(
-        GymInfo.address == gym_info_addr, GymInfo.name == gym_info_name
-    )
+async def get_gym_info_by_name_and_addr(db: AsyncSession, gym_info_name: str, gym_info_addr: str) -> GymInfo | None:
+    stmt = select(GymInfo).where(GymInfo.address == gym_info_addr, GymInfo.name == gym_info_name)
     res = await db.execute(stmt)
     gym: GymInfo | None = res.scalars().first()
     return gym
@@ -78,9 +75,7 @@ async def delete_gym_info_by_id(db: AsyncSession, gym_info_id: UUID):
     return {"message": "Successfully deleted"}
 
 
-async def update_gym_info_by_id(
-    db: AsyncSession, gym_info_id: UUID, gym_info: GymInfoUpdate
-) -> GymInfo:
+async def update_gym_info_by_id(db: AsyncSession, gym_info_id: UUID, gym_info: GymInfoUpdate) -> GymInfo:
     gym = await get_gym_info_by_id(db, gym_info_id)
     for k, v in gym_info.get_update_dict().items():
         setattr(gym, k, v)
@@ -101,18 +96,14 @@ async def get_promise_location_by_place_name_and_addr(
     return promise_location
 
 
-async def create_promise_location(
-    db: AsyncSession, promise_location: PromiseLocationBase
-) -> PromiseLocation:
+async def create_promise_location(db: AsyncSession, promise_location: PromiseLocationBase) -> PromiseLocation:
     new_promise_location = PromiseLocation(**promise_location.dict())
     db.add(new_promise_location)
     await db.commit()
     return new_promise_location
 
 
-async def get_promise_location_or_create(
-    db: AsyncSession, promise_location: PromiseLocationBase
-) -> PromiseLocation:
+async def get_promise_location_or_create(db: AsyncSession, promise_location: PromiseLocationBase) -> PromiseLocation:
     _promise_location = await get_promise_location_by_place_name_and_addr(
         db, promise_location.place_name, promise_location.address
     )
@@ -126,7 +117,7 @@ async def get_workout_promise_list(
     db: AsyncSession,
     limit: int = 10,
     offset: int | None = None,
-) -> tuple[int | None, list[WorkoutPromise]]:
+):
     stmt = (
         select(WorkoutPromise)
         .order_by(WorkoutPromise.created_at.desc())
@@ -134,21 +125,21 @@ async def get_workout_promise_list(
             selectinload(WorkoutPromise.chat_room),
             selectinload(WorkoutPromise.participants).options(
                 selectinload(WorkoutParticipant.user).load_only(
-                    "id", "username", "profile_pic"
+                    User.id,
+                    User.username,
+                    User.profile_pic,
                 )
             ),
             selectinload(WorkoutPromise.promise_location),
             selectinload(WorkoutPromise.admin_user).load_only(
-                "id", "username", "profile_pic"
+                User.id,
+                User.username,
+                User.profile_pic,
             ),
         )
         .where(WorkoutPromise.is_private.is_(False))
     )
-    t_stmt = (
-        select(func.count("*"))
-        .where(WorkoutPromise.is_private.is_(False))
-        .select_from(WorkoutPromise)
-    )
+    t_stmt = select(func.count("*")).where(WorkoutPromise.is_private.is_(False)).select_from(WorkoutPromise)
 
     if offset:
         stmt = stmt.offset(offset)
@@ -166,7 +157,7 @@ async def get_recruiting_workout_promise_list(
     db: AsyncSession,
     limit: int = 10,
     offset: int | None = None,
-) -> tuple[int | None, list[WorkoutPromise]]:
+):
     stmt = (
         select(WorkoutPromise)
         .order_by(WorkoutPromise.created_at.desc())
@@ -174,12 +165,16 @@ async def get_recruiting_workout_promise_list(
             selectinload(WorkoutPromise.chat_room),
             selectinload(WorkoutPromise.participants).options(
                 selectinload(WorkoutParticipant.user).load_only(
-                    "id", "username", "profile_pic"
+                    User.id,
+                    User.username,
+                    User.profile_pic,
                 )
             ),
             selectinload(WorkoutPromise.promise_location),
             selectinload(WorkoutPromise.admin_user).load_only(
-                "id", "username", "profile_pic"
+                User.id,
+                User.username,
+                User.profile_pic,
             ),
         )
         .where(WorkoutPromise.is_private.is_(False))
@@ -209,7 +204,7 @@ async def get_workout_promise_list_written_by_me(
     user_id: UUID,
     limit: int = 10,
     offset: int | None = None,
-) -> tuple[int | None, list[WorkoutPromise]]:
+):
     stmt = (
         select(WorkoutPromise)
         .order_by(WorkoutPromise.created_at.desc())
@@ -217,12 +212,16 @@ async def get_workout_promise_list_written_by_me(
             selectinload(WorkoutPromise.chat_room),
             selectinload(WorkoutPromise.participants).options(
                 selectinload(WorkoutParticipant.user).load_only(
-                    "id", "username", "profile_pic"
+                    User.id,
+                    User.username,
+                    User.profile_pic,
                 )
             ),
             selectinload(WorkoutPromise.promise_location),
             selectinload(WorkoutPromise.admin_user).load_only(
-                "id", "username", "profile_pic"
+                User.id,
+                User.username,
+                User.profile_pic,
             ),
         )
         .where(WorkoutPromise.is_private.is_(False))
@@ -252,15 +251,13 @@ async def get_workout_promise_list_joined_by_me(
     user_id: UUID,
     limit: int = 10,
     offset: int | None = None,
-) -> tuple[int | None, list[WorkoutPromise]]:
+):
     stmt = (
         select(WorkoutPromise)
         .order_by(WorkoutPromise.created_at.desc())
         .options(selectinload(WorkoutPromise.chat_room))
         .options(
-            selectinload(WorkoutPromise.participants).options(
-                selectinload(WorkoutParticipant.user)
-            ),
+            selectinload(WorkoutPromise.participants).options(selectinload(WorkoutParticipant.user)),
         )
         .options(selectinload(WorkoutPromise.promise_location))
         .options(selectinload(WorkoutPromise.admin_user))
@@ -294,9 +291,7 @@ async def get_workout_promise_list_joined_by_me(
     return total.scalars().first(), result.scalars().all()
 
 
-async def get_workout_promise_with_participants(
-    db: AsyncSession, workout_promise_id: UUID
-) -> WorkoutPromise:
+async def get_workout_promise_with_participants(db: AsyncSession, workout_promise_id: UUID) -> WorkoutPromise:
     stmt = (
         select(WorkoutPromise)
         .options(
@@ -311,15 +306,11 @@ async def get_workout_promise_with_participants(
     return workout_promise
 
 
-async def get_workout_promise_by_id(
-    db: AsyncSession, workout_promise_id: UUID
-) -> WorkoutPromise:
+async def get_workout_promise_by_id(db: AsyncSession, workout_promise_id: UUID) -> WorkoutPromise:
     stmt = (
         select(WorkoutPromise)
         .options(
-            selectinload(WorkoutPromise.participants).options(
-                selectinload(WorkoutParticipant.user)
-            ),
+            selectinload(WorkoutPromise.participants).options(selectinload(WorkoutParticipant.user)),
             selectinload(WorkoutPromise.chat_room),
             selectinload(WorkoutPromise.promise_location),
             selectinload(WorkoutPromise.admin_user),
@@ -352,7 +343,8 @@ async def create_workout_promise(
         new_workout_promise.promise_location = db_promise_location
 
     # Make Admin Participant
-    admin_participant = WorkoutParticipant(
+    # FIXME: mypy error
+    admin_participant = WorkoutParticipant(  # type: ignore
         user=await get_my_info_by_id(admin_user_id, db),
         user_id=admin_user_id,
         is_admin=True,
@@ -420,9 +412,7 @@ async def get_workout_participant_by_ids(
     return workout_participant
 
 
-async def get_workout_participant_id_list_by_user_id(
-    db: AsyncSession, user_id: UUID
-) -> list[UUID]:
+async def get_workout_participant_id_list_by_user_id(db: AsyncSession, user_id: UUID):
     stmt = select(WorkoutParticipant.id).where(WorkoutParticipant.user_id == user_id)
     res = await db.execute(stmt)
     workout_participant_id_list = res.scalars().all()
@@ -452,8 +442,8 @@ async def create_workout_participant(
             raise WorkoutPromiseIsFullException
     else:
         raise WorkoutPromiseIsWrongException
-
-    new_db_workout_participant = WorkoutParticipant(
+    # FIXME: mypy error
+    new_db_workout_participant = WorkoutParticipant(  # type: ignore
         **workout_participant.dict(),
         user_id=user_id,
         user=await get_my_info_by_id(user_id, db),
@@ -461,11 +451,10 @@ async def create_workout_participant(
     db_workout_promise.participants.append(new_db_workout_participant)
     db.add(db_workout_promise)
 
-    admin_participant = await get_workout_participant_by_ids(
-        db, db_workout_promise.admin_user.id, workout_promise_id
-    )
+    # FIXME: mypy error
+    admin_participant = await get_workout_participant_by_ids(db, db_workout_promise.admin_user.id, workout_promise_id)  # type: ignore
 
-    new_notification_workout = NotificationWorkout(
+    new_notification_workout = NotificationWorkout(  # type: ignore
         message=f"{new_db_workout_participant.status_message}",
         notification_type=NotificationWorkoutType.WORKOUT_REQUEST,
         sender_id=new_db_workout_participant.id,
@@ -508,30 +497,23 @@ async def update_workout_participant_by_admin(
     user_id: UUID,
     workout_participant: WorkoutParticipantUpdate,
 ) -> WorkoutParticipant:
-    db_workout_participant = await get_workout_participant_by_ids(
-        db, user_id, workout_promise_id
-    )
+    db_workout_participant = await get_workout_participant_by_ids(db, user_id, workout_promise_id)
     for k, v in workout_participant.get_update_dict().items():
         setattr(db_workout_participant, k, v)
     if workout_participant.is_admin:
-        stmt = select(WorkoutPromise.admin_user_id).where(
-            WorkoutPromise.id == workout_promise_id
-        )
+        stmt = select(WorkoutPromise.admin_user_id).where(WorkoutPromise.id == workout_promise_id)
         res = await db.execute(stmt)
         admin_user_id = res.scalars().first()
         if admin_user_id != req_user_id:
-            raise NotAdminOfWorkoutPromiseException(
-                "Failed to update is_admin in WorkoutParticipant"
-            )
+            raise NotAdminOfWorkoutPromiseException("Failed to update is_admin in WorkoutParticipant")
         else:
             db_workout_participant.is_admin = workout_participant.is_admin
 
-    db_admin_workout_participant = await get_workout_participant_by_ids(
-        db, req_user_id, workout_promise_id
-    )
+    db_admin_workout_participant = await get_workout_participant_by_ids(db, req_user_id, workout_promise_id)
 
     if workout_participant.status == ParticipantStatus.ACCEPTED:
-        new_notification_workout = NotificationWorkout(
+        # FIXME: mypy error
+        new_notification_workout = NotificationWorkout(  # type: ignore
             notification_type=NotificationWorkoutType.WORKOUT_ACCEPT,
             sender_id=db_admin_workout_participant.id,
             sender=db_admin_workout_participant,
@@ -540,7 +522,8 @@ async def update_workout_participant_by_admin(
         )
 
     elif workout_participant.status == ParticipantStatus.REJECTED:
-        new_notification_workout = NotificationWorkout(
+        # FIXME: mypy error
+        new_notification_workout = NotificationWorkout(  # type: ignore
             notification_type=NotificationWorkoutType.WORKOUT_REJECT,
             sender_id=db_admin_workout_participant.id,
             sender=db_admin_workout_participant,

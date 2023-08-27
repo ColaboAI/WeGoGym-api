@@ -1,8 +1,9 @@
-from fastapi import APIRouter, Depends, Form, Query, UploadFile
+from typing_extensions import Annotated
+from fastapi import APIRouter, Body, Depends, Form, Query, UploadFile, File
 from typing import List
 
 from pydantic import UUID4, Json
-from app.utils.common import load_posts_json_fields, normalize_post
+from app.utils.common import normalize_post
 from app.utils.pagination import limit_offset_query
 from app.utils.user import get_user_id_from_request
 from app.schemas.community import (
@@ -51,7 +52,7 @@ async def get_all_communities():
 async def post_community(
     community: CommunityCreate,
 ):
-    community_dict = community.dict()
+    community_dict = community.model_dump()
     return await community_service.create_community(community_dict)
 
 
@@ -91,8 +92,8 @@ async def get_posts_where_community_id(
     ],
 )
 async def post_post(
-    images: list[UploadFile] | None = None,
-    post: Json[PostCreate] = Form(...),
+    post: Annotated[Json[PostCreate], Form(media_type="multipart/form-data")],
+    images: list[UploadFile] = File(None, description="Post Images"),  # FIXME: Is definition correct?
     user_id: UUID4 = Depends(get_user_id_from_request),
 ):
     post_obj = await community_service.create_post(user_id, post, images)
@@ -100,12 +101,8 @@ async def post_post(
 
 
 @router.get("/posts/{post_id}", status_code=200, response_model=PostResponse)
-async def get_post(
-    post_id: int, user_id: UUID4 | None = Depends(get_user_id_from_request)
-):
-    post = await community_service.get_post_with_like_cnt_where_id(
-        post_id, user_id=user_id
-    )
+async def get_post(post_id: int, user_id: UUID4 | None = Depends(get_user_id_from_request)):
+    post = await community_service.get_post_with_like_cnt_where_id(post_id, user_id=user_id)
 
     return normalize_post(post)
 
@@ -126,11 +123,7 @@ async def patch_post_where_id(
     post_update: Json[PostUpdate] = Form(...),
     user_id: UUID4 = Depends(get_user_id_from_request),
 ):
-    return normalize_post(
-        await community_service.update_post_where_id(
-            post_id, user_id, post_update, images
-        )
-    )
+    return normalize_post(await community_service.update_post_where_id(post_id, user_id, post_update, images))
 
 
 @router.delete(
@@ -160,9 +153,7 @@ async def post_post_like(
     post_id: int,
     user_id: UUID4 = Depends(get_user_id_from_request),
 ):
-    return normalize_post(
-        await community_service.create_or_update_post_like(post_id, user_id, True)
-    )
+    return normalize_post(await community_service.create_or_update_post_like(post_id, user_id, True))
 
 
 @router.post(
@@ -177,9 +168,7 @@ async def post_post_unlike(
     post_id: int,
     user_id: UUID4 = Depends(get_user_id_from_request),
 ):
-    return normalize_post(
-        await community_service.create_or_update_post_like(post_id, user_id, False)
-    )
+    return normalize_post(await community_service.create_or_update_post_like(post_id, user_id, False))
 
 
 @router.get(
@@ -189,8 +178,8 @@ async def post_post_unlike(
     summary="Get comments with pagination",
 )
 async def get_comments(
-    post_id: int,
-    user_id: UUID4 | None = Depends(get_user_id_from_request),
+    post_id: Annotated[int, Query(..., description="post id")],
+    user_id: Annotated[UUID4 | None, Depends(get_user_id_from_request)],
     pagination: dict = Depends(limit_offset_query),
 ):
     total, items, next_cursor = await community_service.get_comments_where_post_id(
@@ -227,9 +216,7 @@ async def patch_comment(
     comment_update: CommentUpdate,
     user_id: UUID4 = Depends(get_user_id_from_request),
 ):
-    return await community_service.update_comment_where_id(
-        comment_id, user_id, comment_update
-    )
+    return await community_service.update_comment_where_id(comment_id, user_id, comment_update)
 
 
 @router.delete(

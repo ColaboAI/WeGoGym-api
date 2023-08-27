@@ -1,6 +1,8 @@
 from datetime import datetime
 from enum import Enum
-from pydantic import UUID4, BaseModel, Field
+from typing import Annotated
+from fastapi import Form
+from pydantic import UUID4, BaseModel, ConfigDict, Field
 import ujson
 
 
@@ -51,15 +53,13 @@ class PostBase(BaseModel):
 
 
 class PostCreate(PostBase):
-    title: str = Field(min_length=1, max_length=100)
-    content: str = Field(min_length=1, max_length=1000)
-    want_ai_coach: bool = Field(True)
-    video: list[str] | None = Field(
-        None, description="video url. ex) https://www.youtube.com/watch?v=1234"
-    )
+    title: Annotated[str, Form(min_length=1, max_length=100)]
+    content: Annotated[str, Form(min_length=1, max_length=1000)]
+    want_ai_coach: Annotated[bool | None, Form(description="AI 코치를 원하는지 여부")] = None
+    video: Annotated[list[str] | None, Form(description="video url. ex) https://www.youtube.com/watch?v=1234")] = None
 
     def create_dict(self, user_id: UUID4) -> dict:
-        d = self.dict(exclude_unset=True, exclude={"want_ai_coach"})
+        d = self.model_dump(exclude_unset=True, exclude={"want_ai_coach"})
         d["user_id"] = user_id
         if "video" in d and d["video"] is not None:
             d["video"] = ujson.dumps(d["video"])
@@ -69,12 +69,10 @@ class PostCreate(PostBase):
 class PostUpdate(BaseModel):
     title: str | None = Field(None, min_length=1, max_length=200)
     content: str | None = Field(None, min_length=1, max_length=1000)
-    video: list[str] | None = Field(
-        None, description="video url. ex) https://www.youtube.com/watch?v=1234"
-    )
+    video: list[str] | None = Field(None, description="video url. ex) https://www.youtube.com/watch?v=1234")
 
     def create_dict(self) -> dict:
-        d = self.dict(exclude_unset=True)
+        d = self.model_dump(exclude_unset=True)
         if "video" in d and d["video"] is not None:
             d["video"] = ujson.dumps(d["video"])
         return d
@@ -84,16 +82,15 @@ class PostRead(PostBase):
     id: int
     image: list[str] | None = Field(None, description="Json encoded list of image urls")
     # Json encoded list of video urls
-    video: list[str] | None = Field(
-        None, description="video url. ex) https://www.youtube.com/watch?v=1234"
-    )
+    video: list[str] | None = Field(None, description="video url. ex) https://www.youtube.com/watch?v=1234")
     available: bool
     created_at: datetime
     updated_at: datetime
     user: AuthorRead | None = None
 
-    class Config:
-        orm_mode = True
+    model_config = ConfigDict(
+        from_attributes=True,
+    )
 
 
 class PostResponse(PostRead):
@@ -123,8 +120,9 @@ class CommentRead(CommentBase):
     updated_at: datetime
     user: AuthorRead | None = None
 
-    class Config:
-        orm_mode = True
+    model_config = ConfigDict(
+        from_attributes=True,
+    )
 
 
 class CommentResponse(CommentRead):
