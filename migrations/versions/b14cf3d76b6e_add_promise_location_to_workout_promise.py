@@ -40,16 +40,12 @@ def upgrade() -> None:
         ),
         sa.PrimaryKeyConstraint("id", name=op.f("pk_promise_location")),
     )
-    op.create_index(
-        op.f("ix_promise_location_id"), "promise_location", ["id"], unique=False
-    )
+    op.create_index(op.f("ix_promise_location_id"), "promise_location", ["id"], unique=False)
     op.add_column(
         "workout_promise",
         sa.Column("promise_location_id", app.models.guid.GUID(), nullable=True),
     )
-    op.drop_constraint(
-        "fk_workout_promise_gym_info_id_gym_info", "workout_promise", type_="foreignkey"
-    )
+    op.drop_constraint("fk_workout_promise_gym_info_id_gym_info", "workout_promise", type_="foreignkey")
     op.create_foreign_key(
         op.f("fk_workout_promise_promise_location_id_promise_location"),
         "workout_promise",
