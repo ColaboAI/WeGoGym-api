@@ -1,7 +1,7 @@
 """Add community models
 
 Revision ID: 2b1f3e34bd7b
-Revises: ffebf314bc59
+Revises: b14cf3d76b6e
 Create Date: 2023-08-08 13:51:56.696851
 
 """
@@ -11,7 +11,7 @@ import app.models.guid
 
 # revision identifiers, used by Alembic.
 revision = "2b1f3e34bd7b"
-down_revision = "ffebf314bc59"
+down_revision = "b14cf3d76b6e"
 branch_labels = None
 depends_on = None
 
@@ -21,9 +21,7 @@ def upgrade() -> None:
     op.create_table(
         "community",
         sa.Column("id", sa.Integer(), autoincrement=True, nullable=False),
-        sa.Column(
-            "type", sa.Integer(), nullable=False, comment="1: 운동 2: 식단 3: 자유 4: 질문"
-        ),
+        sa.Column("type", sa.Integer(), nullable=False, comment="1: 운동 2: 식단 3: 자유 4: 질문"),
         sa.Column("name", sa.String(length=100), nullable=False),
         sa.Column("description", sa.String(length=1000), nullable=False),
         sa.Column("image", sa.String(length=1000), nullable=True),
@@ -69,9 +67,7 @@ def upgrade() -> None:
             ["community.id"],
             name=op.f("fk_post_community_id_community"),
         ),
-        sa.ForeignKeyConstraint(
-            ["user_id"], ["user.id"], name=op.f("fk_post_user_id_user")
-        ),
+        sa.ForeignKeyConstraint(["user_id"], ["user.id"], name=op.f("fk_post_user_id_user")),
         sa.PrimaryKeyConstraint("id", name=op.f("pk_post")),
     )
     op.create_index(op.f("ix_post_id"), "post", ["id"], unique=False)
@@ -94,12 +90,8 @@ def upgrade() -> None:
             server_default=sa.text("TIMEZONE('utc', CURRENT_TIMESTAMP)"),
             nullable=False,
         ),
-        sa.ForeignKeyConstraint(
-            ["post_id"], ["post.id"], name=op.f("fk_comment_post_id_post")
-        ),
-        sa.ForeignKeyConstraint(
-            ["user_id"], ["user.id"], name=op.f("fk_comment_user_id_user")
-        ),
+        sa.ForeignKeyConstraint(["post_id"], ["post.id"], name=op.f("fk_comment_post_id_post")),
+        sa.ForeignKeyConstraint(["user_id"], ["user.id"], name=op.f("fk_comment_user_id_user")),
         sa.PrimaryKeyConstraint("id", name=op.f("pk_comment")),
     )
     op.create_index(op.f("ix_comment_id"), "comment", ["id"], unique=False)
@@ -109,12 +101,8 @@ def upgrade() -> None:
         sa.Column("is_like", sa.Boolean(), nullable=False),
         sa.Column("user_id", app.models.guid.GUID(), nullable=True),
         sa.Column("post_id", sa.Integer(), nullable=True),
-        sa.ForeignKeyConstraint(
-            ["post_id"], ["post.id"], name=op.f("fk_post_like_post_id_post")
-        ),
-        sa.ForeignKeyConstraint(
-            ["user_id"], ["user.id"], name=op.f("fk_post_like_user_id_user")
-        ),
+        sa.ForeignKeyConstraint(["post_id"], ["post.id"], name=op.f("fk_post_like_post_id_post")),
+        sa.ForeignKeyConstraint(["user_id"], ["user.id"], name=op.f("fk_post_like_user_id_user")),
         sa.PrimaryKeyConstraint("id", name=op.f("pk_post_like")),
         sa.UniqueConstraint("user_id", "post_id", name=op.f("uq_post_like_user_id")),
     )
@@ -130,13 +118,9 @@ def upgrade() -> None:
             ["comment.id"],
             name=op.f("fk_comment_like_comment_id_comment"),
         ),
-        sa.ForeignKeyConstraint(
-            ["user_id"], ["user.id"], name=op.f("fk_comment_like_user_id_user")
-        ),
+        sa.ForeignKeyConstraint(["user_id"], ["user.id"], name=op.f("fk_comment_like_user_id_user")),
         sa.PrimaryKeyConstraint("id", name=op.f("pk_comment_like")),
-        sa.UniqueConstraint(
-            "user_id", "comment_id", name=op.f("uq_comment_like_user_id")
-        ),
+        sa.UniqueConstraint("user_id", "comment_id", name=op.f("uq_comment_like_user_id")),
     )
     op.create_index(op.f("ix_comment_like_id"), "comment_like", ["id"], unique=False)
     # ### end Alembic commands ###

@@ -62,6 +62,7 @@ def upgrade() -> None:
         type_=sa.Integer(),
         existing_nullable=False,
         default=1,
+        postgresql_using="is_liked::integer",
     )
     # ### end Alembic commands ###
 
@@ -74,6 +75,7 @@ def downgrade() -> None:
         existing_type=sa.Integer(),
         type_=sa.BOOLEAN(),
         existing_nullable=False,
+        postgresql_using="is_liked::boolean",
     )
     op.drop_column("post_like", "updated_at")
     op.drop_column("post_like", "created_at")
