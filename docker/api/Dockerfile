@@ -1,4 +1,14 @@
-FROM python:3.10-slim
+FROM python:3.11-slim AS python-base
+
+ENV PYTHONUNBUFFERED=1 \
+    PYTHONDONTWRITEBYTECODE=1 \
+    PIP_NO_CACHE_DIR=off \
+    PIP_DISABLE_PIP_VERSION_CHECK=on \
+    PIP_DEFAULT_TIMEOUT=100 \
+    PIP_ROOT_USER_ACTION=ignore \
+    POETRY_VIRTUALENVS_IN_PROJECT=1 \
+    POETRY_VIRTUALENVS_CREATE=1 \
+    POETRY_NO_INTERACTION=1
 
 ARG USER_NAME=default_user
 ARG ostype=Linux
@@ -7,26 +17,38 @@ ARG GROUP_ID
 
 ENV WORK_DIR=/code
 ENV USER_NAME=${USER_NAME}
-ENV PYTHONPATH "${PYTHONPATH}:/"
 ENV ENV=DEV
 ENV PORT=8000
 
-RUN apt-get update && apt-get install -y wget
 
+# ----- builder-base ----- #
+FROM python-base AS builder-base
+
+RUN pip install --upgrade pip && pip install poetry==1.5.0
+
+WORKDIR ${WORK_DIR}
+
+COPY poetry.lock pyproject.toml ./
+
+RUN poetry install --without dev
+
+
+# ----- server ----- #
+FROM python-base AS server
+ENV VENV_PATH="$WORK_DIR/.venv"
+ENV PATH="$VENV_PATH/bin:$PATH"
 RUN bash -c 'groupadd -r --gid ${GROUP_ID} ${USER_NAME} && \
     useradd -r --create-home --shell /bin/bash --uid ${USER_ID} --gid ${GROUP_ID} ${USER_NAME}' && \
     mkdir -p ${WORK_DIR} && chown ${USER_NAME} ${WORK_DIR}
 
-# RUN useradd ${USER_NAME}
-# RUN mkdir ${WORK_DIR}
-# RUN chown ${USER_NAME}:${USER_NAME} ${WORK_DIR}
 
+COPY --from=builder-base $VENV_PATH $VENV_PATH
 
-COPY --chown=${USER_NAME}:${USER_NAME} . ${WORK_DIR}
 WORKDIR ${WORK_DIR}
 
-RUN pip install --upgrade pip
-RUN pip install -r requirements.txt
+COPY --chown=${USER_NAME}:${USER_NAME} . .
+
+RUN apt-get update && apt-get install -y wget
 
 ENV DOCKERIZE_VERSION v0.6.1
 RUN wget https://github.com/jwilder/dockerize/releases/download/$DOCKERIZE_VERSION/dockerize-linux-amd64-$DOCKERIZE_VERSION.tar.gz \

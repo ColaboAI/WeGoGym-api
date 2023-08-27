@@ -5,3 +5,18 @@ LICENSE
 db
 venv
 .mypy_cache
+.vscode
+.DS_Store
+.idea
+README.md
+log.txt
+
+db
+
+__pycache__
+*.pyc
+*.pyo
+*.pyd
+
+# ignore local poetry venv folder
+.venv
