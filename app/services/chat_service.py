@@ -250,7 +250,7 @@ async def get_chat_room_list_by_user_id(
             isouter=True,
         )
         .add_columns(last_msg.c.last_message_text, last_msg.c.last_message_created_at)
-        .order_by(ChatRoom.updated_at.desc())
+        .order_by(last_msg.c.last_message_created_at.desc())
         .where(
             ChatRoom.id == chat_rooms.c.chat_room_id,
             ChatRoom.admin_user_id.notin_(
