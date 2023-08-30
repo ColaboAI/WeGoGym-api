@@ -187,6 +187,16 @@ async def get_comments(
     )
     return {"total": total, "items": items, "next_cursor": next_cursor}
 
+@router.get(
+    "/comments/{comment_id}",
+    status_code=200,
+    response_model=CommentResponse,
+)
+async def get_comment(
+    comment_id: int,
+    user_id: UUID4 | None = Depends(get_user_id_from_request)
+):
+    return await community_service.get_comment_where_id(comment_id)
 
 @router.post(
     "/comments",
