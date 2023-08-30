@@ -76,7 +76,12 @@ async def create(comment_data: dict, session: AsyncSession):
 
 @Transactional()
 async def get_where_id(id: int, session: AsyncSession):
-    res = await session.execute(select(Comment).where(Comment.id == id))
+    res = await session.execute(
+        select(Comment)
+        .join(Comment.user, isouter=True)
+        .options(contains_eager(Comment.user).load_only(User.id, User.username, User.profile_pic))
+        .where(Comment.id == id)
+    )
     return res.scalar_one()
 
 
@@ -141,7 +146,8 @@ async def count_where_post_id(post_id: int, session: AsyncSession):
 async def update_where_id(comment_id, comment_data: dict, session: AsyncSession):
     stmt = update(Comment).where(Comment.id == comment_id).values(**comment_data)
     await session.execute(stmt)
-    return await get_with_like_cnt_where_id(comment_id, session=session)
+    await session.commit()
+    return await get_where_id(comment_id, session=session)
 
 
 @Transactional()
