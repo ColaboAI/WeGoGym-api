@@ -107,20 +107,19 @@ async def get_post(post_id: int, user_id: UUID4 | None = Depends(get_user_id_fro
     return normalize_post(post)
 
 
-@router.patch(
-    "/posts/{post_id}",
+@router.post(
+    "/posts/{post_id}/update",
     status_code=200,
     response_model=PostResponse,
-    response_model_exclude={"like_cnt"},
     summary="Update post",
     dependencies=[
         Depends(PermissionDependency([IsAuthenticated])),
     ],
 )
-async def patch_post_where_id(
+async def update_post_where_id(
     post_id: int,
-    images: list[UploadFile] | None = None,
-    post_update: Json[PostUpdate] = Form(...),
+    post_update: Annotated[Json[PostUpdate], Form(media_type="multipart/form-data")],
+    images: list[UploadFile] = File(None, description="Post Images"),  # FIXME: same as above
     user_id: UUID4 = Depends(get_user_id_from_request),
 ):
     return normalize_post(await community_service.update_post_where_id(post_id, user_id, post_update, images))
@@ -187,16 +186,15 @@ async def get_comments(
     )
     return {"total": total, "items": items, "next_cursor": next_cursor}
 
+
 @router.get(
     "/comments/{comment_id}",
     status_code=200,
     response_model=CommentResponse,
 )
-async def get_comment(
-    comment_id: int,
-    user_id: UUID4 | None = Depends(get_user_id_from_request)
-):
+async def get_comment(comment_id: int, user_id: UUID4 | None = Depends(get_user_id_from_request)):
     return await community_service.get_comment_where_id(comment_id)
+
 
 @router.post(
     "/comments",
