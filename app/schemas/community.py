@@ -66,10 +66,16 @@ class PostCreate(PostBase):
         return d
 
 
+class OrderedImage(BaseModel):
+    order: int
+    uri: str
+
+
 class PostUpdate(BaseModel):
     title: str | None = Field(None, min_length=1, max_length=200)
     content: str | None = Field(None, min_length=1, max_length=1000)
     video: list[str] | None = Field(None, description="video url. ex) https://www.youtube.com/watch?v=1234")
+    image_list: list[OrderedImage] | None = Field(None, description="list of image urls")
 
     def create_dict(self) -> dict:
         d = self.model_dump(exclude_unset=True)

@@ -13,9 +13,7 @@ bucket_name = settings.S3_BUCKET
 
 
 # TODO: Use this function to upload multiple files
-def upload_files_to_s3(
-    files: list[UploadFile], prefix: str, acl: str = "public-read"
-) -> list[str]:
+def upload_files_to_s3(files: list[UploadFile], prefix: str, acl: str = "public-read") -> list[str]:
     """
     Docs: https://boto3.amazonaws.com/v1/documentation/api/latest/guide/s3-uploading-files.html
     """
@@ -24,10 +22,30 @@ def upload_files_to_s3(
     out = []
     for i, file in enumerate(files):
         try:
-            file_key = f"{prefix}_{i}"
+            file_key = f"{prefix}_{file.filename}_{i}"
             url = upload_image_to_s3(file, file_key, acl)
             if url:
                 out.append(url)
+        except Exception as e:
+            logger.debug(e)
+            raise e
+    return out
+
+
+def upload_files_to_s3_return_dict(files: list[UploadFile], prefix: str, acl: str = "public-read") -> dict[int, str]:
+    """
+    Docs: https://boto3.amazonaws.com/v1/documentation/api/latest/guide/s3-uploading-files.html
+    """
+    if not files:
+        return {}
+    out = {}
+    for file in files:
+        try:
+            file_key = f"{prefix}_{file.filename}"
+            url = upload_image_to_s3(file, file_key, acl)
+            if url and file.filename:
+                index = file.filename.split("_")[-1]
+                out[int(index)] = url
         except Exception as e:
             logger.debug(e)
             raise e

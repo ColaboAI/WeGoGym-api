@@ -9,7 +9,7 @@ from app.core.exceptions.base import (
 )
 from app.core.exceptions.community import PostNotFound
 from app.models.community import Comment, Post
-from app.schemas.community import CommentCreate, CommentUpdate, PostCreate, PostUpdate
+from app.schemas.community import CommentCreate, CommentUpdate, OrderedImage, PostCreate, PostUpdate
 from app.repository.community import community, post, comment
 from sqlalchemy.exc import NoResultFound, IntegrityError
 
@@ -85,16 +85,25 @@ async def update_post_where_id(id: int, user_id: UUID4, post_data: PostUpdate, i
         raise ForbiddenException("You are not authorized to update this post")
 
     post_dict = post_data.create_dict()
+    image_model_list: dict = post_dict.pop("image_list", [])
+    image_list: list[tuple[int, str]] = []
+    if len(image_model_list) > 0:
+        image_list = [(image_model["order"], image_model["uri"]) for image_model in image_model_list]
     if images and len(images) > 0:
         loop = asyncio.get_running_loop()
         res = await loop.run_in_executor(
             None,
-            aws.upload_files_to_s3,
+            aws.upload_files_to_s3_return_dict,
             images,
             f"test/posts/{post_obj.id}",
         )
-        image_urls = ujson.dumps(res)
-        post_dict["image"] = image_urls
+        for order_str, url in res.items():
+            image_list.append((int(order_str), url))
+
+    image_list.sort(key=lambda x: x[0])
+    img_urls = [url for _, url in image_list]
+    image_urls_json = ujson.dumps(img_urls)
+    post_dict["image"] = image_urls_json
 
     new_post_obj: Post = await post.update_where_id(
         id,
