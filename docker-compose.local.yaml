@@ -6,32 +6,7 @@ version: "3.8"
 # uvicorn app.main:app --reload
 #
 services:
-  api:
-    build:
-      context: .
-      dockerfile: docker/api/Dockerfile
-      args:
-        USER_ID: $API_CONTAINER_USER_ID
-        GROUP_ID: $API_CONTAINER_GROUP_ID
-        USER_NAME: $API_CONTAINER_USER_NAME
-        ostype: "Mac"
-    container_name: api
-    hostname: api
-    volumes:
-      - ./:/home
-    env_file:
-      - .env
-    tty: true
-    ports:
-      - "8000:8000"
-    networks:
-      - backend
-      - redis-cluster
-    depends_on:
-      - db
-      - redis-cluster
-
-  db:
+  db-local:
     restart: always
     image: postgres:15.3
     volumes:
@@ -49,62 +24,53 @@ services:
 
   # 서비스명
   # Redis Cluster 설정
-  redis-cluster-creator:
+  redis-cluster-creator-local:
     # 사용할 이미지
     image: redis:latest
     # 컨테이너명 설정
-    container_name: redis-cluster-creator
+    container_name: redis-cluster-creator-local
     # 접근 포트 설정 (컨테이너 외부:컨테이너 내부)
     depends_on:
-      - redis-cluster
-      - redis-node2
-      - redis-node3
+      - redis-cluster-local
+      - redis-node2-local
+      - redis-node3-local
     # 명령어 설정
-    command: redis-cli --cluster create redis-cluster:6379 redis-node2:6380 redis-node3:6381 --cluster-yes
-    networks:
-      - redis-cluster
-
+    command: redis-cli --cluster create 127.0.0.1:6379 127.0.0.1:6380 127.0.0.1:6381 --cluster-yes
+    network_mode: "service:redis-cluster-local"
     # 네트워크 설정
 
   # Redis Node1 설정
-  redis-cluster:
+  redis-cluster-local:
     image: redis:latest
-    container_name: redis-cluster
+    container_name: redis-cluster-local
     restart: always
-    ports:
-      - 6379:6379
     volumes:
       - ./redis-node.conf:/usr/local/etc/redis.conf
     command: ["redis-server", "/usr/local/etc/redis.conf", "--port", "6379"]
-    networks:
-      - redis-cluster
+    ports:
+      - 6379:6379
+      - 6380:6380
+      - 6381:6381
 
   # Redis Node1 설정
-  redis-node2:
+  redis-node2-local:
     image: redis:latest
-    container_name: redis-node2
+    container_name: redis-node2-local
     restart: always
-    ports:
-      - 6380:6380
     volumes:
       - ./redis-node.conf:/usr/local/etc/redis.conf
     command: ["redis-server", "/usr/local/etc/redis.conf", "--port", "6380"]
-    networks:
-      - redis-cluster
+    network_mode: "service:redis-cluster-local"
   # Redis Node1 설정
-  redis-node3:
+  redis-node3-local:
     image: redis:latest
-    container_name: redis-node3
+    container_name: redis-node3-local
     restart: always
-    ports:
-      - 6381:6381
     volumes:
       - ./redis-node.conf:/usr/local/etc/redis.conf
     command: ["redis-server", "/usr/local/etc/redis.conf", "--port", "6381"]
-    networks:
-      - redis-cluster
+    network_mode: "service:redis-cluster-local"
+
 networks:
   backend:
-    driver: "bridge"
-  redis-cluster:
     driver: "bridge"

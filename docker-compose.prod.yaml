@@ -72,21 +72,6 @@ services:
       - "traefik.http.routers.fastapi.tls.certresolver=letsencrypt"
       - "traefik.http.services.fastapi.loadbalancer.server.port=8000"
 
-  redis:
-    build:
-      context: .
-      dockerfile: docker/redis/Dockerfile
-      args:
-        REDIS_PASSWORD: ${REDIS_PASSWORD}
-    container_name: redis
-    hostname: ${REDIS_HOST}
-    env_file:
-      - .env.prod
-    ports:
-      - "${REDIS_PORT}:6379"
-    networks:
-      - backend
-
 networks:
   backend:
     driver: "bridge"
