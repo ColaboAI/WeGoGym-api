@@ -1,20 +1,18 @@
-from redis import asyncio as aioredis
-
+import re
 from app.core.config import settings
+from coredis import RedisCluster
+from coredis.retry import ConstantRetryPolicy
 
-
-def get_redis_url():
-    return settings.REDIS_URL
-
-
+print(settings.REDIS_HOST, settings.REDIS_PORT)
 # singleton redis connection pool
-redis = aioredis.from_url(url=get_redis_url())
+redis = RedisCluster(
+    startup_nodes=[{"host": settings.REDIS_HOST, "port": int(settings.REDIS_PORT)}],
+    skip_full_coverage_check=True,
+    connect_timeout=10,
+)
 
-
-async def get_redis_conn() -> aioredis.Redis:
-    """
-    Assemble database URL from self.
-    :return: database URL.
-    """
-
-    return await aioredis.from_url(url=get_redis_url(), decode_responses=True)
+chat_redis = RedisCluster(
+    startup_nodes=[{"host": settings.REDIS_HOST, "port": int(settings.REDIS_PORT)}],
+    skip_full_coverage_check=True,
+    decode_responses=True,
+)

@@ -22,7 +22,6 @@ See https://pydantic-docs.helpmanual.io/usage/settings/
 from functools import lru_cache
 from os import environ
 from pathlib import Path
-
 from pydantic import AnyHttpUrl, AnyUrl, validator
 from pydantic_settings import BaseSettings
 from sqlalchemy import URL, make_url
@@ -35,21 +34,20 @@ class Settings(BaseSettings):
     SECRET_KEY: str
     JWT_SECRET_KEY: str
     JWT_ALGORITHM: str = "HS256"
-    ENVIRONMENT: str = environ.get("ENV", "DEV")  # Literal["DEV", "PRODUCTION", "STAGING"]
+    ENVIRONMENT: str = environ.get("ENV", "LOCAL")  # Literal["DEV", "PRODUCTION", "STAGING"]
     ACCESS_TOKEN_EXPIRE_MINUTES: int
     BACKEND_CORS_ORIGINS: str | list[AnyHttpUrl]
+
     REDIS_USERNAME: str = "default"
     REDIS_HOST: str = "127.0.0.1"
     REDIS_PORT: str = "6379"
-    REDIS_PASSWORD: str = "password"
-    REDIS_URL: str = ""
     # PROJECT NAME, VERSION AND DESCRIPTION
     PROJECT_NAME: str
     VERSION: str
     DESCRIPTION: str
 
     # POSTGRESQL DEFAULT DATABASE
-    DEFAULT_DATABASE_HOSTNAME: str = "localhost"
+    DEFAULT_DATABASE_HOSTNAME: str = "127.0.0.1"
     DEFAULT_DATABASE_USER: str
     DEFAULT_DATABASE_PASSWORD: str
     DEFAULT_DATABASE_PORT: str
@@ -70,48 +68,24 @@ class Settings(BaseSettings):
             return [item.strip() for item in cors_origins.split(",")]
         return cors_origins
 
-    @validator("REDIS_URL")
+    @validator("REDIS_HOST", "DEFAULT_DATABASE_HOSTNAME")
     @classmethod
-    def _assemble_redis_url(cls, v: str, values: dict[str, str]) -> str:
-        url = None
-        if environ.get("ENV", None) == None:
-            url = AnyUrl.build(
-                scheme="redis",
-                password=values["REDIS_PASSWORD"],
-                host="127.0.0.1",
-                port=int(values["REDIS_PORT"]),
-            )
-        else:
-            url = AnyUrl.build(
-                scheme="redis",
-                password=values["REDIS_PASSWORD"],
-                host=values["REDIS_HOST"],
-                port=int(values["REDIS_PORT"]),
-            )
-        return str(url)
+    def _validate_redis_host(cls, v: str) -> str:
+        if environ.get("ENV", "LOCAL") == "LOCAL":
+            return "127.0.0.1"
+        return v
 
     @validator("DEFAULT_SQLALCHEMY_DATABASE_URI")
     @classmethod
     def _assemble_default_db_connection(cls, v: str, values: dict[str, str]) -> URL:
-        url = None
-        if environ.get("ENV", None) == None:
-            url = AnyUrl.build(
-                scheme="postgresql+asyncpg",
-                username=values["DEFAULT_DATABASE_USER"],
-                password=values["DEFAULT_DATABASE_PASSWORD"],
-                host="127.0.0.1",
-                port=int(values["DEFAULT_DATABASE_PORT"]),
-                path=f"{values['DEFAULT_DATABASE_DB']}",
-            )
-        else:
-            url = AnyUrl.build(
-                scheme="postgresql+asyncpg",
-                username=values["DEFAULT_DATABASE_USER"],
-                password=values["DEFAULT_DATABASE_PASSWORD"],
-                host=values["DEFAULT_DATABASE_HOSTNAME"],
-                port=int(values["DEFAULT_DATABASE_PORT"]),
-                path=f"{values['DEFAULT_DATABASE_DB']}",
-            )
+        url = AnyUrl.build(
+            scheme="postgresql+asyncpg",
+            username=values["DEFAULT_DATABASE_USER"],
+            password=values["DEFAULT_DATABASE_PASSWORD"],
+            host=values["DEFAULT_DATABASE_HOSTNAME"],
+            port=int(values["DEFAULT_DATABASE_PORT"]),
+            path=f"{values['DEFAULT_DATABASE_DB']}",
+        )
         return make_url(str(url))
 
     class Config:
@@ -131,7 +105,7 @@ class ProductionSettings(Settings):
 
 @lru_cache()
 def get_settings() -> Settings:
-    if Settings().ENVIRONMENT == "DEV":
+    if Settings().ENVIRONMENT in ["DEV", "LOCAL"]:
         return Settings()
     return ProductionSettings()
 

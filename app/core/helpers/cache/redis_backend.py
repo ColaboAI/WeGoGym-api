@@ -21,8 +21,8 @@ class RedisBackend(BaseBackend):
     async def set(self, response: Any, key: str, ttl: int = 60) -> None:
         json_compatible_item_data = jsonable_encoder(response)
         response = ujson.dumps(json_compatible_item_data)
-        await redis.set(name=key, value=response, ex=ttl)
+        await redis.set(key=key, value=response, ex=ttl)
 
     async def delete_startswith(self, value: str) -> None:
         async for key in redis.scan_iter(f"{value}::*"):
-            await redis.delete(key)
+            await redis.delete([key])

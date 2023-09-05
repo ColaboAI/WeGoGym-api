@@ -13,11 +13,13 @@ from app.models.user import User, user_block_list
 from app.services.fcm_service import send_message_to_multiple_devices_by_fcm_token_list
 from app.services.user_service import get_blocked_me_list
 from app.utils.ecs_log import logger
-import json
+import ujson
 from fastapi import HTTPException, WebSocket
+from fastapi.exceptions import WebSocketException
 
-from redis.asyncio.client import Redis, PubSub
-from app.core.helpers.redis import get_redis_conn
+from coredis import RedisCluster
+from coredis.commands import ShardedPubSub
+from app.core.helpers.redis import chat_redis as redis
 from dataclasses import asdict, dataclass
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
@@ -38,17 +40,16 @@ class ChatService:
         self.ws: WebSocket = websocket
         self.chat_room_id = chat_room_id
         self.user_id = user_id
-        self.get_redis_conn = get_redis_conn
         self.session = session
-        self.conn = None
-        self.pubsub = None
+        self.conn: RedisCluster = redis
+        self.pubsub: ShardedPubSub | None = None
 
-    async def publish_handler(self, conn: Redis):
+    async def publish_handler(self, conn: RedisCluster):
         while True:
             try:
                 if self.ws.client_state == WebSocketState.CONNECTED:
                     m = await self.ws.receive_text()
-                    message: dict = json.loads(m)
+                    message: dict = ujson.loads(m)
 
                     if message:
                         text = message["text"]
@@ -68,9 +69,9 @@ class ChatService:
                             type="text_message",
                         )
 
-                        await conn.publish(
+                        await conn.spublish(
                             self.chat_room_id.__str__(),
-                            json.dumps(asdict(msg_data)),
+                            ujson.dumps(asdict(msg_data)),
                         )
 
                         banned_set = await get_blocked_me_list(
@@ -94,40 +95,50 @@ class ChatService:
                         )
 
                 else:
-                    logger.warning(f"Websocket state: {self.ws.application_state}, reconnecting...")  # noqa: E501
+                    logger.warning(f"Websocket state: {self.ws.client_state}, reconnecting...")  # noqa: E501
                     break
+
+            except WebSocketException as e:
+                logger.debug(f"Connection closed: {e}")
+                raise e
             except Exception as e:
-                logger.debug(f"pub handler {e}")
+                logger.debug(f"Publish handler exception: {e}")
                 raise e
 
-    async def subscribe_handler(self, pubsub: PubSub):
+    async def subscribe_handler(self, pubsub: ShardedPubSub):
         await pubsub.subscribe(self.chat_room_id.__str__())
         while True:
+            # FIXME: asyncio gather로 묶어서 task cancel이 안되는 문제가 있음
+            # websocket has client_state and application_state
             try:
-                # TODO: check if connection is closed
-                # websocket has client_state and application_state
                 if self.ws.client_state == WebSocketState.CONNECTED:
                     message = await pubsub.get_message(ignore_subscribe_messages=True)
-                    if message:
-                        data = json.loads(message.get("data"))
-                        chat_message = ChatMessageDataClass(**data)
-                        await self.ws.send_json(asdict(chat_message), mode="text")
-
+                    if message and message.get("type") == "message":
+                        data_in_message = message.get("data", None)
+                        if isinstance((data_in_message), str) and data_in_message:
+                            data = ujson.loads(data_in_message)
+                            chat_message = ChatMessageDataClass(**data)
+                            await self.ws.send_json(asdict(chat_message), mode="text")
                 else:
                     logger.warning(f"Websocket state: {self.ws.application_state}, reconnecting...")  # noqa: E501
                     break
+            except WebSocketException as e:
+                logger.debug(f"Connection closed: {e}")
+                raise e
             except Exception as e:
-                logger.debug(f"sub handler: {e}")
+                logger.debug(f"Subscribe handler exception: {e}")
                 raise e
 
     async def run(self):
-        self.conn: Redis = await self.get_redis_conn()
-        self.pubsub: PubSub = self.conn.pubsub()
+        self.pubsub: ShardedPubSub = self.conn.sharded_pubsub()
 
         tasks = [self.publish_handler(self.conn), self.subscribe_handler(self.pubsub)]
         try:
             res = await asyncio.gather(*tasks, return_exceptions=True)
             logger.info(f"Result: {res}")
+
+        except asyncio.CancelledError:
+            logger.debug("Task cancelled")
 
         except Exception as e:
             logger.debug(f"Run exception: {e}")
@@ -136,9 +147,6 @@ class ChatService:
             if self.pubsub:
                 await self.pubsub.close()
                 del self.pubsub
-            if self.conn:
-                await self.conn.close()
-                del self.conn
 
 
 @dataclass(slots=True)
