@@ -9,7 +9,7 @@ from app.core.exceptions.base import (
 )
 from app.core.exceptions.community import PostNotFound
 from app.models.community import Comment, Post
-from app.schemas.community import CommentCreate, CommentUpdate, OrderedImage, PostCreate, PostUpdate
+from app.schemas.community import CommentCreate, CommentUpdate, PostCreate, PostUpdate
 from app.repository.community import community, post, comment
 from sqlalchemy.exc import NoResultFound, IntegrityError
 

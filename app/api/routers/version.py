@@ -6,7 +6,7 @@ version_router = APIRouter()
 
 # 앱 버전 정보 가져오기
 @version_router.get(
-    "/",
+    "",
     summary="Get app version",
     description="Get app version",
 )

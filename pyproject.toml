@@ -27,8 +27,8 @@ ujson = "^5.7.0"
 pydantic-settings = "^2.0.3"
 greenlet = "^2.0.2"
 firebase-admin = "^6.2.0"
-redis = "^5.0.0"
 sqlalchemy = "^2.0.20"
+coredis = "^4.16.0"
 
 
 [tool.poetry.group.local.dependencies]

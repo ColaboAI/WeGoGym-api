@@ -464,6 +464,49 @@ files = [
 ]
 
 [[package]]
+name = "coredis"
+version = "4.16.0"
+description = "Python async client for Redis key-value store"
+optional = false
+python-versions = ">=3.7"
+files = [
+    {file = "coredis-4.16.0-cp310-cp310-macosx_10_9_x86_64.whl", hash = "sha256:e5586a1b1d6fa68c33ac81bb46fffb04f1d6f0bebefeca4e79f1d767590ba7bd"},
+    {file = "coredis-4.16.0-cp310-cp310-macosx_11_0_arm64.whl", hash = "sha256:cf6c6a9ac9ec930102ed313cd08fc7fd0018acfbf2933e7bad3c8687d1c8be3e"},
+    {file = "coredis-4.16.0-cp310-cp310-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:a2c81444e16e2df02f159e1a3855236f6012c22b618616be476aa8b2abd0557b"},
+    {file = "coredis-4.16.0-cp310-cp310-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:fca044896fa4382bf597a7499793106900a63e5af347f8fdbc35a3b76df335ec"},
+    {file = "coredis-4.16.0-cp310-cp310-manylinux_2_5_i686.manylinux1_i686.manylinux_2_17_i686.manylinux2014_i686.whl", hash = "sha256:45fb92b17bbec723f8435d7d9f3a8357748245b305df3fd96059ef50ebb15016"},
+    {file = "coredis-4.16.0-cp311-cp311-macosx_10_9_x86_64.whl", hash = "sha256:2467c3ad143c6531e0870e705c610e8c53fd7160ac790d0bfa2d225eeffeb1e6"},
+    {file = "coredis-4.16.0-cp311-cp311-macosx_11_0_arm64.whl", hash = "sha256:a7afa8104fcab533090fa4d6007072243bc8bf145fad60d014f5ae978a79e94f"},
+    {file = "coredis-4.16.0-cp311-cp311-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:ba7f36504057ca6fa0d2591961016da9ce91ecdccfa223c57a4fad008173fe79"},
+    {file = "coredis-4.16.0-cp311-cp311-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:d14fbd3858ac2751160d35cf3184065a3c6a8c646c54ad886610e2d7a5d6875a"},
+    {file = "coredis-4.16.0-cp311-cp311-manylinux_2_5_i686.manylinux1_i686.manylinux_2_17_i686.manylinux2014_i686.whl", hash = "sha256:f99bf313d14b690a3fdabb285d8362d4efca736599be1341bd95ce3d2977ba06"},
+    {file = "coredis-4.16.0-cp37-cp37m-macosx_10_9_x86_64.whl", hash = "sha256:6435c6b44adf925b660cb2c222a4a37e071f7fc0a0dc936e441c3889c6b0de90"},
+    {file = "coredis-4.16.0-cp37-cp37m-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:100ed99c398b6854e23d4bd835290e652e11d845a2f446726d450451eaa96830"},
+    {file = "coredis-4.16.0-cp37-cp37m-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:3ffb64e3dbf8b477e68a32077bdab6e67b802189afb60cfb444e30d06125ba3d"},
+    {file = "coredis-4.16.0-cp37-cp37m-manylinux_2_5_i686.manylinux1_i686.manylinux_2_17_i686.manylinux2014_i686.whl", hash = "sha256:fed4245fdaeab4171bb521109c0d199c3a47ec11b4899b49213273bfda608235"},
+    {file = "coredis-4.16.0-cp38-cp38-macosx_10_9_x86_64.whl", hash = "sha256:324434a218043165859f535daf4991e02ab515598202a9757ebbdc8f0e163edd"},
+    {file = "coredis-4.16.0-cp38-cp38-macosx_11_0_arm64.whl", hash = "sha256:5548b7568c4580f441ee1493a43e8974e59936fbbe1b5bded391386df739ba27"},
+    {file = "coredis-4.16.0-cp38-cp38-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:244f80e3daf5c55fdf39e9813fd716b5889378c47195cdfa8b41d8c00c685c5a"},
+    {file = "coredis-4.16.0-cp38-cp38-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:ccd8ec0d1879a57360b2bc9c782e7e50153c458e245032c3f79f31dacf537c39"},
+    {file = "coredis-4.16.0-cp38-cp38-manylinux_2_5_i686.manylinux1_i686.manylinux_2_17_i686.manylinux2014_i686.whl", hash = "sha256:8ce1fcc8ec48a98df6db0cd6bf6aa73b7ffaec2384784858480a8b16e2a2e7d4"},
+    {file = "coredis-4.16.0-cp39-cp39-macosx_10_9_x86_64.whl", hash = "sha256:1ccf4b2f055b3bdde793242ce012a308be46cd5f9668579d5b9ada5a648b239d"},
+    {file = "coredis-4.16.0-cp39-cp39-macosx_11_0_arm64.whl", hash = "sha256:f850f8cad9b2ebf7111b1f10b0c40214edc53a5ff9dcf9c7c8d18464a902658b"},
+    {file = "coredis-4.16.0-cp39-cp39-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:d2fdaa2abccb496b855c608412540360664f8c329f2d72c221691e511926bb83"},
+    {file = "coredis-4.16.0-cp39-cp39-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:76f908b2bb4b629ecd8bc7c39371ace9bddfa1afc7e37d901a20e202ffcd63c4"},
+    {file = "coredis-4.16.0-cp39-cp39-manylinux_2_5_i686.manylinux1_i686.manylinux_2_17_i686.manylinux2014_i686.whl", hash = "sha256:3513d6844383501a7066292b1a5c23b92a3c39e3c24619422edfe343d6d00c26"},
+    {file = "coredis-4.16.0-py3-none-any.whl", hash = "sha256:dc72407c5f0caa093a25a0ec530e4de66f82eea2468c4e0ee9934b99112f7cc7"},
+    {file = "coredis-4.16.0.tar.gz", hash = "sha256:da5dcaf1418670f4cb3286beac0f8d8aae93a408fdfb80f92322e1acc63785fd"},
+]
+
+[package.dependencies]
+async-timeout = ">4,<5"
+deprecated = ">=1.2"
+packaging = ">=21,<24"
+pympler = ">1,<2"
+typing-extensions = ">=4.3"
+wrapt = ">=1.1.0,<2"
+
+[[package]]
 name = "coverage"
 version = "7.3.0"
 description = "Code coverage measurement for Python"
@@ -571,6 +614,23 @@ sdist = ["build"]
 ssh = ["bcrypt (>=3.1.5)"]
 test = ["pretend", "pytest (>=6.2.0)", "pytest-benchmark", "pytest-cov", "pytest-xdist"]
 test-randomorder = ["pytest-randomly"]
+
+[[package]]
+name = "deprecated"
+version = "1.2.14"
+description = "Python @deprecated decorator to deprecate old python classes, functions or methods."
+optional = false
+python-versions = ">=2.7, !=3.0.*, !=3.1.*, !=3.2.*, !=3.3.*"
+files = [
+    {file = "Deprecated-1.2.14-py2.py3-none-any.whl", hash = "sha256:6fac8b097794a90302bdbb17b9b815e732d3c4720583ff1b198499d78470466c"},
+    {file = "Deprecated-1.2.14.tar.gz", hash = "sha256:e5323eb936458dccc2582dc6f9c322c852a775a27065ff2b0c4970b9d53d01b3"},
+]
+
+[package.dependencies]
+wrapt = ">=1.10,<2"
+
+[package.extras]
+dev = ["PyTest", "PyTest-Cov", "bump2version (<1)", "sphinx (<2)", "tox"]
 
 [[package]]
 name = "dill"
@@ -1887,6 +1947,17 @@ spelling = ["pyenchant (>=3.2,<4.0)"]
 testutils = ["gitpython (>3)"]
 
 [[package]]
+name = "pympler"
+version = "1.0.1"
+description = "A development tool to measure, monitor and analyze the memory behavior of Python objects."
+optional = false
+python-versions = ">=3.6"
+files = [
+    {file = "Pympler-1.0.1-py3-none-any.whl", hash = "sha256:d260dda9ae781e1eab6ea15bacb84015849833ba5555f141d2d9b7b7473b307d"},
+    {file = "Pympler-1.0.1.tar.gz", hash = "sha256:993f1a3599ca3f4fcd7160c7545ad06310c9e12f70174ae7ae8d4e25f6c5d3fa"},
+]
+
+[[package]]
 name = "pyparsing"
 version = "3.1.1"
 description = "pyparsing module - Classes and methods to define and execute parsing grammars"
@@ -2073,24 +2144,6 @@ files = [
     {file = "PyYAML-6.0.1-cp39-cp39-win_amd64.whl", hash = "sha256:510c9deebc5c0225e8c96813043e62b680ba2f9c50a08d3724c7f28a747d1486"},
     {file = "PyYAML-6.0.1.tar.gz", hash = "sha256:bfdf460b1736c775f2ba9f6a92bca30bc2095067b8a9d77876d1fad6cc3b4a43"},
 ]
-
-[[package]]
-name = "redis"
-version = "5.0.0"
-description = "Python client for Redis database and key-value store"
-optional = false
-python-versions = ">=3.7"
-files = [
-    {file = "redis-5.0.0-py3-none-any.whl", hash = "sha256:06570d0b2d84d46c21defc550afbaada381af82f5b83e5b3777600e05d8e2ed0"},
-    {file = "redis-5.0.0.tar.gz", hash = "sha256:5cea6c0d335c9a7332a460ed8729ceabb4d0c489c7285b0a86dbbf8a017bd120"},
-]
-
-[package.dependencies]
-async-timeout = {version = ">=4.0.2", markers = "python_full_version <= \"3.11.2\""}
-
-[package.extras]
-hiredis = ["hiredis (>=1.0.0)"]
-ocsp = ["cryptography (>=36.0.1)", "pyopenssl (==20.0.1)", "requests (>=2.26.0)"]
 
 [[package]]
 name = "requests"
@@ -2713,4 +2766,4 @@ files = [
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.11"
-content-hash = "11fc0a8b5b355b1875036fdbb1560d223f5ad41bc27a54d4fa57e08595c1c4aa"
+content-hash = "d990a55540adf5b2340faf8043873b7bf674d35c5834444dfaabdb9e1feae115"
