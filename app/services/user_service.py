@@ -159,7 +159,6 @@ async def update_my_info_by_id(user_id: UUID4, update_req: UserUpdate, session: 
                     db_gym_info = GymInfo(**v)
                 user.gym_info = db_gym_info
             else:
-                print(k, v)
                 setattr(user, k, v)
 
     session.add(user)
