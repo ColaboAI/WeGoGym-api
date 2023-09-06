@@ -8,7 +8,6 @@ from app.core.fastapi.dependencies.premission import (
 )
 from app.core.helpers.cache import Cache
 from app.schemas.workout_promise import (
-    GymInfoBase,
     PromiseLocationBase,
     WorkoutParticipantBase,
     WorkoutParticipantRead,
@@ -53,9 +52,7 @@ async def get_workout_promises(
     return {
         "total": total,
         "items": wp_list,
-        "next_cursor": offset + len(wp_list)
-        if total and total > offset + len(wp_list)
-        else None,
+        "next_cursor": offset + len(wp_list) if total and total > offset + len(wp_list) else None,
     }
 
 
@@ -75,9 +72,7 @@ async def get_recruiting_workout_promises(
     return {
         "total": total,
         "items": wp_list,
-        "next_cursor": offset + len(wp_list)
-        if total and total > offset + len(wp_list)
-        else None,
+        "next_cursor": offset + len(wp_list) if total and total > offset + len(wp_list) else None,
     }
 
 
@@ -102,9 +97,7 @@ async def get_workout_promises_written_by_me(
     return {
         "total": total,
         "items": wp_list,
-        "next_cursor": offset + len(wp_list)
-        if total and total > offset + len(wp_list)
-        else None,
+        "next_cursor": offset + len(wp_list) if total and total > offset + len(wp_list) else None,
     }
 
 
@@ -129,9 +122,7 @@ async def get_workout_promises_joined_by_me(
     return {
         "total": total,
         "items": wp_list,
-        "next_cursor": offset + len(wp_list)
-        if total and total > offset + len(wp_list)
-        else None,
+        "next_cursor": offset + len(wp_list) if total and total > offset + len(wp_list) else None,
     }
 
 
@@ -162,9 +153,7 @@ async def make_new_workout_promise(
     db: AsyncSession = Depends(get_db_transactional_session),
 ):
     if request.user.id:
-        db_workout_promise = await create_workout_promise(
-            db, request.user.id, workout_promise, promise_location
-        )
+        db_workout_promise = await create_workout_promise(db, request.user.id, workout_promise, promise_location)
     else:
         raise UnauthorizedException("You are not authenticated user")
 
@@ -186,9 +175,7 @@ async def join_workout_promise(
     req_body: WorkoutParticipantBase = Body(...),
     db: AsyncSession = Depends(get_db_transactional_session),
 ):
-    db_w_pp = await create_workout_participant(
-        db, workout_promise_id, req_body, req.user.id
-    )
+    db_w_pp = await create_workout_participant(db, workout_promise_id, req_body, req.user.id)
     await Cache.remove_by_prefix("workout-promise-detail")
 
     return db_w_pp
@@ -235,9 +222,7 @@ async def update_workout_promise(
     promise_location: PromiseLocationBase = Body(None),
     db: AsyncSession = Depends(get_db_transactional_session),
 ):
-    updated_w_p = await update_workout_promise_by_id(
-        db, workout_promise_id, workout_promise, promise_location
-    )
+    updated_w_p = await update_workout_promise_by_id(db, workout_promise_id, workout_promise, promise_location)
     await Cache.remove_by_prefix("workout-promise-detail")
     await Cache.remove_by_prefix("workout-promise-list")
     await Cache.remove_by_prefix("workout-promise-recruiting-list")
@@ -257,9 +242,7 @@ async def update_workout_participant(
     update_req: WorkoutParticipantUpdate = Body(...),
     db: AsyncSession = Depends(get_db_transactional_session),
 ):
-    updated_w_pp = await update_workout_participant_by_admin(
-        db, req.user.id, workout_promise_id, user_id, update_req
-    )
+    updated_w_pp = await update_workout_participant_by_admin(db, req.user.id, workout_promise_id, user_id, update_req)
     await Cache.remove_by_prefix("workout-promise-detail")
     await Cache.remove_by_prefix("workout-promise-list")
     await Cache.remove_by_prefix("workout-promise-recruiting-list")
