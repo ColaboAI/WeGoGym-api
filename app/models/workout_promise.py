@@ -32,7 +32,7 @@ class WorkoutPromise(TimestampMixin, Base):
     title: Mapped[str] = mapped_column(String, index=True, nullable=False)
     description: Mapped[str] = mapped_column(String, index=True, nullable=False)
     max_participants: Mapped[int] = mapped_column(Integer, default=3, nullable=False)
-    is_private: Mapped[bool] = mapped_column(Boolean, default=False)
+    is_private: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
     status: Mapped[str] = mapped_column(
         String,
         default=WorkoutPromiseStatus.RECRUITING,
@@ -40,22 +40,27 @@ class WorkoutPromise(TimestampMixin, Base):
         index=True,
         nullable=False,
     )
-    recruit_end_time: Mapped[datetime] = mapped_column(DateTime(timezone=True), index=True)
+    recruit_end_time: Mapped[datetime] = mapped_column(DateTime(timezone=True), index=True, nullable=True)
     # TODO: workout_id and related table should be added
-    promise_time: Mapped[datetime] = mapped_column(DateTime(timezone=True), index=True, server_default=utcnow())
+    promise_time: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), index=True, server_default=utcnow(), nullable=False
+    )
     workout_part: Mapped[str] = mapped_column(String, index=True, nullable=True)
     # Child table (One to "Many")
     admin_user_id: Mapped[UUID4] = mapped_column(
         GUID,
         ForeignKey("user.id", ondelete="CASCADE"),
+        nullable=False,
     )
     admin_user: Mapped["User"] = relationship("User", back_populates="admin_workout_promises", lazy="select")
 
     # 1:1 relationship
-    chat_room_id: Mapped[UUID4] = mapped_column(GUID, ForeignKey("chat_room.id", ondelete="SET NULL"))
+    chat_room_id: Mapped[UUID4] = mapped_column(GUID, ForeignKey("chat_room.id", ondelete="SET NULL"), nullable=True)
     chat_room: Mapped["ChatRoom"] = relationship("ChatRoom", back_populates="workout_promise", lazy="select")
 
-    promise_location_id: Mapped[UUID4] = mapped_column(GUID, ForeignKey("promise_location.id", ondelete="SET NULL"))
+    promise_location_id: Mapped[UUID4] = mapped_column(
+        GUID, ForeignKey("promise_location.id", ondelete="SET NULL"), nullable=True
+    )
     promise_location: Mapped["PromiseLocation"] = relationship(
         "PromiseLocation", back_populates="workout_promises", lazy="select"
     )
@@ -72,26 +77,30 @@ class WorkoutPromise(TimestampMixin, Base):
 class WorkoutParticipant(TimestampMixin, Base):
     __mapper_args__ = {"eager_defaults": True}
     id: Mapped[UUID4] = mapped_column(GUID, primary_key=True, index=True, default=uuid.uuid4)
-    name: Mapped[str] = mapped_column(String, index=True)
+    name: Mapped[str] = mapped_column(String, index=True, nullable=True)
 
     # 참여 여부, 승인 여부
-    status: Mapped[str] = mapped_column(String, default=ParticipantStatus.PENDING, index=True)
+    status: Mapped[str] = mapped_column(String, default=ParticipantStatus.PENDING, index=True, nullable=False)
 
     # 참여신청 시, 상태메세지를 입력할 수 있음
     # 참여 후에는 상태메세지로 참여자의 운동 등의 상태를 알 수 있음
-    status_message: Mapped[str] = mapped_column(String)
+    status_message: Mapped[str] = mapped_column(String, nullable=True)
     is_admin: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
 
     # ("Many" to one)
-    user_id: Mapped[UUID4] = mapped_column(GUID, ForeignKey("user.id", ondelete="CASCADE"))
+    user_id: Mapped[UUID4] = mapped_column(GUID, ForeignKey("user.id", ondelete="CASCADE"), nullable=False)
     user: Mapped["User"] = relationship("User", back_populates="workout_participants")
 
     # ("Many" to one)
-    workout_promise_id: Mapped[UUID4] = mapped_column(GUID, ForeignKey("workout_promise.id", ondelete="CASCADE"))
+    workout_promise_id: Mapped[UUID4] = mapped_column(
+        GUID, ForeignKey("workout_promise.id", ondelete="CASCADE"), nullable=False
+    )
     workout_promise: Mapped[WorkoutPromise] = relationship("WorkoutPromise", back_populates="participants")
 
     # 1:1 relationship child
-    chat_room_member_id: Mapped[UUID4] = mapped_column(GUID, ForeignKey("chat_room_member.id", ondelete="SET NULL"))
+    chat_room_member_id: Mapped[UUID4] = mapped_column(
+        GUID, ForeignKey("chat_room_member.id", ondelete="SET NULL"), nullable=True
+    )
     chat_room_member: Mapped["ChatRoomMember"] = relationship("ChatRoomMember", back_populates="workout_participant")
 
     notifications_workout_sender: Mapped[list["NotificationWorkout"]] = relationship(
@@ -137,13 +146,13 @@ class GymInfo(TimestampMixin, Base):  # type: ignore
     # 헬스장 이름
     name: Mapped[str] = mapped_column(String, index=True, nullable=False)
     # 사용자가 직접 등록한 헬스장인지 여부
-    is_custom_gym: Mapped[bool] = mapped_column(Boolean, default=False)
+    is_custom_gym: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
     # 도로명 주소
     address: Mapped[str] = mapped_column(String, index=True, nullable=False, unique=True)
     # 우편번호
-    zip_code: Mapped[str] = mapped_column(String)
+    zip_code: Mapped[str] = mapped_column(String, nullable=True)
     # 영업 상태
-    status: Mapped[str] = mapped_column(String)
+    status: Mapped[str] = mapped_column(String, nullable=True)
 
     # Parent relationship (Many to "One")
     users: Mapped[list["User"]] = relationship(
@@ -163,7 +172,7 @@ class GymInfo(TimestampMixin, Base):  # type: ignore
 class GymFacility(Base):
     id: Mapped[UUID4] = mapped_column(GUID, primary_key=True, index=True, default=uuid.uuid4)
     name: Mapped[str] = mapped_column(String, index=True, nullable=False, unique=True)
-    description: Mapped[str] = mapped_column(String, index=True)
+    description: Mapped[str] = mapped_column(String, index=True, nullable=True)
 
     # (Many to Many)
     gym_infos: Mapped[list[GymInfo]] = relationship(

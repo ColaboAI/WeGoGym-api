@@ -33,7 +33,9 @@ class NotificationWorkout(Notification):
     )
 
     # 알림을 보내는 유저(WorkoutParticipant) Many to One
-    sender_id: Mapped[UUID4] = mapped_column(GUID, ForeignKey("workout_participant.id", ondelete="CASCADE"))
+    sender_id: Mapped[UUID4] = mapped_column(
+        GUID, ForeignKey("workout_participant.id", ondelete="CASCADE"), nullable=False
+    )
     sender: Mapped["WorkoutParticipant"] = relationship(
         "WorkoutParticipant",
         back_populates="notifications_workout_sender",
@@ -42,7 +44,9 @@ class NotificationWorkout(Notification):
     )
 
     # 알림을 수신하는 유저들(WorkoutParticipants) Many to One
-    recipient_id: Mapped[UUID4] = mapped_column(GUID, ForeignKey("workout_participant.id", ondelete="CASCADE"))
+    recipient_id: Mapped[UUID4] = mapped_column(
+        GUID, ForeignKey("workout_participant.id", ondelete="CASCADE"), nullable=False
+    )
     recipient: Mapped["WorkoutParticipant"] = relationship(
         "WorkoutParticipant",
         back_populates="notifications_workout_recipient",

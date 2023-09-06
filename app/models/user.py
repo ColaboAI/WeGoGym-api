@@ -84,7 +84,7 @@ class User(TimestampMixin, Base):  # type: ignore
     last_active_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
 
     # Child relationship with GymInfo ("many" to one)
-    gym_info_id: Mapped[UUID4] = mapped_column(GUID, ForeignKey("gym_info.id", ondelete="SET NULL"))
+    gym_info_id: Mapped[UUID4] = mapped_column(GUID, ForeignKey("gym_info.id", ondelete="SET NULL"), nullable=True)
     gym_info: Mapped["GymInfo"] = relationship("GymInfo", back_populates="users")
 
     # Parent relationship with ChatRoomMember (Many to "One")

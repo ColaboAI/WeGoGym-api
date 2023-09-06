@@ -28,8 +28,8 @@ class Post(TimestampMixin, Base):
     title: Mapped[str] = mapped_column(String(100), nullable=False)
     content: Mapped[str] = mapped_column(TEXT, nullable=False)
     available: Mapped[bool] = mapped_column(Boolean, nullable=False, server_default="1")
-    image: Mapped[str] = mapped_column(TEXT)
-    video: Mapped[str] = mapped_column(TEXT)
+    image: Mapped[str] = mapped_column(TEXT, nullable=True)
+    video: Mapped[str] = mapped_column(TEXT, nullable=True)
     user_id: Mapped[UUID4] = mapped_column(GUID, ForeignKey("user.id", ondelete="CASCADE"), index=True, nullable=False)
     community_id: Mapped[int] = mapped_column(
         Integer,

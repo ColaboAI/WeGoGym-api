@@ -51,7 +51,9 @@ class ChatRoom(TimestampMixin, Base):
     name: Mapped[str] = mapped_column(String(100), index=True, nullable=True)
     description: Mapped[str] = mapped_column(String(200), nullable=True)
     is_private: Mapped[bool] = mapped_column(Boolean, index=True, nullable=False, server_default=true())
-    admin_user_id: Mapped[UUID4] = mapped_column(GUID, ForeignKey("user.id", ondelete="CASCADE"), index=True)
+    admin_user_id: Mapped[UUID4] = mapped_column(
+        GUID, ForeignKey("user.id", ondelete="SET NULL"), index=True, nullable=True
+    )
     admin_user: Mapped["User"] = relationship("User", back_populates="admin_chat_rooms")
     is_group_chat: Mapped[bool] = mapped_column(Boolean, index=True, nullable=False, server_default=true())
 
@@ -87,10 +89,10 @@ class Message(TimestampMixin, Base):
     id: Mapped[UUID4] = mapped_column(GUID, primary_key=True, index=True, default=uuid.uuid4)
 
     user: Mapped["User"] = relationship("User", back_populates="messages")
-    user_id: Mapped[UUID4] = mapped_column(GUID, ForeignKey("user.id", ondelete="SET NULL"))
+    user_id: Mapped[UUID4] = mapped_column(GUID, ForeignKey("user.id", ondelete="SET NULL"), nullable=True)
 
     chat_room: Mapped[ChatRoom] = relationship("ChatRoom", back_populates="messages")
-    chat_room_id: Mapped[UUID4] = mapped_column(GUID, ForeignKey("chat_room.id", ondelete="SET NULL"))
+    chat_room_id: Mapped[UUID4] = mapped_column(GUID, ForeignKey("chat_room.id", ondelete="SET NULL"), nullable=True)
 
     text: Mapped[str] = mapped_column(String(300), nullable=True)
     media_url: Mapped[str] = mapped_column(String(256), nullable=True)
