@@ -2,7 +2,7 @@ from datetime import datetime, timezone
 
 from uuid import UUID
 from fastapi import APIRouter, Depends, HTTPException, Query, Request
-from sqlalchemy import select
+from sqlalchemy import insert, select, update
 from app.core.exceptions.chat import ChatRoomNotFound
 from app.core.fastapi.dependencies.premission import (
     IsAuthenticated,
@@ -31,7 +31,7 @@ from app.services.chat_service import (
     get_user_mem_with_ids,
     make_chat_room_member,
 )
-from app.services.workout_promise_service import get_workout_promise_by_id
+from app.services.workout_promise_service import get_workout_promise_by_id, get_workout_promise_with_participants
 from app.session import get_db_transactional_session
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -99,37 +99,42 @@ async def create_chat_room(
             raise HTTPException(status_code=409, detail="Chat room already exists")
 
     try:
-        chat_room_obj = ChatRoom(**chat_room.model_dump(exclude={"members_user_ids", "retry", "workout_promise_id"}))
-        if chat_room.workout_promise_id:
-            workout_promise = await get_workout_promise_by_id(session, chat_room.workout_promise_id)
-            chat_room_obj.workout_promise = workout_promise
-            for wpp in workout_promise.participants:
-                is_admin = True if wpp.user_id == chat_room.admin_user_id else False
-                # FIXME: mypy
-                chat_room_member_obj = ChatRoomMember(  # type: ignore
-                    user=wpp.user,  # type: ignore
-                    is_admin=is_admin,
-                    workout_participant=wpp,
-                    chat_room=chat_room_obj,
-                )
-                session.add(chat_room_member_obj)
-                chat_room_obj.members.append(chat_room_member_obj)
-        else:
-            for uid in chat_room.members_user_ids:
-                is_admin = True if uid == chat_room.admin_user_id else False
-                user = await get_user_by_id(uid, session)
-                # FIXME: mypy
-                chat_room_member_obj = ChatRoomMember(  # type: ignore
-                    is_admin=is_admin,  # type: ignore
-                    user=user,
-                    chat_room=chat_room_obj,
-                )
-                session.add(chat_room_member_obj)
-                chat_room_obj.members.append(chat_room_member_obj)
+        chat_room_obj = await session.scalar(
+            insert(ChatRoom)
+            .values(**chat_room.model_dump(exclude={"members_user_ids", "retry", "workout_promise_id"}))
+            .returning(ChatRoom)
+        )
+        if chat_room_obj is None:
+            raise HTTPException(status_code=400, detail="Failed to create chat room")
 
-        session.add(chat_room_obj)
+        chat_mems = (
+            await session.scalars(
+                insert(ChatRoomMember)
+                .values(
+                    [
+                        {
+                            "user_id": uid,
+                            "chat_room_id": chat_room_obj.id,
+                            "is_admin": False if uid != chat_room.admin_user_id else True,
+                        }
+                        for uid in chat_room.members_user_ids
+                    ]
+                )
+                .returning(ChatRoomMember)
+            )
+        ).all()
+
+        if chat_room.workout_promise_id:
+            workout_promise = await get_workout_promise_with_participants(session, chat_room.workout_promise_id)
+            workout_promise.chat_room_id = chat_room_obj.id
+            for wpp in workout_promise.participants:
+                if wpp.user_id in chat_room.members_user_ids:
+                    wpp.chat_room_member_id = next(filter(lambda x: x.user_id == wpp.user_id, chat_mems)).id
+            session.add(workout_promise)
+
         await session.commit()
-        return chat_room_obj
+
+        return await get_chat_room_and_members_by_id(chat_room_obj.id, session)
     except Exception as e:
         await session.rollback()
         print(e, e.__dict__)
