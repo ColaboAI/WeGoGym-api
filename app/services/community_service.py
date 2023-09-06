@@ -53,7 +53,7 @@ async def create_post(user_id: UUID4, post_data: PostCreate, images: list[Upload
                 None,
                 aws.upload_files_to_s3,
                 images,
-                f"test/posts/{post_obj.id}",
+                f"posts/{post_obj.id}",
             )
             image_urls = ujson.dumps(res)
 
@@ -95,7 +95,7 @@ async def update_post_where_id(id: int, user_id: UUID4, post_data: PostUpdate, i
             None,
             aws.upload_files_to_s3_return_dict,
             images,
-            f"test/posts/{post_obj.id}",
+            f"posts/{post_obj.id}",
         )
         for order_str, url in res.items():
             image_list.append((int(order_str), url))
