@@ -116,6 +116,7 @@ class ChatService:
             except asyncio.CancelledError as e:
                 logger.debug(f"Subscribe handler cancelled: {e}")
                 await pubsub.unsubscribe(self.chat_room_id.__str__())
+                pubsub.close()
                 raise e
 
             except Exception as e:
