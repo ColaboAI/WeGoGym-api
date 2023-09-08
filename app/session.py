@@ -6,7 +6,13 @@ from sqlalchemy import exc
 from app.utils.ecs_log import logger
 
 sqlalchemy_database_uri = config.settings.DEFAULT_SQLALCHEMY_DATABASE_URI
-async_engine = create_async_engine(sqlalchemy_database_uri, pool_pre_ping=True, echo=True)
+async_engine = create_async_engine(
+    sqlalchemy_database_uri,
+    echo=True,
+    pool_pre_ping=True,
+    pool_size=20,
+    max_overflow=30,
+)
 
 transactional_session_factory = async_sessionmaker(
     async_engine,
@@ -20,15 +26,12 @@ async def get_db_transactional_session() -> AsyncGenerator[AsyncSession, None]:
     :param request: current request.
     :yield: database session.
     """
-    session: AsyncSession = transactional_session_factory()
-
-    try:  # noqa: WPS501
-        yield session
-    except exc.DBAPIError:
-        await session.rollback()
-    finally:
-        await session.commit()
-        await session.close()
+    async with transactional_session_factory() as session:
+        try:  # noqa: WPS501
+            yield session
+            await session.commit()
+        except exc.DBAPIError as e:
+            await session.rollback()
 
 
 class Transactional:
