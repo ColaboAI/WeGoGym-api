@@ -1,6 +1,6 @@
 import asyncio
 from datetime import datetime, timezone
-from uuid import UUID
+from pydantic import UUID4
 from fastapi.websockets import WebSocketState
 
 from sqlalchemy import delete, distinct, func, select, text
@@ -32,8 +32,8 @@ class ChatService:
     def __init__(
         self,
         websocket: WebSocket,
-        chat_room_id: UUID,
-        user_id: UUID,
+        chat_room_id: UUID4,
+        user_id: UUID4,
         session: AsyncSession,
     ):
         super().__init__()
@@ -160,8 +160,8 @@ class ChatMessageDataClass:
 
 
 async def get_user_mem_with_ids(
-    user_id: UUID,
-    room_id: UUID,
+    user_id: UUID4,
+    room_id: UUID4,
     session: AsyncSession,
 ) -> ChatRoomMember:
     """return chat room member if user is in room"""
@@ -174,7 +174,7 @@ async def get_user_mem_with_ids(
     return data
 
 
-async def get_chat_room_and_members_by_id(chat_room_id: UUID, session: AsyncSession) -> ChatRoom:
+async def get_chat_room_and_members_by_id(chat_room_id: UUID4, session: AsyncSession) -> ChatRoom:
     """return chat room and members by room_id"""
     stmt = (
         select(ChatRoom)
@@ -201,7 +201,7 @@ async def get_chat_room_and_members_by_id(chat_room_id: UUID, session: AsyncSess
         raise ChatRoomNotFound
 
 
-async def get_chat_room_by_id(chat_room_id: UUID, session: AsyncSession):
+async def get_chat_room_by_id(chat_room_id: UUID4, session: AsyncSession):
     """return chat room by room_id"""
     stmt = select(ChatRoom).where(ChatRoom.id == chat_room_id)
     result = await session.execute(stmt)
@@ -211,7 +211,7 @@ async def get_chat_room_by_id(chat_room_id: UUID, session: AsyncSession):
 
 # TODO
 async def get_chat_room_list_by_user_id(
-    session: AsyncSession, user_id: UUID, limit: int, offset: int | None = None
+    session: AsyncSession, user_id: UUID4, limit: int, offset: int | None = None
 ) -> tuple[int | None, list[ChatRoom]]:
     """return all chat room that user is in"""
 
@@ -333,8 +333,8 @@ async def get_public_chat_room_list(session: AsyncSession, limit: int, offset: i
 
 
 async def get_chat_room_member_by_user_and_room_id(
-    user_id: UUID,
-    room_id: UUID,
+    user_id: UUID4,
+    room_id: UUID4,
     session: AsyncSession,
 ):
     stmt = select(ChatRoomMember).where(ChatRoomMember.user_id == user_id, ChatRoomMember.chat_room_id == room_id)
@@ -343,7 +343,7 @@ async def get_chat_room_member_by_user_and_room_id(
     return chat_room_member
 
 
-async def make_chat_room_member(user_id: UUID, room_id: UUID, session: AsyncSession):
+async def make_chat_room_member(user_id: UUID4, room_id: UUID4, session: AsyncSession):
     chat_room_member = ChatRoomMember(user_id=user_id, chat_room_id=room_id)  # type: ignore
     session.add(chat_room_member)
     await session.commit()
@@ -352,8 +352,8 @@ async def make_chat_room_member(user_id: UUID, room_id: UUID, session: AsyncSess
 
 async def delete_chat_room_member_by_user_and_room_id(
     session: AsyncSession,
-    user_id: UUID,
-    room_id: UUID,
+    user_id: UUID4,
+    room_id: UUID4,
 ):
     stmt = text("DELETE FROM chat_room_member WHERE user_id = :user_id AND chat_room_id = :room_id")
     try:
@@ -385,7 +385,7 @@ async def get_chat_room_members_count(room_id: str, session: AsyncSession):
     return result.fetchone()
 
 
-async def get_user_by_id(user_id: UUID, session: AsyncSession) -> User:
+async def get_user_by_id(user_id: UUID4, session: AsyncSession) -> User:
     stmt = select(User).where(User.id == user_id)
     result = await session.execute(stmt)
     usr: User | None = result.scalars().first()
@@ -394,7 +394,7 @@ async def get_user_by_id(user_id: UUID, session: AsyncSession) -> User:
     return usr
 
 
-async def post_chat_message(user_id: UUID, room_id: UUID, message: str, session: AsyncSession):
+async def post_chat_message(user_id: UUID4, room_id: UUID4, message: str, session: AsyncSession):
     msg = Message(user_id=user_id, chat_room_id=room_id, text=message)  # type: ignore
     session.add(msg)
 
@@ -404,7 +404,7 @@ async def post_chat_message(user_id: UUID, room_id: UUID, message: str, session:
 
 async def get_chat_messages(
     session: AsyncSession,
-    room_id: UUID,
+    room_id: UUID4,
     created_at: datetime | None = None,
     limit: int = 10,
     offset: int = 0,
@@ -458,7 +458,7 @@ async def delete_chat_room_member_by_id(session: AsyncSession, chat_room_member_
 
 
 async def delete_chat_room_member_admin_by_id(
-    session: AsyncSession, chat_room_member_id: UUID, admin_id: UUID, chat_room_id: UUID
+    session: AsyncSession, chat_room_member_id: UUID4, admin_id: UUID4, chat_room_id: UUID4
 ):
     admin_mem = await get_user_mem_with_ids(admin_id, chat_room_id, session)
     if not admin_mem.is_admin:
@@ -469,7 +469,7 @@ async def delete_chat_room_member_admin_by_id(
     await session.commit()
 
 
-async def get_chat_message_by_id(session: AsyncSession, message_id: UUID) -> Message:
+async def get_chat_message_by_id(session: AsyncSession, message_id: UUID4) -> Message:
     stmt = select(Message).where(Message.id == message_id)
     result = await session.execute(stmt)
     msg = result.scalars().first()
@@ -478,7 +478,7 @@ async def get_chat_message_by_id(session: AsyncSession, message_id: UUID) -> Mes
     return msg
 
 
-async def get_last_message_and_members_by_room_id(session: AsyncSession, room_id: UUID) -> Message | None:
+async def get_last_message_and_members_by_room_id(session: AsyncSession, room_id: UUID4) -> Message | None:
     stmt = (
         select(Message)
         .where(Message.chat_room_id == room_id)
@@ -493,7 +493,7 @@ async def get_last_message_and_members_by_room_id(session: AsyncSession, room_id
 
 async def find_chat_room_by_user_ids(
     session: AsyncSession,
-    user_ids: list[UUID],
+    user_ids: list[UUID4],
     is_group_chat: bool = False,
 ):
     stmt = (
