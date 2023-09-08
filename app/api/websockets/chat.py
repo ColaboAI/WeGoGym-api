@@ -42,13 +42,12 @@ async def chat_websocket_endpoint(
         chat_service = ChatService(websocket, chat_room_id, user_id, session=session)
         await chat_service.run()
     except UserNotInChatRoom as e:
-        logger.debug(e)
         raise WSUserNotInChatRoom
-    except WebSocketDisconnect:
-        await conn_manager.disconnect(str_chat_room_id + "," + str_user_id)
+    except WebSocketDisconnect as e:
+        await conn_manager.disconnect(str_chat_room_id + str_user_id)
     except Exception as e:
         logger.debug(e)
     finally:
-        await conn_manager.disconnect(str_chat_room_id + "," + str_user_id)
+        await conn_manager.disconnect(str_chat_room_id + str_user_id)
         chat_room_member.last_read_at = datetime.now(timezone.utc)
         del chat_service

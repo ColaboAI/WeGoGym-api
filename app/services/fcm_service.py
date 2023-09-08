@@ -22,9 +22,9 @@ async def subscribe_fcm_token_to_topic(db: AsyncSession, user_id: uuid.UUID, top
 
     try:
         response = messaging.subscribe_to_topic(user.fcm_token, topic)
-        print("Successfully subscribed to topic:", response)
+        logger.debug("Successfully subscribed to topic:", response)
     except Exception as e:
-        print("Error subscribing to topic:", e)
+        logger.debug("Error subscribing to topic:", e)
 
 
 async def send_message_to_single_device_by_fcm_token(
