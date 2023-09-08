@@ -1,6 +1,7 @@
 import asyncio
 from datetime import datetime, timezone
 from uuid import UUID
+from fastapi.websockets import WebSocketState
 
 from sqlalchemy import delete, distinct, func, select, text
 from app.core.exceptions.chat import (
@@ -14,8 +15,7 @@ from app.services.fcm_service import send_message_to_multiple_devices_by_fcm_tok
 from app.services.user_service import get_blocked_me_list
 from app.utils.ecs_log import logger
 import ujson
-from fastapi import HTTPException, WebSocket
-from fastapi.exceptions import WebSocketException
+from fastapi import HTTPException, WebSocket, WebSocketDisconnect
 
 from coredis import RedisCluster
 from coredis.commands import ShardedPubSub
@@ -24,7 +24,7 @@ from dataclasses import asdict, dataclass
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 from sqlalchemy.orm.exc import NoResultFound
-from starlette.websockets import WebSocketState
+from app.core.conn import conn_manager
 
 
 # TODO: When Keyboard interrupt, close the connection. and task must be cancelled
@@ -93,60 +93,59 @@ class ChatService:
                         await send_message_to_multiple_devices_by_fcm_token_list(
                             fcm_tokens, title, body, data=asdict(msg_data)
                         )
+                    else:
+                        logger.warning("Websocket Connection State Changed")
+                        break
 
-                else:
-                    logger.warning(f"Websocket state: {self.ws.client_state}, reconnecting...")  # noqa: E501
-                    break
-
-            except WebSocketException as e:
-                logger.debug(f"Connection closed: {e}")
-                raise e
             except Exception as e:
-                logger.debug(f"Publish handler exception: {e}")
+                e.args += ("ChatService subscribe_handler",)
                 raise e
 
     async def subscribe_handler(self, pubsub: ShardedPubSub):
         await pubsub.subscribe(self.chat_room_id.__str__())
         while True:
             # FIXME: asyncio gather로 묶어서 task cancel이 안되는 문제가 있음
-            # websocket has client_state and application_state
             try:
-                if self.ws.client_state == WebSocketState.CONNECTED:
-                    message = await pubsub.get_message(ignore_subscribe_messages=True)
-                    if message and message.get("type") == "message":
-                        data_in_message = message.get("data", None)
-                        if isinstance((data_in_message), str) and data_in_message:
-                            data = ujson.loads(data_in_message)
-                            chat_message = ChatMessageDataClass(**data)
-                            await self.ws.send_json(asdict(chat_message), mode="text")
-                else:
-                    logger.warning(f"Websocket state: {self.ws.application_state}, reconnecting...")  # noqa: E501
-                    break
-            except WebSocketException as e:
-                logger.debug(f"Connection closed: {e}")
+                message = await pubsub.get_message()
+                if message and message.get("type") == "message":
+                    data_in_message = message.get("data", None)
+                    if isinstance((data_in_message), str) and data_in_message:
+                        data = ujson.loads(data_in_message)
+                        chat_message = ChatMessageDataClass(**data)
+                        await self.ws.send_json(asdict(chat_message), mode="text")
+            except asyncio.CancelledError as e:
+                logger.debug(f"Subscribe handler cancelled: {e}")
+                await pubsub.unsubscribe(self.chat_room_id.__str__())
                 raise e
+
             except Exception as e:
-                logger.debug(f"Subscribe handler exception: {e}")
+                e.args += ("ChatService subscribe_handler",)
                 raise e
 
     async def run(self):
         self.pubsub: ShardedPubSub = self.conn.sharded_pubsub()
-
-        tasks = [self.publish_handler(self.conn), self.subscribe_handler(self.pubsub)]
+        task_1 = asyncio.create_task(self.publish_handler(self.conn))
+        task_2 = asyncio.create_task(self.subscribe_handler(self.pubsub))
+        tasks = [task_1, task_2]
         try:
-            res = await asyncio.gather(*tasks, return_exceptions=True)
-            logger.info(f"Result: {res}")
+            done, pending = await asyncio.wait(tasks, return_when=asyncio.FIRST_COMPLETED)
 
-        except asyncio.CancelledError:
-            logger.debug("Task cancelled")
+            for task in pending:
+                logger.debug(f"Cancel task: {task}")
+                task.cancel()
+            for task in done:
+                logger.debug(f"Result: {task.result()}")
+                raise task.exception()
 
         except Exception as e:
             logger.debug(f"Run exception: {e}")
-
+            raise e
         finally:
             if self.pubsub:
                 await self.pubsub.close()
                 del self.pubsub
+            if self.ws:
+                del self.ws
 
 
 @dataclass(slots=True)

@@ -7,6 +7,7 @@ from app.core.exceptions.websocket import WSInvalidToken, WSTokenExpired
 from app.utils.token_helper import TokenHelper
 from starlette.websockets import WebSocketState
 
+
 # Add connection manager method to validate user auth
 class ConnectionManager:
     def __init__(self):

@@ -137,7 +137,6 @@ async def create_chat_room(
         return await get_chat_room_and_members_by_id(chat_room_obj.id, session)
     except Exception as e:
         await session.rollback()
-        print(e, e.__dict__)
         raise HTTPException(status_code=500, detail=str(e))
 
 
