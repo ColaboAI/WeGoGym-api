@@ -11,8 +11,6 @@ venv
 README.md
 log.txt
 
-db
-
 __pycache__
 *.pyc
 *.pyo
