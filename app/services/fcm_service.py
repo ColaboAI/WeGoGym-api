@@ -6,6 +6,7 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.models.notification import NotificationWorkout
 from app.models.user import User
+from app.session import Transactional
 from app.utils.ecs_log import logger
 from app.schemas.notification import NotificationWorkoutTitle
 
@@ -58,14 +59,15 @@ async def send_message_to_single_device_by_fcm_token(
 
 
 # google fcm admin sdk 를 사용하여 메시지를 보내는 함수
+@Transactional()
 async def send_message_to_single_device_by_uid(
-    db: AsyncSession,
+    session: AsyncSession,
     user_id: UUID4,
     title: str,
     body: str,
     data: dict[str, str] | None = None,
 ):
-    user = await db.get(User, user_id)
+    user = await session.get(User, user_id)
 
     if user is None or user.fcm_token is None:
         return
