@@ -1,12 +1,12 @@
 from typing import TYPE_CHECKING
 from pydantic import UUID4
 from app.core.db.mixins.timestamp_mixin import TimestampMixin
-from sqlalchemy import Float, Integer, ForeignKey, String, Text
-from sqlalchemy.orm import relationship, mapped_column, Mapped
+from sqlalchemy import Float, Integer, ForeignKey, String, Text, UniqueConstraint
+from sqlalchemy.orm import relationship, mapped_column, Mapped, query_expression
 from app.models import Base, GUID
 
 if TYPE_CHECKING:
-    from app.models.community import Post
+    from app.models.community import Post, User
 
 
 class AiCoaching(TimestampMixin, Base):
@@ -29,3 +29,23 @@ class AiCoaching(TimestampMixin, Base):
     )
 
     post: Mapped["Post"] = relationship("Post", back_populates="ai_coaching")
+
+    ai_coaching_likes: Mapped["AiCoachingLike"] = relationship("AiCoachingLike", back_populates="ai_coaching")
+
+    is_liked: Mapped[int] = query_expression()
+    like_cnt: Mapped[int] = query_expression()
+
+
+class AiCoachingLike(TimestampMixin, Base):
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True, autoincrement=True)
+    is_liked: Mapped[int] = mapped_column(Integer, nullable=False)
+    user_id: Mapped[UUID4] = mapped_column(GUID, ForeignKey("user.id", ondelete="SET NULL"), index=True, nullable=False)
+    ai_coaching_id: Mapped[int] = mapped_column(
+        Integer,
+        ForeignKey("ai_coaching.id", ondelete="CASCADE"),
+        index=True,
+        nullable=False,
+    )
+    user: Mapped["User"] = relationship("User", back_populates="ai_coaching_likes")
+    ai_coaching: Mapped[AiCoaching] = relationship("AiCoaching", back_populates="ai_coaching_likes")
+    __table_args__ = (UniqueConstraint("user_id", "ai_coaching_id"),)
