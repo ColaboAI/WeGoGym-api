@@ -1,16 +1,20 @@
+from fastapi.encoders import jsonable_encoder
 import openai
 from pydantic import UUID4
 import ujson
 from app.ai.client import get_summary_chain, text_splitter
 from app.ai.prompt import get_zero_shot_prompt
-from app.ai.repository import create_ai_coaching
+from app.ai import repository as ai_coaching_repository
 from app.ai.utils import calc_cost, transform_func
+from app.ai.config import ai_settings
+from app.core.exceptions.base import BadRequestException
 from app.utils.ecs_log import logger
 from app.services import fcm_service
-from app.ai.config import ai_settings
 from langchain.callbacks import get_openai_callback
-
 import tiktoken
+from sqlalchemy.orm.exc import NoResultFound
+from sqlalchemy.exc import IntegrityError
+from app.core.exceptions import NotFoundException
 
 
 async def make_ai_coaching(user_input: str, user_id: UUID4, post_id: UUID4, model_name="gpt-3.5-turbo"):
@@ -56,14 +60,20 @@ async def make_ai_coaching(user_input: str, user_id: UUID4, post_id: UUID4, mode
         try:
             result["post_id"] = post_id
             result["user_id"] = user_id
-            await create_ai_coaching(result)
+            await ai_coaching_repository.create_ai_coaching(result)
             parsed_response = ujson.loads(result["response"])
-            await fcm_service.send_message_to_single_device_by_uid(
-                user_id=user_id,
-                title="AI 코칭이 도착했어요!",
-                body=parsed_response["answer"][:50],  # 50자까지만 보여주기
-                data={"post_id": str(post_id)},
-            )
+            if parsed_response["summary"] is not None:
+                await ai_coaching_repository.update_post_summary_where_id(
+                    post_id,
+                    parsed_response["summary"][:200],
+                )
+            if parsed_response["answer"] is not None:
+                await fcm_service.send_message_to_single_device_by_uid(
+                    user_id=user_id,
+                    title="AI 코칭이 도착했어요!",
+                    body=parsed_response["answer"][:50],  # 50자까지만 보여주기
+                    data={"post_id": str(post_id)},
+                )
         except Exception as e:
             logger.error(e)
 
@@ -85,3 +95,43 @@ async def openai_chat_completion(user_input: str, model_name="gpt-3.5-turbo"):
         "cost": cost,
         "model_name": model_name,
     }
+
+
+async def get_ai_coaching_where_post_id(post_id: int, user_id: UUID4 | None) -> dict:
+    try:
+        ai_coaching_obj = await ai_coaching_repository.get_ai_coaching_where_post_id(post_id, user_id)
+
+        encoded = jsonable_encoder(ai_coaching_obj)
+        print(encoded)
+        ai_response = ujson.loads(encoded.pop("response"))
+        return {**encoded, **ai_response}
+
+    except NoResultFound as e:
+        raise NotFoundException("AI Coaching not found") from e
+
+
+async def get_ai_coaching_where_id(ai_coaching_id: int, user_id: UUID4) -> dict:
+    try:
+        ai_coaching_obj = await ai_coaching_repository.get_ai_coaching_where_id(ai_coaching_id, user_id)
+        encoded = jsonable_encoder(ai_coaching_obj)
+        ai_response = ujson.loads(encoded.pop("response"))
+        return {**encoded, **ai_response}
+
+    except NoResultFound as e:
+        raise NotFoundException("AI Coaching not found") from e
+
+
+async def create_or_update_ai_coaching_like(ai_coaching_id: int, user_id: UUID4, like: int):
+    try:
+        await ai_coaching_repository.create_or_update_like(ai_coaching_id, user_id, like)
+        return await get_ai_coaching_where_id(ai_coaching_id, user_id)
+    except IntegrityError as e:
+        raise BadRequestException(str(e.orig)) from e
+
+
+async def delete_ai_coaching_like(ai_coaching_id: int, user_id: UUID4):
+    try:
+        await ai_coaching_repository.delete_like_where_ai_coaching_id_and_user_id(ai_coaching_id, user_id)
+        return await get_ai_coaching_where_id(ai_coaching_id, user_id)
+    except NoResultFound as e:
+        raise NotFoundException("Like not found") from e
