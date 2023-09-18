@@ -31,6 +31,7 @@ from app.models.workout_promise import WorkoutParticipant
 
 if TYPE_CHECKING:
     from app.models import GymInfo, Post, PostLike, Comment, CommentLike
+    from app.ai.models import AiCoachingLike
 
 
 user_block_list = Table(
@@ -172,6 +173,13 @@ class User(TimestampMixin, Base):  # type: ignore
 
     comment_likes: Mapped[list["CommentLike"]] = relationship(
         "CommentLike",
+        back_populates="user",
+        cascade="save-update, merge, delete",
+        passive_deletes=True,
+    )
+
+    ai_coaching_likes: Mapped[list["AiCoachingLike"]] = relationship(
+        "AiCoachingLike",
         back_populates="user",
         cascade="save-update, merge, delete",
         passive_deletes=True,
