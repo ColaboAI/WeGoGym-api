@@ -111,7 +111,14 @@ async def post_post(
     return normalize_post(post_obj)
 
 
-@router.get("/posts/{post_id}", status_code=200, response_model=PostResponse)
+@router.get(
+    "/posts/{post_id}",
+    status_code=200,
+    response_model=PostResponse,
+    dependencies=[
+        Depends(PermissionDependency([AllowAll])),
+    ],
+)
 async def get_post(post_id: int, user_id: UUID4 | None = Depends(get_user_id_from_request)):
     post = await community_service.get_post_with_like_cnt_where_id(post_id, user_id=user_id)
 
