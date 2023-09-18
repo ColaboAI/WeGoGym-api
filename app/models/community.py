@@ -27,6 +27,7 @@ class Community(TimestampMixin, Base):
 class Post(TimestampMixin, Base):
     id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True, autoincrement=True)
     title: Mapped[str] = mapped_column(String(100), nullable=False)
+    summary: Mapped[str] = mapped_column(String(200), nullable=True, comment="Ai Summary")
     content: Mapped[str] = mapped_column(TEXT, nullable=False)
     available: Mapped[bool] = mapped_column(Boolean, nullable=False, server_default="1")
     image: Mapped[str] = mapped_column(TEXT, nullable=True)

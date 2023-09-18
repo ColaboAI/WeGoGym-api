@@ -76,6 +76,7 @@ class PostUpdate(BaseModel):
     content: str | None = Field(None, min_length=1, max_length=1000)
     video: list[str] | None = Field(None, description="video url. ex) https://www.youtube.com/watch?v=1234")
     image_list: list[OrderedImage] | None = Field(None, description="list of image urls")
+    summary: str | None = Field(None)
 
     def create_dict(self) -> dict:
         d = self.model_dump(exclude_unset=True)
@@ -93,6 +94,7 @@ class PostRead(PostBase):
     created_at: datetime
     updated_at: datetime
     user: AuthorRead | None = None
+    summary: str | None = None
 
     model_config = ConfigDict(
         from_attributes=True,
