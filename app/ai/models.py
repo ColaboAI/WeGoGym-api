@@ -12,9 +12,9 @@ if TYPE_CHECKING:
 class AiCoaching(TimestampMixin, Base):
     id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True, autoincrement=True)
     post_id: Mapped[Integer] = mapped_column(
-        Integer, ForeignKey("post.id", ondelete="SET NULL"), nullable=False, index=True
+        Integer, ForeignKey("post.id", ondelete="SET NULL"), nullable=True, index=True
     )
-    user_id: Mapped[UUID4] = mapped_column(GUID, ForeignKey("user.id", ondelete="SET NULL"), nullable=False, index=True)
+    user_id: Mapped[UUID4] = mapped_column(GUID, ForeignKey("user.id", ondelete="SET NULL"), nullable=True, index=True)
 
     response: Mapped[str] = mapped_column(Text, nullable=False)
     prompt_tokens: Mapped[int] = mapped_column(
