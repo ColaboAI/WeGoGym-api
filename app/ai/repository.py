@@ -45,7 +45,6 @@ async def get_ai_coaching_where_post_id(post_id: int, user_id: UUID4 | None, ses
         .where(AiCoaching.post_id == post_id)
     )
     if user_id is not None:
-        print("user_id!!!!!", user_id)
         stmt = stmt.options(
             with_expression(
                 AiCoaching.is_liked,
