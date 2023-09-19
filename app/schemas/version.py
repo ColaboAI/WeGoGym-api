@@ -9,7 +9,7 @@ class AppVersion(BaseModel):
 
 
 latest_version = AppVersion(
-    version_number="1.0.5",
+    version_number="1.0.6",
     update_link_iOS="https://apps.apple.com/kr/app/wegogym/id6447636341",
     update_link_android="https://play.google.com/store/search?q=%EC%9C%84%EA%B3%A0%EC%A7%90&c=apps&hl=ko-KR",
 )
