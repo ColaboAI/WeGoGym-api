@@ -58,7 +58,7 @@ async def get_ai_coaching_where_post_id(post_id: int, user_id: UUID4 | None, ses
             )
         )
     ai_coaching = await session.execute(stmt)
-    return ai_coaching.scalar_one()
+    return ai_coaching.scalar_one_or_none()
 
 
 @Transactional()
