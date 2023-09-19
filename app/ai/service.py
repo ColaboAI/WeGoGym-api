@@ -97,17 +97,23 @@ async def openai_chat_completion(user_input: str, model_name="gpt-3.5-turbo"):
     }
 
 
-async def get_ai_coaching_where_post_id(post_id: int, user_id: UUID4 | None) -> dict:
+async def get_ai_coaching_where_post_id(post_id: int, user_id: UUID4 | None) -> dict | None:
     try:
         ai_coaching_obj = await ai_coaching_repository.get_ai_coaching_where_post_id(post_id, user_id)
 
         encoded = jsonable_encoder(ai_coaching_obj)
-        print(encoded)
-        ai_response = ujson.loads(encoded.pop("response"))
-        return {**encoded, **ai_response}
+        ai_response: dict | None = None
+        try:
+            ai_response_raw = encoded.pop("response")
+            ai_response = ujson.loads(ai_response_raw)
+        except KeyError:
+            ai_response = None
+        except ujson.JSONDecodeError:
+            ai_response = {"answer": ai_response_raw}
+        return {**encoded, **ai_response} if ai_response is not None else {**encoded}
 
     except NoResultFound as e:
-        raise NotFoundException("AI Coaching not found") from e
+        return None
 
 
 async def get_ai_coaching_where_id(ai_coaching_id: int, user_id: UUID4) -> dict:

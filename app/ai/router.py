@@ -1,9 +1,6 @@
 from typing import Annotated
-from fastapi import APIRouter, Depends, HTTPException, Request
-from fastapi.encoders import jsonable_encoder
+from fastapi import APIRouter, Depends, Query
 from pydantic import UUID4
-from fastapi.responses import UJSONResponse
-import ujson
 from app.ai import service as ai_service
 from app.ai.schema import AiCoachingResponse
 from app.core.fastapi.dependencies.premission import AllowAll, IsAuthenticated, PermissionDependency
@@ -16,7 +13,7 @@ router = APIRouter(
 
 
 @router.get(
-    "/coachings",
+    "/coachings/all",
     status_code=200,
     summary="Get all ai coaching",
 )
@@ -25,17 +22,19 @@ async def get_all_ai_coaching():
 
 
 @router.get(
-    "/coachings/{id}",
+    "/coachings",
     status_code=200,
     summary="Get ai coaching where post id",
-    response_model=AiCoachingResponse,
+    response_model=Annotated[AiCoachingResponse | None, None],
     dependencies=[
         Depends(PermissionDependency([AllowAll])),
     ],
 )
-async def get_ai_coaching_where_id(id: int, user_id: Annotated[UUID4, None] = Depends(get_user_id_from_request)):
-    print("user_id!!!!!", user_id)
-    return await ai_service.get_ai_coaching_where_post_id(id, user_id)
+async def get_ai_coaching_where_id(
+    post_id: int = Query(..., ge=1),
+    user_id: Annotated[UUID4, None] = Depends(get_user_id_from_request),
+):
+    return await ai_service.get_ai_coaching_where_post_id(post_id, user_id)
 
 
 @router.post(

@@ -1,5 +1,8 @@
+from typing import Annotated
 from langchain.output_parsers import PydanticOutputParser
-from pydantic import BaseModel, ConfigDict, Field, FieldValidationInfo, validator
+from pydantic import BaseModel
+
+str_default_none = Annotated[str | None, None]
 
 
 class AiCoachingFromLLM(BaseModel):
@@ -11,9 +14,9 @@ class AiCoachingFromLLM(BaseModel):
 class AiCoachingResponse(BaseModel):
     id: int
     post_id: int
-    summary: str | None
-    answer: str | None
-    motivation: str | None
+    summary: str_default_none = None
+    answer: str_default_none = None
+    motivation: str_default_none = None
 
     like_cnt: int | None = 0
     is_liked: int | None = -1
