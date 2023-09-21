@@ -107,4 +107,4 @@ class NotificationWorkoutListResponse(BaseListResponse):
     )
 
 
-NotificationWorkoutRead.update_forward_refs()
+NotificationWorkoutRead.model_rebuild()

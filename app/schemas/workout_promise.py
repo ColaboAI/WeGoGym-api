@@ -213,5 +213,5 @@ class WorkoutPromiseListResponse(BaseListResponse):
     )
 
 
-WorkoutPromiseRead.update_forward_refs()
-WorkoutParticipantRead.update_forward_refs()
+WorkoutPromiseRead.model_rebuild()
+WorkoutParticipantRead.model_rebuild()

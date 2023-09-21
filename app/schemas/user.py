@@ -139,5 +139,5 @@ class CheckUserInfoResponse(BaseModel):
 # if TYPE_CHECKING:
 from app.schemas.workout_promise import GymInfoBase, GymInfoRead
 
-UserUpdate.update_forward_refs()
-MyInfoRead.update_forward_refs()
+UserUpdate.model_rebuild()
+MyInfoRead.model_rebuild()
