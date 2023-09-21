@@ -3,7 +3,10 @@ import openai
 from pydantic import UUID4
 import ujson
 from app.ai.client import get_summary_chain, text_splitter
-from app.ai.prompt import get_zero_shot_prompt
+from app.ai.prompt import (
+    get_gpt_messages,
+    get_zero_shot_prompt,
+)
 from app.ai import repository as ai_coaching_repository
 from app.ai.utils import calc_cost, transform_func
 from app.ai.config import ai_settings
@@ -32,12 +35,12 @@ async def make_ai_coaching(user_input: str, user_id: UUID4, post_id: UUID4, mode
     token_length = len(encoding.encode(get_zero_shot_prompt(processed_text["transformed_text"])))
     logger.debug(f"prompt token counts: {token_length}")
     result = None
-    docs = text_splitter.create_documents([processed_text["transformed_text"]])
-    logger.debug(f"docs: {docs}")
 
     try:
         if token_length > 2048:
             with get_openai_callback() as cb:
+                docs = text_splitter.create_documents([processed_text["transformed_text"]])
+                logger.debug(f"docs: {docs}")
                 text = await summary_chain.arun(docs)
 
                 logger.debug(repr(cb))
@@ -51,6 +54,7 @@ async def make_ai_coaching(user_input: str, user_id: UUID4, post_id: UUID4, mode
         else:
             result = await openai_chat_completion(
                 user_input=processed_text["transformed_text"],
+                model_name=model_name,
             )
     except Exception as e:
         logger.error(e)
@@ -80,10 +84,8 @@ async def make_ai_coaching(user_input: str, user_id: UUID4, post_id: UUID4, mode
 
 async def openai_chat_completion(user_input: str, model_name="gpt-3.5-turbo"):
     openai.api_key = ai_settings.OPENAI_API_KEY
-    messages = [
-        {"role": "user", "content": get_zero_shot_prompt(user_input)},
-    ]
-    response = await openai.ChatCompletion.acreate(model=model_name, messages=messages, temperature=0, max_tokens=2048)
+    messages = get_gpt_messages(model_name=model_name, user_input=user_input)
+    response = await openai.ChatCompletion.acreate(model=model_name, messages=messages, temperature=0.1)
     logger.debug(response)
     prompt_tokens = response["usage"]["prompt_tokens"]
     completion_tokens = response["usage"]["completion_tokens"]
