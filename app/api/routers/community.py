@@ -106,6 +106,7 @@ async def post_post(
             user_input=f"{post_obj.title}\n{post_obj.content}",
             user_id=user_id,
             post_id=post_obj.id,
+            model_name="gpt-4",
         )
 
     return normalize_post(post_obj)
