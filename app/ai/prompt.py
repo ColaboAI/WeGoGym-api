@@ -42,7 +42,9 @@ combine_system_prompt_with_format_instructions = """You will be given a list of 
 2. Analyze the summary and provide a comprehensive answer in Korean from the perspective of a healthcare expert. If user asked multiple questions, answer all of them.
 3. Add positive encouragement in Korean that can help with exercise motivation at the end."""
 
-
+map_system_template = (
+    "You are health care expert. You are helping a user who is seeking advice related to weight training."
+)
 map_template = """Summarize the user's text, separated by three sharp(###), in 3 bullet points.
 ###{text}###"""
 
@@ -52,7 +54,7 @@ combine_template = """{text}
 
 map_prompt = ChatPromptTemplate(
     messages=[
-        SystemMessagePromptTemplate.from_template(system_prompt),
+        SystemMessagePromptTemplate.from_template(map_system_template),
         HumanMessagePromptTemplate.from_template(map_template),
     ],
     input_variables=["text"],
