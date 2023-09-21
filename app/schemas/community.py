@@ -7,10 +7,11 @@ import ujson
 
 
 class CommunityEnum(int, Enum):
-    WORKOUT = 1
+    WORKOUT = 1  # 운동
     DIET = 2  # 식단
     FREE = 3
     ANONYMOUS = 4
+    SOCIAL = 5
 
 
 class AuthorRead(BaseModel):
@@ -18,8 +19,9 @@ class AuthorRead(BaseModel):
     username: str
     profile_pic: str | None = None
 
-    class Config:
-        orm_mode = True
+    model_config = ConfigDict(
+        from_attributes=True,
+    )
 
 
 class CommunityCreate(BaseModel):
@@ -27,8 +29,9 @@ class CommunityCreate(BaseModel):
     description: str = Field(..., min_length=1)
     type: int = Field(CommunityEnum.WORKOUT, description="게시판 타입(운동, 식단, 자유, 익명)")
 
-    class Config:
-        orm_mode = True
+    model_config = ConfigDict(
+        from_attributes=True,
+    )
 
     # password: Optional[str] = Field(None, description="관리자 비밀번호")
 
@@ -40,10 +43,10 @@ class CommunityRead(BaseModel):
     description: str
     created_at: datetime
     updated_at: datetime
-
-    class Config:
-        orm_mode = True
-        use_enum_values = True
+    model_config = ConfigDict(
+        from_attributes=True,
+        use_enum_values=True,
+    )
 
 
 class PostBase(BaseModel):

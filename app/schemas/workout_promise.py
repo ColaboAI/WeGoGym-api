@@ -1,7 +1,7 @@
 from datetime import datetime
 from enum import Enum
 
-from pydantic import BaseModel, Field, UUID4
+from pydantic import BaseModel, ConfigDict, Field, UUID4
 from app.schemas.chat import ChatRoomRead
 from app.schemas.user import UserRead
 
@@ -53,8 +53,9 @@ class GymInfoRead(GymInfoBase):
     created_at: datetime
     updated_at: datetime
 
-    class Config:
-        orm_mode = True
+    model_config = ConfigDict(
+        from_attributes=True,
+    )
 
 
 class PromiseLocationBase(BaseModel):
@@ -86,8 +87,9 @@ class PromiseLocationRead(PromiseLocationBase):
     created_at: datetime
     updated_at: datetime
 
-    class Config:
-        orm_mode = True
+    model_config = ConfigDict(
+        from_attributes=True,
+    )
 
 
 class WorkoutPromiseBase(BaseModel):
@@ -115,8 +117,9 @@ class WorkoutPromiseRead(WorkoutPromiseBase):
     participants: list["WorkoutParticipantRead"]
     status: WorkoutPromiseStatus
 
-    class Config:
-        orm_mode = True
+    model_config = ConfigDict(
+        from_attributes=True,
+    )
 
 
 # id -> from path parameter
@@ -157,8 +160,9 @@ class WorkoutParticipantBase(BaseModel):
     status_message: str | None = Field(None, description="Status message of participant")
     is_admin: bool = Field(False, description="Is admin of Promise")
 
-    class Config:
-        orm_mode = True
+    model_config = ConfigDict(
+        from_attributes=True,
+    )
 
 
 class WorkoutParticipantRead(WorkoutParticipantBase):
@@ -170,8 +174,9 @@ class WorkoutParticipantRead(WorkoutParticipantBase):
     user_id: UUID4 | None
     user: UserRead | None
 
-    class Config:
-        orm_mode = True
+    model_config = ConfigDict(
+        from_attributes=True,
+    )
 
 
 class WorkoutParticipantUpdate(BaseModel):
@@ -203,8 +208,9 @@ class WorkoutPromiseListResponse(BaseListResponse):
     items: list[WorkoutPromiseRead]
     next_cursor: int | None
 
-    class Config:
-        orm_mode = True
+    model_config = ConfigDict(
+        from_attributes=True,
+    )
 
 
 WorkoutPromiseRead.update_forward_refs()

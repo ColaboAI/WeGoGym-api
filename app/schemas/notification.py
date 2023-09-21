@@ -1,7 +1,7 @@
 from datetime import datetime
 from enum import Enum
 
-from pydantic import BaseModel, Field, UUID4
+from pydantic import BaseModel, ConfigDict, Field, UUID4
 
 from app.schemas.workout_promise import WorkoutParticipantRead
 
@@ -52,15 +52,17 @@ class NotificationBase(BaseModel):
     message: str | None = Field(None, min_length=1, max_length=100)
     read_at: datetime | None = Field(None, description="읽은 시간")
 
-    class Config:
-        orm_mode = True
+    model_config = ConfigDict(
+        from_attributes=True,
+    )
 
 
 class NotificationWorkoutBase(NotificationBase):
     notification_type: NotificationWorkoutType = Field(..., description="운동 알림 타입")
 
-    class Config:
-        orm_mode = True
+    model_config = ConfigDict(
+        from_attributes=True,
+    )
 
 
 class NotificationWorkoutRead(NotificationWorkoutBase):
@@ -72,8 +74,9 @@ class NotificationWorkoutRead(NotificationWorkoutBase):
     recipient_id: UUID4 = Field(..., description="알림 받는 사람")
     recipient: WorkoutParticipantRead
 
-    class Config:
-        orm_mode = True
+    model_config = ConfigDict(
+        from_attributes=True,
+    )
 
 
 class NotificationWorkoutUpdate(BaseModel):
@@ -99,8 +102,9 @@ class NotificationWorkoutListResponse(BaseListResponse):
     items: list[NotificationWorkoutRead]
     next_cursor: int | None
 
-    class Config:
-        orm_mode = True
+    model_config = ConfigDict(
+        from_attributes=True,
+    )
 
 
 NotificationWorkoutRead.update_forward_refs()

@@ -5,7 +5,7 @@ from typing import Any, Optional
 from datetime import datetime
 from pydantic_core import CoreSchema
 import ujson
-from pydantic import BaseModel, Field, UUID4, GetCoreSchemaHandler
+from pydantic import BaseModel, ConfigDict, Field, UUID4, GetCoreSchemaHandler
 
 
 class CreateUpdateDictModel(BaseModel):
@@ -31,8 +31,9 @@ class UserRead(CreateUpdateDictModel):
     username: str
     profile_pic: str | None
 
-    class Config:
-        orm_mode = True
+    model_config = ConfigDict(
+        from_attributes=True,
+    )
 
 
 class UserListRead(BaseModel):
@@ -125,8 +126,9 @@ class RecommendedUser(BaseModel):
     username: str
 
     # similarity: float
-    class Config:
-        orm_mode = True
+    model_config = ConfigDict(
+        from_attributes=True,
+    )
 
 
 class CheckUserInfoResponse(BaseModel):
