@@ -37,7 +37,7 @@ async def make_ai_coaching(user_input: str, user_id: UUID4, post_id: UUID4, mode
     result = None
 
     try:
-        if token_length > 2048:
+        if token_length > 1024 * 4:
             with get_openai_callback() as cb:
                 docs = text_splitter.create_documents([processed_text["transformed_text"]])
                 logger.debug(f"docs: {docs}")
