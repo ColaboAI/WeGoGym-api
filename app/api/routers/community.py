@@ -1,5 +1,5 @@
 from typing_extensions import Annotated
-from fastapi import APIRouter, Body, Depends, Form, Query, UploadFile, File
+from fastapi import APIRouter, BackgroundTasks, Body, Depends, Form, Query, UploadFile, File
 from typing import List
 
 from pydantic import UUID4, Json
@@ -25,6 +25,7 @@ from app.core.fastapi.dependencies.premission import (
     IsAdmin,
     PermissionDependency,
 )
+from app.ai import service as ai_service
 
 router = APIRouter(prefix="/communities", tags=["community"])
 
@@ -92,15 +93,33 @@ async def get_posts_where_community_id(
     ],
 )
 async def post_post(
+    background_task: BackgroundTasks,
     post: Annotated[Json[PostCreate], Form(media_type="multipart/form-data")],
     images: list[UploadFile] = File(None, description="Post Images"),  # FIXME: Is definition correct?
     user_id: UUID4 = Depends(get_user_id_from_request),
 ):
     post_obj = await community_service.create_post(user_id, post, images)
+    if post.want_ai_coach is True and post_obj is not None and len(post_obj.content) > 5:
+        # make ai coaching
+        background_task.add_task(
+            ai_service.make_ai_coaching,
+            user_input=f"{post_obj.title}\n{post_obj.content}",
+            user_id=user_id,
+            post_id=post_obj.id,
+            model_name="gpt-4",
+        )
+
     return normalize_post(post_obj)
 
 
-@router.get("/posts/{post_id}", status_code=200, response_model=PostResponse)
+@router.get(
+    "/posts/{post_id}",
+    status_code=200,
+    response_model=PostResponse,
+    dependencies=[
+        Depends(PermissionDependency([AllowAll])),
+    ],
+)
 async def get_post(post_id: int, user_id: UUID4 | None = Depends(get_user_id_from_request)):
     post = await community_service.get_post_with_like_cnt_where_id(post_id, user_id=user_id)
 

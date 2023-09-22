@@ -11,6 +11,7 @@ from app.api.routers.notification import notification_router
 from app.api.routers.voc import voc_router
 from app.api.routers.version import version_router
 from app.api.routers.community import router as community_router
+from app.ai.router import router as ai_router
 
 api_router = APIRouter(prefix="/api/v1")
 
@@ -66,6 +67,10 @@ api_router.include_router(
     version_router,
     prefix="/version",
     tags=["version"],
+)
+
+api_router.include_router(
+    ai_router,
 )
 
 api_router.include_router(

@@ -1,4 +1,5 @@
 from pydantic import UUID4
+from app.ai.models import AiCoaching
 from app.core.db.mixins.timestamp_mixin import TimestampMixin
 from app.models import Base
 from sqlalchemy import (
@@ -26,6 +27,7 @@ class Community(TimestampMixin, Base):
 class Post(TimestampMixin, Base):
     id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True, autoincrement=True)
     title: Mapped[str] = mapped_column(String(100), nullable=False)
+    summary: Mapped[str] = mapped_column(String(200), nullable=True, comment="Ai Summary")
     content: Mapped[str] = mapped_column(TEXT, nullable=False)
     available: Mapped[bool] = mapped_column(Boolean, nullable=False, server_default="1")
     image: Mapped[str] = mapped_column(TEXT, nullable=True)
@@ -41,7 +43,7 @@ class Post(TimestampMixin, Base):
     community: Mapped[Community] = relationship("Community", back_populates="posts")
     post_likes: Mapped[list["PostLike"]] = relationship("PostLike", back_populates="post")
     comments: Mapped[list["Comment"]] = relationship("Comment", back_populates="post")
-
+    ai_coaching: Mapped[list["AiCoaching"]] = relationship("AiCoaching", back_populates="post")
     like_cnt: Mapped[int] = query_expression()
     comment_cnt: Mapped[int] = query_expression()
 

@@ -22,8 +22,8 @@ See https://pydantic-docs.helpmanual.io/usage/settings/
 from functools import lru_cache
 from os import environ
 from pathlib import Path
-from pydantic import AnyHttpUrl, AnyUrl, validator
-from pydantic_settings import BaseSettings
+from pydantic import AnyHttpUrl, AnyUrl, validator, field_validator
+from pydantic_settings import BaseSettings, SettingsConfigDict
 from sqlalchemy import URL, make_url
 
 PROJECT_DIR = Path(__file__).parent.parent.parent
@@ -61,14 +61,14 @@ class Settings(BaseSettings):
     DISCORD_WEBHOOK_URL: str
 
     # VALIDATORS
-    @validator("BACKEND_CORS_ORIGINS")
+    @field_validator("BACKEND_CORS_ORIGINS")
     @classmethod
     def _assemble_cors_origins(cls, cors_origins: str | list[AnyHttpUrl]):
         if isinstance(cors_origins, str):
             return [item.strip() for item in cors_origins.split(",")]
         return cors_origins
 
-    @validator("REDIS_HOST", "DEFAULT_DATABASE_HOSTNAME")
+    @field_validator("REDIS_HOST", "DEFAULT_DATABASE_HOSTNAME")
     @classmethod
     def _validate_redis_host(cls, v: str) -> str:
         if environ.get("ENV", "LOCAL") == "LOCAL":
@@ -88,19 +88,22 @@ class Settings(BaseSettings):
         )
         return make_url(str(url))
 
-    class Config:
-        env_file = f"{PROJECT_DIR}/.env"
-        case_sensitive = True
-        extra = "allow"
+    model_config = SettingsConfigDict(
+        env_file=f"{PROJECT_DIR}/.env",
+        case_sensitive=True,
+        extra="allow",
+    )
 
 
 # dev config for local development
 
 
 class ProductionSettings(Settings):
-    class Config:
-        env_file = f"{PROJECT_DIR}/.env.prod"
-        case_sensitive = True
+    model_config = SettingsConfigDict(
+        env_file=f"{PROJECT_DIR}/.env.prod",
+        case_sensitive=True,
+        extra="allow",
+    )
 
 
 @lru_cache()

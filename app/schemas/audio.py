@@ -1,4 +1,4 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 
 from .hashtag import Hashtag
 
@@ -11,8 +11,9 @@ class AudioRead(BaseModel):
     cover_image_url: str
     hashtag: list[Hashtag]
 
-    class Config:
-        orm_mode = True
+    model_config = ConfigDict(
+        from_attributes=True,
+    )
 
 
 class AudioCreate(BaseModel):

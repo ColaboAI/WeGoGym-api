@@ -6,7 +6,7 @@ from sqlalchemy.ext.asyncio import AsyncAttrs
 
 class Base(AsyncAttrs, DeclarativeBase):
     @declared_attr.directive
-    def __tablename__(cls) -> str:  # pylint: disable=no-self-argument
+    def __tablename__(cls) -> str:
         return re.sub("(?<!^)(?=[A-Z])", "_", cls.__name__).lower()
 
     metadata = MetaData(

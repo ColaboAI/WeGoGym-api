@@ -1,5 +1,5 @@
 from datetime import datetime
-from pydantic import BaseModel, Field, UUID4
+from pydantic import BaseModel, ConfigDict, Field, UUID4
 
 from app.schemas.user import UserRead
 
@@ -10,8 +10,9 @@ class ChatRoomMemberRead(BaseModel):
     created_at: datetime
     last_read_at: datetime
 
-    class Config:
-        orm_mode = True
+    model_config = ConfigDict(
+        from_attributes=True,
+    )
 
 
 class ChatRoomMemberReadWithUser(ChatRoomMemberRead):
@@ -39,8 +40,9 @@ class ChatRoomRead(BaseModel):
     is_group_chat: bool
     unread_count: int | None = None
 
-    class Config:
-        orm_mode = True
+    model_config = ConfigDict(
+        from_attributes=True,
+    )
 
 
 class ChatRoomReadWithLastMessageAndMembers(ChatRoomRead):
@@ -53,8 +55,9 @@ class ChatRoomList(BaseModel):
     total: int
     items: list[ChatRoomRead]
 
-    class Config:
-        orm_mode = True
+    model_config = ConfigDict(
+        from_attributes=True,
+    )
 
 
 class MyChatRoomList(BaseModel):
@@ -62,8 +65,9 @@ class MyChatRoomList(BaseModel):
     next_cursor: int | None
     items: list[ChatRoomReadWithLastMessageAndMembers]
 
-    class Config:
-        orm_mode = True
+    model_config = ConfigDict(
+        from_attributes=True,
+    )
 
 
 class ChatRoomMemberList(BaseModel):
@@ -75,8 +79,9 @@ class ChatRoomMemberList(BaseModel):
 class ChatRoomWithMembersRead(ChatRoomRead):
     members: list[ChatRoomMemberReadWithUser]
 
-    class Config:
-        orm_mode = True
+    model_config = ConfigDict(
+        from_attributes=True,
+    )
 
 
 class ChatRoomCreate(BaseModel):
@@ -134,8 +139,9 @@ class MessageRead(BaseModel):
     created_at: datetime
     media_url: str | None
 
-    class Config:
-        orm_mode = True
+    model_config = ConfigDict(
+        from_attributes=True,
+    )
 
 
 class MessageListRead(BaseModel):

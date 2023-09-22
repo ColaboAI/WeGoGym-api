@@ -7,10 +7,11 @@ import ujson
 
 
 class CommunityEnum(int, Enum):
-    WORKOUT = 1
+    WORKOUT = 1  # 운동
     DIET = 2  # 식단
     FREE = 3
     ANONYMOUS = 4
+    SOCIAL = 5
 
 
 class AuthorRead(BaseModel):
@@ -18,8 +19,9 @@ class AuthorRead(BaseModel):
     username: str
     profile_pic: str | None = None
 
-    class Config:
-        orm_mode = True
+    model_config = ConfigDict(
+        from_attributes=True,
+    )
 
 
 class CommunityCreate(BaseModel):
@@ -27,8 +29,9 @@ class CommunityCreate(BaseModel):
     description: str = Field(..., min_length=1)
     type: int = Field(CommunityEnum.WORKOUT, description="게시판 타입(운동, 식단, 자유, 익명)")
 
-    class Config:
-        orm_mode = True
+    model_config = ConfigDict(
+        from_attributes=True,
+    )
 
     # password: Optional[str] = Field(None, description="관리자 비밀번호")
 
@@ -40,10 +43,10 @@ class CommunityRead(BaseModel):
     description: str
     created_at: datetime
     updated_at: datetime
-
-    class Config:
-        orm_mode = True
-        use_enum_values = True
+    model_config = ConfigDict(
+        from_attributes=True,
+        use_enum_values=True,
+    )
 
 
 class PostBase(BaseModel):
@@ -76,6 +79,7 @@ class PostUpdate(BaseModel):
     content: str | None = Field(None, min_length=1, max_length=1000)
     video: list[str] | None = Field(None, description="video url. ex) https://www.youtube.com/watch?v=1234")
     image_list: list[OrderedImage] | None = Field(None, description="list of image urls")
+    summary: str | None = Field(None)
 
     def create_dict(self) -> dict:
         d = self.model_dump(exclude_unset=True)
@@ -93,6 +97,7 @@ class PostRead(PostBase):
     created_at: datetime
     updated_at: datetime
     user: AuthorRead | None = None
+    summary: str | None = None
 
     model_config = ConfigDict(
         from_attributes=True,
