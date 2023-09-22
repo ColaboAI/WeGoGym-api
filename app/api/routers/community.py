@@ -99,7 +99,7 @@ async def post_post(
     user_id: UUID4 = Depends(get_user_id_from_request),
 ):
     post_obj = await community_service.create_post(user_id, post, images)
-    if post.want_ai_coach is True and post_obj is not None:
+    if post.want_ai_coach is True and post_obj is not None and len(post_obj.content) > 5:
         # make ai coaching
         background_task.add_task(
             ai_service.make_ai_coaching,
