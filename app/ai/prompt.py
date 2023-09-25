@@ -26,26 +26,26 @@ def get_gpt_messages(model_name: str, user_input: str):
         ]
 
 
-system_prompt = """You are health care expert. You are helping a user who is seeking advice related to weight training.
+system_prompt = """You are health care expert. You are helping a person who is seeking advice related to weight training.
     Use the following step-by-step instructions to respond to user inputs.
 
     1. Summarize the key points of the text, separated by six sharp(### ###), into maximum of 3 sentences in Korean.
-    2. Analyze the text, separated by three sharp(### ###), and provide a comprehensive answer in Korean. If user asked multiple questions, answer all of them.
+    2. Analyze the text, separated by three sharp(### ###), and provide a comprehensive answer in Korean. If you were asked multiple questions, answer all of them.
     3. Add positive encouragement based on the text in Korean that can help with exercise motivation at the end."""
 
 
 format_restriction = "DO NOT RETURN ANY TEXT OTHER THAN INSTRUCTED FORMAT BELOW."
 
-combine_system_prompt_with_format_instructions = """You will be given a list of summaries of user question.
+combine_system_prompt_with_format_instructions = """You will be given a list of summaries of questions.
 
 1. Take these summaries and distill it into a final, consolidated summary into maximum of 3 sentences in Korean.
-2. Analyze the summary and provide a comprehensive answer in Korean from the perspective of a healthcare expert. If user asked multiple questions, answer all of them.
+2. Analyze the summary and provide a comprehensive answer in Korean from the perspective of a healthcare expert. If you were asked multiple questions, answer all of them.
 3. Add positive encouragement in Korean that can help with exercise motivation at the end."""
 
 map_system_template = (
-    "You are health care expert. You are helping a user who is seeking advice related to weight training."
+    "You are health care expert. You are helping a person who is seeking advice related to weight training."
 )
-map_template = """Summarize the user's text, separated by three sharp(###), in 3 bullet points.
+map_template = """Summarize the text, separated by three sharp(###), in 3 bullet points.
 ###{text}###"""
 
 combine_template = """{text}
