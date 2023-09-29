@@ -1,3 +1,4 @@
+from calendar import c
 import uuid
 import firebase_admin
 from firebase_admin import messaging
@@ -45,12 +46,21 @@ async def send_message_to_single_device_by_fcm_token(
             ),
         ),
     )
+    android = messaging.AndroidConfig(
+        priority="high",
+        notification=messaging.AndroidNotification(
+            sound="default",
+            channel_id="WeGoGym",
+            tag="위고짐",
+        ),
+    )
 
     message = messaging.Message(
         notification=messaging.Notification(title=title, body=body),
         token=fcm_token,
         data=data,
         apns=apns,
+        android=android,
     )
     try:
         response = messaging.send(message)
@@ -78,9 +88,18 @@ async def send_message_to_single_device_by_uid(
         payload=messaging.APNSPayload(
             aps=messaging.Aps(
                 sound="default",
+                category="mark-as-read",
                 # mutable_content=True,
                 content_available=True,
             ),
+        ),
+    )
+    android = messaging.AndroidConfig(
+        priority="high",
+        notification=messaging.AndroidNotification(
+            sound="default",
+            channel_id="WeGoGym",
+            tag="위고짐",
         ),
     )
 
@@ -89,6 +108,7 @@ async def send_message_to_single_device_by_uid(
         token=user.fcm_token,
         data=data,
         apns=apns,
+        android=android,
     )
     try:
         response = messaging.send(message)
@@ -122,12 +142,21 @@ async def send_message_to_multiple_devices_by_uid_list(
             ),
         ),
     )
+    android = messaging.AndroidConfig(
+        priority="high",
+        notification=messaging.AndroidNotification(
+            sound="default",
+            channel_id="WeGoGym",
+            tag="위고짐",
+        ),
+    )
 
     message = messaging.MulticastMessage(
         notification=messaging.Notification(title=title, body=body),
         tokens=tokens,
         data=data,
         apns=apns,
+        android=android,
     )
     try:
         response = messaging.send_multicast(message)
@@ -156,12 +185,21 @@ async def send_message_to_multiple_devices_by_fcm_token_list(
             ),
         ),
     )
+    android = messaging.AndroidConfig(
+        priority="high",
+        notification=messaging.AndroidNotification(
+            sound="default",
+            channel_id="WeGoGym",
+            tag="위고짐",
+        ),
+    )
 
     message = messaging.MulticastMessage(
         notification=messaging.Notification(title=title, body=body),
         tokens=tokens,
         data=data,
         apns=apns,
+        android=android,
     )
     try:
         response = messaging.send_multicast(message)
@@ -183,12 +221,21 @@ async def send_message_to_topic(topic: str, title: str, body: str, data: dict[st
             ),
         ),
     )
+    android = messaging.AndroidConfig(
+        priority="high",
+        notification=messaging.AndroidNotification(
+            sound="default",
+            channel_id="WeGoGym",
+            tag="위고짐",
+        ),
+    )
 
     message = messaging.Message(
         notification=messaging.Notification(title=title, body=body),
         topic=topic,
         data=data,
         apns=apns,
+        android=android,
     )
     try:
         response = messaging.send(message)
