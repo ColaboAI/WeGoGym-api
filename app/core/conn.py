@@ -6,6 +6,7 @@ from app.core.exceptions.websocket import WSInvalidToken, WSTokenExpired
 
 from app.utils.token_helper import TokenHelper
 from starlette.websockets import WebSocketState
+from app.utils.ecs_log import logger
 
 
 # Add connection manager method to validate user auth
@@ -42,7 +43,10 @@ class ConnectionManager:
         if key in self.active_connections:
             if self.active_connections[key].client_state == WebSocketState.CONNECTED:
                 await self.active_connections[key].close()
-            del self.active_connections[key]
+            try:
+                del self.active_connections[key]
+            except KeyError:
+                logger.error("KeyError in disconnect")
 
     async def close_all(self):
         for key in self.active_connections:
