@@ -30,10 +30,7 @@ async def subscribe_fcm_token_to_topic(db: AsyncSession, user_id: uuid.UUID, top
 
 
 async def send_message_to_single_device_by_fcm_token(
-    fcm_token: str,
-    title: str,
-    body: str,
-    data: dict[str, str] | None = None,
+    fcm_token: str, title: str, body: str, data: dict[str, str] | None = None
 ):
     apns = messaging.APNSConfig(
         headers={"apns-priority": "10"},
@@ -53,9 +50,11 @@ async def send_message_to_single_device_by_fcm_token(
             icon="ic_small_icon",
         ),
     )
-
+    if data is None:
+        data = {}
+    data["title"] = title
+    data["body"] = body
     message = messaging.Message(
-        notification=messaging.Notification(title=title, body=body),
         token=fcm_token,
         data=data,
         apns=apns,
@@ -71,11 +70,7 @@ async def send_message_to_single_device_by_fcm_token(
 # google fcm admin sdk 를 사용하여 메시지를 보내는 함수
 @Transactional()
 async def send_message_to_single_device_by_uid(
-    session: AsyncSession,
-    user_id: UUID4,
-    title: str,
-    body: str,
-    data: dict[str, str] | None = None,
+    session: AsyncSession, user_id: UUID4, title: str, body: str, data: dict[str, str] | None = None
 ):
     user = await session.get(User, user_id)
 
@@ -101,8 +96,12 @@ async def send_message_to_single_device_by_uid(
         ),
     )
 
+    if data is None:
+        data = {}
+    data["title"] = title
+    data["body"] = body
+
     message = messaging.Message(
-        notification=messaging.Notification(title=title, body=body),
         token=user.fcm_token,
         data=data,
         apns=apns,
@@ -148,8 +147,12 @@ async def send_message_to_multiple_devices_by_uid_list(
         ),
     )
 
+    if data is None:
+        data = {}
+    data["title"] = title
+    data["body"] = body
+
     message = messaging.MulticastMessage(
-        notification=messaging.Notification(title=title, body=body),
         tokens=tokens,
         data=data,
         apns=apns,
@@ -189,9 +192,12 @@ async def send_message_to_multiple_devices_by_fcm_token_list(
             icon="ic_small_icon",
         ),
     )
+    if data is None:
+        data = {}
+    data["title"] = title
+    data["body"] = body
 
     message = messaging.MulticastMessage(
-        notification=messaging.Notification(title=title, body=body),
         tokens=tokens,
         data=data,
         apns=apns,
@@ -224,9 +230,12 @@ async def send_message_to_topic(topic: str, title: str, body: str, data: dict[st
             icon="ic_small_icon",
         ),
     )
+    if data is None:
+        data = {}
+    data["title"] = title
+    data["body"] = body
 
     message = messaging.Message(
-        notification=messaging.Notification(title=title, body=body),
         topic=topic,
         data=data,
         apns=apns,
