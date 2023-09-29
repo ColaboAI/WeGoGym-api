@@ -47,11 +47,11 @@ async def send_message_to_single_device_by_fcm_token(
         ),
     )
     android = messaging.AndroidConfig(
-        priority="high",
         notification=messaging.AndroidNotification(
             sound="default",
             channel_id="wegogym",
             tag="위고짐",
+            icon="ic_small_icon",
         ),
     )
 
@@ -95,11 +95,11 @@ async def send_message_to_single_device_by_uid(
         ),
     )
     android = messaging.AndroidConfig(
-        priority="high",
         notification=messaging.AndroidNotification(
             sound="default",
             channel_id="wegogym",
             tag="위고짐",
+            icon="ic_small_icon",
         ),
     )
 
@@ -143,11 +143,11 @@ async def send_message_to_multiple_devices_by_uid_list(
         ),
     )
     android = messaging.AndroidConfig(
-        priority="high",
         notification=messaging.AndroidNotification(
             sound="default",
             channel_id="wegogym",
             tag="위고짐",
+            icon="ic_small_icon",
         ),
     )
 
@@ -186,11 +186,11 @@ async def send_message_to_multiple_devices_by_fcm_token_list(
         ),
     )
     android = messaging.AndroidConfig(
-        priority="high",
         notification=messaging.AndroidNotification(
             sound="default",
             channel_id="wegogym",
             tag="위고짐",
+            icon="ic_small_icon",
         ),
     )
 
@@ -222,11 +222,11 @@ async def send_message_to_topic(topic: str, title: str, body: str, data: dict[st
         ),
     )
     android = messaging.AndroidConfig(
-        priority="high",
         notification=messaging.AndroidNotification(
             sound="default",
             channel_id="wegogym",
             tag="위고짐",
+            icon="ic_small_icon",
         ),
     )
 
