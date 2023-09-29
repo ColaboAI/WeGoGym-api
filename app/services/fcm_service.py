@@ -40,7 +40,7 @@ async def send_message_to_single_device_by_fcm_token(
             aps=messaging.Aps(
                 sound="default",
                 category="mark-as-read",
-                mutable_content=True,
+                # mutable_content=True,
                 content_available=True,
             ),
         ),
@@ -78,7 +78,7 @@ async def send_message_to_single_device_by_uid(
         payload=messaging.APNSPayload(
             aps=messaging.Aps(
                 sound="default",
-                mutable_content=True,
+                # mutable_content=True,
                 content_available=True,
             ),
         ),
@@ -117,7 +117,7 @@ async def send_message_to_multiple_devices_by_uid_list(
             aps=messaging.Aps(
                 sound="default",
                 category="mark-as-read",
-                mutable_content=True,
+                # mutable_content=True,
                 content_available=True,
             ),
         ),
@@ -151,7 +151,7 @@ async def send_message_to_multiple_devices_by_fcm_token_list(
             aps=messaging.Aps(
                 sound="default",
                 category="mark-as-read",
-                mutable_content=True,
+                # mutable_content=True,
                 content_available=True,
             ),
         ),
@@ -178,7 +178,7 @@ async def send_message_to_topic(topic: str, title: str, body: str, data: dict[st
             aps=messaging.Aps(
                 sound="default",
                 category="mark-as-read",
-                mutable_content=True,
+                # mutable_content=True,
                 content_available=True,
             ),
         ),
