@@ -1,4 +1,3 @@
-from calendar import c
 import uuid
 import firebase_admin
 from firebase_admin import messaging
@@ -53,13 +52,13 @@ async def send_message_to_single_device_by_fcm_token(
     )
     if data is None:
         data = {}
-    data["title"] = title
-    data["body"] = body
     message = messaging.Message(
+        notification=messaging.Notification(title=title, body=body),
         token=fcm_token,
         data=data,
         apns=apns,
         android=android,
+        fcm_options=None,
     )
     try:
         response = messaging.send(message)
@@ -100,10 +99,9 @@ async def send_message_to_single_device_by_uid(
 
     if data is None:
         data = {}
-    data["title"] = title
-    data["body"] = body
 
     message = messaging.Message(
+        notification=messaging.Notification(title=title, body=body),
         token=user.fcm_token,
         data=data,
         apns=apns,
@@ -152,10 +150,9 @@ async def send_message_to_multiple_devices_by_uid_list(
 
     if data is None:
         data = {}
-    data["title"] = title
-    data["body"] = body
 
     message = messaging.MulticastMessage(
+        notification=messaging.Notification(title=title, body=body),
         tokens=tokens,
         data=data,
         apns=apns,
@@ -198,10 +195,9 @@ async def send_message_to_multiple_devices_by_fcm_token_list(
     )
     if data is None:
         data = {}
-    data["title"] = title
-    data["body"] = body
 
     message = messaging.MulticastMessage(
+        notification=messaging.Notification(title=title, body=body),
         tokens=tokens,
         data=data,
         apns=apns,
@@ -237,10 +233,9 @@ async def send_message_to_topic(topic: str, title: str, body: str, data: dict[st
     )
     if data is None:
         data = {}
-    data["title"] = title
-    data["body"] = body
 
     message = messaging.Message(
+        notification=messaging.Notification(title=title, body=body),
         topic=topic,
         data=data,
         apns=apns,
